@@ -16,5 +16,9 @@ export default {
 <style lang="scss">
 /*每个页面公共css */
 @import "uview-ui/index.scss";
-@import "../public/tuniao-ui.css"
+@import "../public/tuniao-ui.css";
+
+:root {
+  font-size: 14px; /* 750px设计稿下，1rem = 100px */
+}
 </style>

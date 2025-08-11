@@ -49,7 +49,7 @@ export function queryTags(params) {
 
 
 export function createPost(params) {
-  return fly.get("forum/createPost", params, {
+  return fly.get("/exam/forum/createPost", params, {
     
   });
 }

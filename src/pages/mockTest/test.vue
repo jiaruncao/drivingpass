@@ -14,7 +14,7 @@
       <view class="question-section">
         <view class="question-header">
           <text class="question-text">{{ currentQuestionData.questionText }}</text>
-          <text class="mark-instruction">Mark one answer</text>
+          <view class="mark-instruction">Mark one answer</view>
         </view>
 
         <view class="answer-options">
@@ -22,7 +22,7 @@
             v-for="(option, index) in currentQuestionData.options" 
             :key="index"
             :class="['answer-option', currentQuestionData.selectedOption === index ? 'selected' : '']"
-            @tap="selectAnswer(index)"
+            @click="selectAnswer(index)"
           >
             <view class="answer-checkbox"></view>
             <text class="answer-text">{{ option }}</text>
@@ -43,37 +43,37 @@
     <!-- 底部控制栏 -->
     <view class="bottom-controls">
       <view class="control-buttons">
-        <button class="control-button previous" @tap="previousQuestion">
+        <button class="control-button previous" @click="previousQuestion">
           <text class="arrow">←</text>
           <text>Previous</text>
         </button>
         <button 
           :class="['control-button', 'flag', questionStates[currentQuestion - 1].flagged ? 'flagged' : '']" 
-          @tap="toggleFlag"
+          @click="toggleFlag"
         >
           <text class="flag-icon">!</text>
           <text>Flag</text>
         </button>
-        <button class="control-button review" @tap="showReview">
+        <button class="control-button review" @click="showReview">
           <text class="review-icon">👓</text>
           <text>Review</text>
         </button>
-        <button class="control-button sound" @tap="playAudio">
+        <button class="control-button sound" @click="playAudio">
           <text class="sound-icon">🔊</text>
         </button>
       </view>
-      <button class="control-button next" @tap="nextQuestion">
+      <button class="control-button next" @click="nextQuestion">
         <text>Next</text>
         <text class="arrow">→</text>
       </button>
     </view>
 
     <!-- Review面板遮罩层 -->
-    <view v-if="reviewVisible" class="review-overlay active" @tap="handleOverlayClick">
-      <view class="review-panel" @tap.stop>
+    <view v-if="reviewVisible" class="review-overlay active" @click="handleOverlayClick">
+      <view class="review-panel" @click.stop>
         <view class="review-header">
           <text class="review-title">Review Questions</text>
-          <button class="review-close" @tap="closeReview">×</button>
+          <button class="review-close" @click="closeReview">×</button>
         </view>
         
         <view class="review-stats">
@@ -102,7 +102,7 @@
                 state.answered ? 'answered' : '',
                 state.flagged ? 'flagged' : ''
               ]"
-              @tap="goToQuestionFromReview(state.id)"
+              @click="goToQuestionFromReview(state.id)"
             >
               <text>{{ state.id }}</text>
             </view>
@@ -110,8 +110,8 @@
         </scroll-view>
         
         <view class="review-footer">
-          <button class="review-action-btn secondary" @tap="closeReview">Continue Test</button>
-          <button class="review-action-btn primary" @tap="endTest">End Test</button>
+          <view class="review-action-btn secondary" @click="closeReview">Continue Test</view>
+          <view class="review-action-btn primary" @click="endTest">End Test</view>
         </view>
       </view>
     </view>
@@ -194,7 +194,7 @@ export default {
           'Approach slowly and edge out until you can see more clearly'
         ],
         hasImage: true,
-        imageUrl: 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\' viewBox=\'0 0 400 300\'%3E%3Crect fill=\'%23587A8A\' width=\'400\' height=\'300\'/%3E%3Crect fill=\'%23404040\' x=\'0\' y=\'180\' width=\'400\' height=\'120\'/%3E%3Crect fill=\'%23FFF\' stroke-dasharray=\'15,8\' stroke=\'%23FFF\' stroke-width=\'2\' fill=\'none\' x=\'195\' y=\'180\' width=\'10\' height=\'120\'/%3E%3Crect fill=\'%23228B22\' x=\'0\' y=\'170\' width=\'150\' height=\'10\'/%3E%3Crect fill=\'%23228B22\' x=\'250\' y=\'170\' width=\'150\' height=\'10\'/%3E%3Cpath d=\'M 170 250 Q 190 230 200 180\' stroke=\'%23FFF\' stroke-width=\'2\' fill=\'none\'/%3E%3Cpolygon fill=\'%23FFF\' points=\'197,183 200,180 203,183 200,175\'/%3E%3C/svg%3E',
+        imageUrl: 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\' viewBox=\'0 0 400 300\'%3E%3Crect fill=\'%23587A8A\' width=\'400\' height=\'300\'/%3E%3Crect fill=\'%23404040\' x=\'0\' y=\'180\' width=\'400\' height=\'120\'/%3E%3Crect fill=\'%23FFF\' stroke-dasharray=\'15,8\' stroke=\'%23FFF\' stroke-width=\'2\' fill=\'none\' x=\'195\' y=\'180\' width=\'10\' height=\'120\'/%3E%3Crect fill=\'%238B7355\' x=\'300\' y=\'130\' width=\'80\' height=\'60\'/%3E%3Cpolygon fill=\'%23A0522D\' points=\'300,130 340,110 380,130\'/%3E%3Crect fill=\'%23228B22\' x=\'0\' y=\'170\' width=\'150\' height=\'10\'/%3E%3Crect fill=\'%23228B22\' x=\'250\' y=\'170\' width=\'150\' height=\'10\'/%3E%3Cpath d=\'M 170 250 Q 190 230 200 180\' stroke=\'%23FFF\' stroke-width=\'2\' fill=\'none\'/%3E%3Cpolygon fill=\'%23FFF\' points=\'197,183 200,180 203,183 200,175\'/%3E%3C/svg%3E',
         selectedOption: this.questionStates[this.currentQuestion - 1] ? 
           this.questionStates[this.currentQuestion - 1].selectedOption : null
       }
@@ -216,43 +216,29 @@ export default {
     }
   },
   
-  onLoad() {
-    // 设置页面为横屏模式
-    this.setLandscapeMode()
+  mounted() {
     // 初始化题目状态
     this.initQuestionStates()
     // 启动倒计时
     this.startTimer()
   },
-  
-  onUnload() {
+
+  beforeDestroy() {
     // 清理计时器
     if (this.timer) {
       clearInterval(this.timer)
     }
-    // 恢复竖屏
-    // #ifdef APP-PLUS
-    plus.screen.lockOrientation('portrait-primary')
-    // #endif
   },
   
+  // onUnload() {
+  //   console.log('恢复竖屏')
+  //   // 页面卸载时恢复竖屏
+  //   // #ifdef APP-PLUS
+  //   plus.screen.lockOrientation('portrait-primary');
+  //   // #endif
+  // },
+  
   methods: {
-    // 设置横屏模式
-    setLandscapeMode() {
-      // #ifdef APP-PLUS
-      // APP端强制横屏
-      plus.screen.lockOrientation('landscape-primary')
-      // #endif
-      
-      // #ifdef H5
-      // H5端提示横屏效果更佳
-      const systemInfo = uni.getSystemInfoSync()
-      if (systemInfo.windowWidth < systemInfo.windowHeight) {
-        console.log('建议横屏使用以获得最佳体验')
-      }
-      // #endif
-    },
-    
     // 初始化题目状态
     initQuestionStates() {
       this.questionStates = Array(50).fill(null).map((_, index) => ({
@@ -396,13 +382,11 @@ export default {
 }
 </script>
 
-<style lang="scss">
-/* 全局样式重置 */
-page {
-  width: 100%;
-  height: 100%;
+<style scoped>
+* {
+  box-sizing: border-box;
 }
-
+/* 全局样式重置 */
 .container {
   height: 100vh;
   display: flex;
@@ -414,24 +398,23 @@ page {
 /* 顶部栏 */
 .top-bar {
   background: #F5F5F5;
-  padding: 12rpx 40rpx;
+  padding: 0.375rem 1.25rem; /* 6px 20px → 0.375rem 1.25rem */
   display: flex;
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 2rpx solid #E0E0E0;
-  height: 80rpx;
-  box-sizing: border-box;
+  border-bottom: 0.0625rem solid #E0E0E0; /* 1px → 0.0625rem */
+  height: 2.5rem; /* 40px → 2.5rem */
 }
 
 .question-counter {
-  font-size: 30rpx;
+  font-size: 0.9375rem; /* 15px → 0.9375rem */
   font-weight: 600;
   color: #333333;
 }
 
 .time-remaining {
-  font-size: 28rpx;
+  font-size: 0.875rem; /* 14px → 0.875rem */
   color: #666666;
   font-weight: 500;
   transition: color 0.3s ease;
@@ -448,15 +431,14 @@ page {
   50% { opacity: 0.7; }
 }
 
-/* 主要内容区域 - 横屏优化 */
+/* 主要内容区域 */
 .main-content {
   flex: 1;
   display: flex;
   flex-direction: row;
-  padding: 20rpx 30rpx;
+  padding: 0.625rem 0.9375rem; /* 10px 15px → 0.625rem 0.9375rem */
   background: #FFFFFF;
   min-height: 0;
-  box-sizing: border-box;
 }
 
 /* 当没有图片时，问题区域占满 */
@@ -472,8 +454,8 @@ page {
   flex-direction: column;
   max-width: 55%;
   justify-content: space-between;
-  padding-right: 30rpx;
-  box-sizing: border-box;
+  padding-right: 0.9375rem; /* 15px → 0.9375rem */
+  overflow: auto;
 }
 
 .question-header {
@@ -481,20 +463,18 @@ page {
 }
 
 .question-text {
-  font-size: 34rpx;
+  font-size: 1.0625rem; /* 17px → 1.0625rem */
   line-height: 1.45;
   color: #333333;
-  margin-bottom: 20rpx;
+  margin-bottom: 0.625rem; /* 10px → 0.625rem */
   font-weight: 500;
-  display: block;
 }
 
 .mark-instruction {
-  font-size: 28rpx;
+  font-size: 0.875rem; /* 14px → 0.875rem */
   color: #CC0000;
   font-weight: 500;
-  margin-bottom: 24rpx;
-  display: block;
+  margin-bottom: 0.75rem; /* 12px → 0.75rem */
 }
 
 /* 答案选项 */
@@ -509,26 +489,25 @@ page {
   display: flex;
   flex-direction: row;
   align-items: center;
-  padding: 24rpx 28rpx;
+  padding: 0.75rem 0.875rem; /* 12px 14px → 0.75rem 0.875rem */
   background: #F9F9F9;
-  border-radius: 16rpx;
+  border-radius: 0.5rem; /* 8px → 0.5rem */
   transition: all 0.2s ease;
-  border: 4rpx solid transparent;
-  min-height: 96rpx;
-  margin-bottom: 16rpx;
-  box-sizing: border-box;
+  border: 0.125rem solid transparent; /* 2px → 0.125rem */
+  min-height: 3rem; /* 48px → 3rem */
+  margin-bottom: 0.5rem; /* 8px → 0.5rem */
 }
 
 .answer-checkbox {
-  width: 48rpx;
-  height: 48rpx;
-  border: 4rpx solid #0099CC;
-  border-radius: 8rpx;
+  width: 1.5rem; /* 24px → 1.5rem */
+  height: 1.5rem; /* 24px → 1.5rem */
+  border: 0.125rem solid #0099CC; /* 2px → 0.125rem */
+  border-radius: 0.25rem; /* 4px → 0.25rem */
   background: white;
   flex-shrink: 0;
   position: relative;
   transition: all 0.2s ease;
-  margin-right: 24rpx;
+  margin-right: 0.75rem; /* 12px → 0.75rem */
 }
 
 .answer-option:active {
@@ -538,7 +517,7 @@ page {
 
 .answer-option.selected {
   background: #E8F4F8;
-  border: 4rpx solid #0099CC;
+  border: 0.125rem solid #0099CC; /* 2px → 0.125rem */
 }
 
 .answer-option.selected .answer-checkbox {
@@ -552,12 +531,12 @@ page {
   left: 50%;
   transform: translate(-50%, -50%);
   color: white;
-  font-size: 32rpx;
+  font-size: 1rem; /* 16px → 1rem */
   font-weight: bold;
 }
 
 .answer-text {
-  font-size: 30rpx;
+  font-size: 0.9375rem; /* 15px → 0.9375rem */
   line-height: 1.35;
   color: #333333;
   flex: 1;
@@ -570,59 +549,58 @@ page {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 10rpx;
-  box-sizing: border-box;
+  padding: 0.3125rem; /* 5px → 0.3125rem */
 }
 
 .question-image {
   width: 100%;
   height: 100%;
-  border-radius: 12rpx;
-  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.12);
+  border-radius: 0.375rem; /* 6px → 0.375rem */
+  box-shadow: 0 0.125rem 0.5rem rgba(0,0,0,0.12); /* 2px 8px → 0.125rem 0.5rem */
 }
 
 /* 底部控制栏 */
 .bottom-controls {
   background: #E8E4DC;
-  padding: 20rpx 30rpx;
+  padding: 0.625rem 0.9375rem; /* 10px 15px → 0.625rem 0.9375rem */
   display: flex;
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  border-top: 2rpx solid #D0D0C0;
-  height: 140rpx;
-  box-sizing: border-box;
+  border-top: 0.0625rem solid #D0D0C0; /* 1px → 0.0625rem */
+  height: 4.375rem; /* 70px → 4.375rem */
 }
 
 .control-buttons {
   display: flex;
   flex-direction: row;
   align-items: center;
-  flex: 1;
+  justify-content: flex-start;
+  height: 100%;
 }
 
 .control-button {
-  padding: 24rpx 40rpx;
-  font-size: 32rpx;
-  border: 4rpx solid #B0A090;
-  border-radius: 16rpx;
+  padding: 0.75rem 1.25rem; /* 12px 20px → 0.75rem 1.25rem */
+  font-size: 1rem; /* 16px → 1rem */
+  border: 0.125rem solid #B0A090; /* 2px → 0.125rem */
+  border-radius: 0.5rem; /* 8px → 0.5rem */
   background: #FFFFFF;
   color: #333333;
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4rpx 8rpx rgba(0,0,0,0.1);
+  box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.1); /* 2px 4px → 0.125rem 0.25rem */
   white-space: nowrap;
   font-weight: 500;
-  min-height: 96rpx;
-  margin-right: 20rpx;
-  box-sizing: border-box;
+  min-height: 3rem; /* 48px → 3rem */
+  margin-right: 0.625rem; /* 10px → 0.625rem */
+  height: 100%;
 }
 
 .control-button:active {
   transform: scale(0.98);
-  box-shadow: 0 2rpx 4rpx rgba(0,0,0,0.1);
+  box-shadow: 0 0.0625rem 0.125rem rgba(0,0,0,0.1); /* 1px 2px → 0.0625rem 0.125rem */
 }
 
 /* 各按钮的特定样式 */
@@ -632,8 +610,8 @@ page {
 
 .control-button.previous .arrow {
   color: #CC0000;
-  font-size: 36rpx;
-  margin-right: 16rpx;
+  font-size: 1.125rem; /* 18px → 1.125rem */
+  margin-right: 0.5rem; /* 8px → 0.5rem */
 }
 
 .control-button.flag {
@@ -641,8 +619,8 @@ page {
 }
 
 .control-button.flag .flag-icon {
-  font-size: 40rpx;
-  margin-right: 16rpx;
+  font-size: 1.25rem; /* 20px → 1.25rem */
+  margin-right: 0.5rem; /* 8px → 0.5rem */
 }
 
 .control-button.flag.flagged {
@@ -655,17 +633,17 @@ page {
 }
 
 .control-button.review .review-icon {
-  font-size: 40rpx;
-  margin-right: 16rpx;
+  font-size: 1.25rem; /* 20px → 1.25rem */
+  margin-right: 0.5rem; /* 8px → 0.5rem */
 }
 
 .control-button.sound {
-  padding: 24rpx 32rpx;
-  min-width: 112rpx;
+  padding: 0.75rem 1rem; /* 12px 16px → 0.75rem 1rem */
+  min-width: 3.5rem; /* 56px → 3.5rem */
 }
 
 .control-button.sound .sound-icon {
-  font-size: 40rpx;
+  font-size: 1.25rem; /* 20px → 1.25rem */
 }
 
 .control-button.next {
@@ -676,8 +654,8 @@ page {
 
 .control-button.next .arrow {
   color: #CC0000;
-  font-size: 36rpx;
-  margin-left: 16rpx;
+  font-size: 1.125rem; /* 18px → 1.125rem */
+  margin-left: 0.5rem; /* 8px → 0.5rem */
 }
 
 /* Review面板遮罩层 */
@@ -701,10 +679,10 @@ page {
 
 .review-panel {
   background: white;
-  border-radius: 24rpx;
-  box-shadow: 0 8rpx 40rpx rgba(0, 0, 0, 0.3);
+  border-radius: 0.75rem; /* 12px → 0.75rem */
+  box-shadow: 0 0.25rem 1.25rem rgba(0, 0, 0, 0.3); /* 4px 20px → 0.25rem 1.25rem */
   width: 90%;
-  max-width: 1200rpx;
+  max-width: 37.5rem; /* 600px → 37.5rem */
   max-height: 85vh;
   display: flex;
   flex-direction: column;
@@ -712,30 +690,31 @@ page {
 }
 
 .review-header {
-  padding: 30rpx 40rpx;
-  border-bottom: 4rpx solid #E0E0E0;
+  padding: 0.4375rem 1.25rem; /* 15px 20px → 0.9375rem 1.25rem */
+  border-bottom: 0.125rem solid #E0E0E0; /* 2px → 0.125rem */
   display: flex;
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
   background: #F5F5F5;
-  border-radius: 24rpx 24rpx 0 0;
+  border-radius: 0.75rem 0.75rem 0 0; /* 12px → 0.75rem */
 }
 
 .review-title {
-  font-size: 36rpx;
+  font-size: 1.125rem; /* 18px → 1.125rem */
   font-weight: 600;
   color: #333;
+  flex: 1;
 }
 
 .review-close {
-  width: 64rpx;
-  height: 64rpx;
+  width: 2rem; /* 32px → 2rem */
+  height: 2rem; /* 32px → 2rem */
   border: none;
   background: #CC0000;
   color: white;
   border-radius: 50%;
-  font-size: 36rpx;
+  font-size: 1.125rem; /* 18px → 1.125rem */
   display: flex;
   align-items: center;
   justify-content: center;
@@ -746,9 +725,9 @@ page {
 }
 
 .review-stats {
-  padding: 24rpx 40rpx;
+  padding: 0.55rem 1.25rem; /* 12px 20px → 0.75rem 1.25rem */
   background: #FFF9E6;
-  border-bottom: 2rpx solid #E0E0E0;
+  border-bottom: 0.0625rem solid #E0E0E0; /* 1px → 0.0625rem */
   display: flex;
   flex-direction: row;
   justify-content: space-around;
@@ -759,16 +738,16 @@ page {
   display: flex;
   flex-direction: row;
   align-items: center;
-  font-size: 28rpx;
-  margin: 10rpx;
+  font-size: 0.875rem; /* 14px → 0.875rem */
+  /* margin: 0.3125rem; /* 5px → 0.3125rem */
 }
 
 .stat-indicator {
-  width: 40rpx;
-  height: 40rpx;
-  border-radius: 8rpx;
-  border: 4rpx solid #999;
-  margin-right: 12rpx;
+  width: 1.25rem; /* 20px → 1.25rem */
+  height: 1.25rem; /* 20px → 1.25rem */
+  border-radius: 0.25rem; /* 4px → 0.25rem */
+  border: 0.125rem solid #999; /* 2px → 0.125rem */
+  margin-right: 0.375rem; /* 6px → 0.375rem */
 }
 
 .stat-indicator.answered {
@@ -792,7 +771,8 @@ page {
 
 .review-grid-container {
   flex: 1;
-  padding: 40rpx;
+  width: 100%;
+  max-height: 11.5rem;
 }
 
 .review-grid {
@@ -800,23 +780,24 @@ page {
   flex-direction: row;
   flex-wrap: wrap;
   justify-content: center;
-  max-width: 800rpx;
+  max-width: 25rem; /* 400px → 25rem */
   margin: 0 auto;
+  padding: 0.625rem 0;
 }
 
 .question-box {
-  width: 120rpx;
-  height: 120rpx;
-  border: 4rpx solid #CCC;
-  border-radius: 16rpx;
+  width: 3.75rem; /* 60px → 3.75rem */
+  height: 3.75rem; /* 60px → 3.75rem */
+  border: 0.125rem solid #CCC; /* 2px → 0.125rem */
+  border-radius: 0.5rem; /* 8px → 0.5rem */
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 32rpx;
+  font-size: 1rem; /* 16px → 1rem */
   font-weight: 600;
   position: relative;
   background: white;
-  margin: 10rpx;
+  margin: 0.3125rem; /* 5px → 0.3125rem */
 }
 
 .question-box:active {
@@ -826,7 +807,7 @@ page {
 .question-box.current {
   border-color: #0099CC;
   background: #E8F4F8;
-  box-shadow: 0 0 0 6rpx rgba(0, 153, 204, 0.2);
+  box-shadow: 0 0 0 0.1875rem rgba(0, 153, 204, 0.2); /* 3px → 0.1875rem */
 }
 
 .question-box.answered {
@@ -838,39 +819,39 @@ page {
 .question-box.flagged::after {
   content: '🚩';
   position: absolute;
-  top: -10rpx;
-  right: -10rpx;
-  font-size: 28rpx;
+  top: -0.3125rem; /* -5px → -0.3125rem */
+  right: -0.3125rem; /* -5px → -0.3125rem */
+  font-size: 0.875rem; /* 14px → 0.875rem */
   background: white;
   border-radius: 50%;
-  width: 40rpx;
-  height: 40rpx;
+  width: 1.25rem; /* 20px → 1.25rem */
+  height: 1.25rem; /* 20px → 1.25rem */
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4rpx 8rpx rgba(0,0,0,0.2);
+  box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.2); /* 2px 4px → 0.125rem 0.25rem */
 }
 
 .review-footer {
-  padding: 30rpx 40rpx;
-  border-top: 4rpx solid #E0E0E0;
+  padding: 0.7375rem 1.25rem; /* 15px 20px → 0.9375rem 1.25rem */
+  border-top: 0.125rem solid #E0E0E0; /* 2px → 0.125rem */
   display: flex;
   flex-direction: row;
   justify-content: center;
   background: #F5F5F5;
-  border-radius: 0 0 24rpx 24rpx;
-  box-sizing: border-box;
+  border-radius: 0 0 0.75rem 0.75rem; /* 12px → 0.75rem */
+  height: 100%;
 }
 
 .review-action-btn {
-  padding: 20rpx 40rpx;
+  padding: 0.425rem 1.25rem; /* 10px 20px → 0.625rem 1.25rem */
   border: none;
-  border-radius: 12rpx;
-  font-size: 28rpx;
+  border-radius: 0.375rem; /* 6px → 0.375rem */
+  font-size: 0.875rem; /* 14px → 0.875rem */
   font-weight: 500;
-  box-shadow: 0 4rpx 8rpx rgba(0,0,0,0.1);
-  margin: 0 10rpx;
-  box-sizing: border-box;
+  box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.1); /* 2px 4px → 0.125rem 0.25rem */
+  margin: 0 0.3125rem; /* 5px → 0.3125rem */
+  height: 100%;
 }
 
 .review-action-btn.primary {
@@ -881,7 +862,7 @@ page {
 .review-action-btn.secondary {
   background: white;
   color: #333;
-  border: 2rpx solid #CCC;
+  border: 0.0625rem solid #CCC; /* 1px → 0.0625rem */
 }
 
 .review-action-btn:active {
@@ -895,7 +876,7 @@ page {
 
 @keyframes slideUp {
   from {
-    transform: translateY(40rpx);
+    transform: translateY(1.25rem); /* 20px → 1.25rem */
     opacity: 0;
   }
   to {
@@ -904,73 +885,107 @@ page {
   }
 }
 
-/* 小屏幕横屏优化 */
-@media screen and (max-height: 400px) {
+/* 横屏模式优化 */
+@media screen and (orientation: landscape) and (max-height: 37.5rem) { /* 600px → 37.5rem */
   .top-bar {
-    height: 72rpx;
-    padding: 10rpx 30rpx;
-    box-sizing: border-box;
+    height: 2.25rem; /* 36px → 2.25rem */
+    padding: 0.3125rem 0.9375rem; /* 5px 15px → 0.3125rem 0.9375rem */
   }
   
   .question-counter {
-    font-size: 28rpx;
+    font-size: 0.875rem; /* 14px → 0.875rem */
   }
   
   .time-remaining {
-    font-size: 26rpx;
+    font-size: 0.8125rem; /* 13px → 0.8125rem */
   }
   
   .main-content {
-    padding: 16rpx 24rpx;
-    box-sizing: border-box;
+    padding: 0.5rem 0.75rem 0 0.75rem; /* 8px 12px → 0.5rem 0.75rem */
   }
   
   .question-text {
-    font-size: 32rpx;
-    margin-bottom: 16rpx;
+    font-size: 1rem; /* 16px → 1rem */
+    margin-bottom: 0.5rem; /* 8px → 0.5rem */
   }
   
   .mark-instruction {
-    font-size: 26rpx;
-    margin-bottom: 20rpx;
+    font-size: 0.8125rem; /* 13px → 0.8125rem */
+    margin-bottom: 0.625rem; /* 10px → 0.625rem */
   }
   
   .answer-option {
-    padding: 20rpx 24rpx;
-    min-height: 88rpx;
-    box-sizing: border-box;
+    padding: 0.625rem 0.75rem; /* 10px 12px → 0.625rem 0.75rem */
+    min-height: 2.75rem; /* 44px → 2.75rem */
   }
   
   .answer-text {
-    font-size: 28rpx;
+    font-size: 0.875rem; /* 14px → 0.875rem */
   }
   
   .answer-checkbox {
-    width: 44rpx;
-    height: 44rpx;
+    width: 1.375rem; /* 22px → 1.375rem */
+    height: 1.375rem; /* 22px → 1.375rem */
   }
   
   .bottom-controls {
-    height: 120rpx;
-    padding: 16rpx 24rpx;
-    box-sizing: border-box;
+    height: 3.75rem; /* 60px → 3.75rem */
+    padding: 0.5rem 0.75rem; /* 8px 12px → 0.5rem 0.75rem */
   }
   
   .control-button {
-    font-size: 28rpx;
-    padding: 20rpx 32rpx;
-    min-height: 88rpx;
-    box-sizing: border-box;
+    font-size: 0.875rem; /* 14px → 0.875rem */
+    padding: 0.625rem 1rem; /* 10px 16px → 0.625rem 1rem */
+    min-height: 2.75rem; /* 44px → 2.75rem */
   }
   
   .review-grid {
-    max-width: 1200rpx;
+    max-width: 37.5rem; /* 600px → 37.5rem */
   }
   
   .question-box {
-    width: 100rpx;
-    height: 100rpx;
-    font-size: 28rpx;
+    width: 3.125rem; /* 50px → 3.125rem */
+    height: 3.125rem; /* 50px → 3.125rem */
+    font-size: 0.875rem; /* 14px → 0.875rem */
+  }
+  
+  .review-panel {
+    max-height: 90vh;
+    max-width: 43.75rem;
+  }
+}
+
+/* 竖屏模式 */
+@media screen and (orientation: portrait) {
+  .main-content {
+    flex-direction: column;
+    padding: 0.75rem; /* 12px → 0.75rem */
+  }
+  
+  .question-section {
+    max-width: 100%;
+    flex: 0.55;
+    justify-content: flex-start;
+    padding-right: 0;
+  }
+  
+  .image-section {
+    max-width: 100%;
+    flex: 0.45;
+    padding: 0.5rem; /* 8px → 0.5rem */
+  }
+  
+  .question-text {
+    font-size: 1rem; /* 16px → 1rem */
+    margin-bottom: 0.625rem; /* 10px → 0.625rem */
+  }
+  
+  .answer-option {
+    padding: 0.625rem 0.75rem; /* 10px 12px → 0.625rem 0.75rem */
+  }
+  
+  .answer-text {
+    font-size: 0.875rem; /* 14px → 0.875rem */
   }
 }
 </style>

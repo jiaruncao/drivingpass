@@ -294,7 +294,8 @@
       "style" : 
       {
         "navigationBarTitleText" : "",
-        "navigationStyle": "custom"
+        "navigationStyle": "custom",
+        "pageOrientation": "landscape"
       }
     },
     {
@@ -302,7 +303,8 @@
       "style" : 
       {
         "navigationBarTitleText" : "",
-        "navigationStyle": "custom"
+        "navigationStyle": "custom",
+        "pageOrientation": "landscape"
       }
     },
     {
@@ -310,7 +312,8 @@
       "style" : 
       {
         "navigationBarTitleText" : "",
-        "navigationStyle": "custom"
+        "navigationStyle": "custom",
+        "pageOrientation": "primary"
       }
     }
   ],

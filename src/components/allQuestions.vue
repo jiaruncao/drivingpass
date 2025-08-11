@@ -94,13 +94,14 @@ export default {
   flex-wrap: wrap;
   max-height: 70vh;
   overflow-y: scroll;
+  gap: 36rpx;
   .question_item {
-    margin: 18rpx;
-    width: 80rpx;
-    height: 80rpx;
+    // margin: 18rpx;
+    width: 78rpx;
+    height: 78rpx;
     border-radius: 100%;
     text-align: center;
-    line-height: 80rpx;
+    line-height: 78rpx;
     background: #ffffff;
     border: 2px solid #d7d7d7;
   }

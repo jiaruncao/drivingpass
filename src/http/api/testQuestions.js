@@ -43,3 +43,21 @@ export function collectAdd(params) {
 export function collectCancel(params) {
   return fly.post("/exam/question/collectCancel", params);
 }
+/*
+ * author：huanyun
+ * create by date：2025/08/06
+ * question_id  题目ID
+ * user_answer 用户答案
+ * source 默认TRAINING:练习
+ */
+export function wrongAdd(params) {
+  return fly.post("/exam/question/wrongAdd", params);
+}
+/*
+ * author：huanyun
+ * create by date：2025/08/06
+ * question_id  题目ID
+ */
+export function recordAdd(params) {
+  return fly.post("/exam/question/recordAdd", params);
+}

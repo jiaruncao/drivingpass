@@ -177,6 +177,9 @@ export default {
   onLoad() {
     // 页面加载时初始化
     this.getSystemInfo();
+    // #ifdef APP-PLUS
+    plus.screen.lockOrientation('portrait-primary');
+    // #endif
   },
   onReady() {
     // 页面渲染完成后初始化图表
@@ -375,6 +378,11 @@ export default {
 </script>
 
 <style lang="scss">
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 /* 全局样式 */
 .app {
   min-height: 100vh;
@@ -640,8 +648,8 @@ export default {
 .stats-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 15px;
-  margin-bottom: 20px;
+  // gap: 15px;
+  // margin-bottom: 20px;
 }
 
 .stat-card {
@@ -656,8 +664,13 @@ export default {
   flex-direction: column;
   align-items: center;
   box-sizing: border-box;
+  margin-right: 16px;
+  margin-bottom: 30rpx;
 }
-
+/* 清除最后一列的右侧 margin */
+.stat-card:nth-child(2n) {
+  margin-right: 0;
+}
 .stat-number {
   display: block;
   font-size: 32px;

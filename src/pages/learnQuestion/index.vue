@@ -122,7 +122,7 @@
               <div class="header_avatar">
                 <img :src="item.avatar" alt="" />
               </div>
-              <div class="header_name">{{ item.name }}</div>
+              <div class="header_name">{{ item.nickname }}</div>
               <div
                 class="header_thumbsUp"
                 :style="{ color: item.isThumbsUp ? '#419FFF' : '#999999' }"
@@ -162,7 +162,7 @@
               v-for="(evaluate, e) in item.evaluate"
               :key="e"
             >
-              <div class="evaluate_name">{{ evaluate.name }}：</div>
+              <div class="evaluate_name">{{ evaluate.nickname }}：</div>
               <div class="evaluate_content">{{ evaluate.content }}</div>
               <div class="evaluate_icon" @click="handleComment(evaluate)">
                 <u-icon name="more-dot-fill" color="#000" size="20"></u-icon>
@@ -271,7 +271,8 @@
 </template>
 
 <script>
-import {startTrain, collectAdd, collectCancel} from '@/http/api/testQuestions.js'
+import {startTrain, collectAdd, collectCancel, wrongAdd, recordAdd} from '@/http/api/testQuestions.js'
+import {queryPostList, createPost} from '@/http/api/community.js'
 import allQuestion from "@/components/allQuestions.vue";
 export default {
   components: { allQuestion },
@@ -376,8 +377,13 @@ export default {
       this.replyShow = true;
     },
     postReply() {
-      this.$utils.toast("Comment successful!");
-      this.replyShow = false;
+      createPost({
+        question_id: this.startLearnQuestion.id,
+        content: this.replyQuery.content,
+      }).then(res => {
+        this.$utils.toast("Comment successful!");
+        this.replyShow = false;
+      })
     },
     closeReply() {
       this.replyShow = false;
@@ -537,6 +543,33 @@ export default {
     },
     selectOptionHandle(item, i) {
       this.selectOption = item;
+      this.recordAdd()
+      this.queryPostList()
+      if (this.selectOption.key != this.startLearnQuestion.answer) {
+        this.wrongAdd()
+      }
+    },
+    // 设置错题记录
+    wrongAdd () {
+      wrongAdd({
+        question_id: this.startLearnQuestion.id,
+        source: 'TRAINING',
+        user_answer: this.selectOption.key
+      })
+    },
+    recordAdd () {
+      recordAdd({
+        question_id: this.startLearnQuestion.id
+      })
+    },
+    // 查询评论
+    queryPostList () {
+      queryPostList({
+        question_id: this.startLearnQuestion.id
+      }).then(res => {
+        console.log(res)
+        this.forumList = res.data.list.data
+      })
     },
     goBack() {
       uni.navigateBack({ delta: 1 });
