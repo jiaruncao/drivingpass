@@ -64,6 +64,7 @@
 </template>
 
 <script>
+  import {getPaperList} from '@/http/api/testQuestions.js'
   export default {
     data() {
       return {
@@ -88,6 +89,7 @@
     onLoad() {
       // 页面加载时检查屏幕方向
       this.setLandscapeMode();
+      this.getPaperList()
     },
     onUnload() {
       // #ifdef APP-PLUS
@@ -99,6 +101,12 @@
       this.setLandscapeMode();
     },
     methods: {
+      // 获取考题列表
+      getPaperList () {
+        getPaperList().then(res => {
+          console.log(res)
+        })
+      },
       // 设置横屏模式
       setLandscapeMode() {
         // #ifdef APP-PLUS

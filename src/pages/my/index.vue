@@ -1,460 +1,1007 @@
 <template>
-	<view class="container">
-		<!-- 用户信息区域 -->
-		<view :style="{ paddingTop: safeAreaTop + 'rpx' }">
-			<view class="tn-flex tn-flex-direction-row tn-flex-col-center">
-				<u-avatar :src="user.avatar" size="120rpx" shape="circle"></u-avatar>
-				<view class="tn-flex tn-flex-row-between tn-flex-9 tn-flex-col-center">
-					<view class="tn-flex tn-flex-direction-row tn-padding-left-sm">
-						<view class="tn-flex tn-flex-direction-column">
-							<text class="user-name">{{ user.name }}</text>
-							<view class="exam-countdown tn-flex tn-flex-direction-row">
-								<text class="exam-countdownday">{{user.countdown}} </text>
-								<text class="countdown-text tn-padding-left-xs">days until next attempt</text>
-								<u-icon name="arrow-right" size="12" color="#999"></u-icon>
-							</view>
-						</view>
-					</view>
-					<view class="tn-flex edit-btn tn-flex-col-center tn-flex-row-center" @click="editClick()">
-						Edit Profile
-					</view>
-				</view>
-			</view>
-		</view>
+  <view class="app">
+    <view class="gradient-bg">
+      <view class="gradient-top"></view>
+      <view class="gradient-bottom"></view>
+    </view>
 
-		<!-- 个人简介 -->
-		<view class="bio-section">
-			<text class="bio-text">Bio：{{ user.bio }}</text>
-		</view>
+    <!-- 主要内容 -->
+    <view class="container">
+      <!-- 用户信息卡片 -->
+      <view class="profile-card">
+        <view class="edit-profile-btn" @tap="editProfile">
+          <text class="edit-icon">✏️</text>
+        </view>
+        <view class="profile-content">
+          <view class="avatar-container">
+            <view class="avatar">
+              <text class="avatar-text">{{ userInitial }}</text>
+            </view>
+          </view>
+          <text class="username">{{ userData.username }}</text>
+          <view v-if="userData.testCentre" class="test-centre">
+            <text class="location-icon">📍</text>
+            <text class="test-centre-text">{{ userData.testCentre }}</text>
+          </view>
+          <text v-if="userData.examDate" class="next-attempt">Test Date: {{ userData.examDate }}</text>
+          <text class="bio">{{ userData.bio }}</text>
+          <view class="stats-row">
+            <view class="stat-item">
+              <text class="stat-value">{{ userData.following }}</text>
+              <text class="stat-label">Following</text>
+            </view>
+            <view class="stat-item">
+              <text class="stat-value">{{ userData.followers }}</text>
+              <text class="stat-label">Followers</text>
+            </view>
+            <view class="stat-item">
+              <text class="stat-value">{{ userData.likes }}</text>
+              <text class="stat-label">Likes</text>
+            </view>
+          </view>
+        </view>
+      </view>
 
-		<!-- 统计数据 -->
-		<view class="tn-flex tn-flex-row-between tn-margin-bottom-sm">
-			<view class="stat-item" @click="followerClick()">
-				<text class="stat-number">{{ user.following }}</text>
-				<text class="stat-label tn-padding-left-xs">Followed</text>
-			</view>
-			<view class="stat-item" @click="fansClick()">
-				<text class="stat-number">{{ user.followers }}</text>
-				<text class="stat-label tn-padding-left-xs">Fans</text>
-			</view>
-			<view class="stat-item">
-				<text class="stat-number">{{ user.likes }}</text>
-				<text class="stat-label tn-padding-left-xs">Likes</text>
-			</view>
-		</view>
+      <!-- 订阅卡片 -->
+      <view class="subscription-card">
+        <view class="subscription-header">
+          <text class="subscription-title">Subscription Features</text>
+          <view class="subscription-badge" :class="getBadgeClass">
+            <text class="badge-text">{{ subscriptionData.type }}</text>
+          </view>
+        </view>
+        <text class="expires-text" v-if="subscriptionData.type !== 'free'">
+          Expires {{ subscriptionData.expiryDate }}
+        </text>
+        
+        <view class="features-grid">
+          <!-- Silver Features - 第一行 -->
+          <view class="feature-item" 
+                :class="getFeatureClass('silver', 'official_questions')"
+                @tap="handleFeatureClick('official_questions')">
+            <view class="feature-icon-wrapper">
+              <view class="feature-icon">
+                <text class="icon-text">📝</text>
+              </view>
+            </view>
+            <text class="feature-label">DVSA Official Questions</text>
+          </view>
+          
+          <view class="feature-item" 
+                :class="getFeatureClass('silver', 'official_hazard')"
+                @tap="handleFeatureClick('official_hazard')">
+            <view class="feature-icon-wrapper">
+              <view class="feature-icon">
+                <text class="icon-text">🎬</text>
+              </view>
+            </view>
+            <text class="feature-label">Official Hazard Videos</text>
+          </view>
+          
+          <view class="feature-item" 
+                :class="getFeatureClass('silver', 'mock_tests')"
+                @tap="handleFeatureClick('mock_tests')">
+            <view class="feature-icon-wrapper">
+              <view class="feature-icon">
+                <text class="icon-text">📊</text>
+              </view>
+            </view>
+            <text class="feature-label">Realistic Mock Tests</text>
+          </view>
+          
+          <view class="feature-item" 
+                :class="getFeatureClass('silver', 'study_material')"
+                @tap="handleFeatureClick('study_material')">
+            <view class="feature-icon-wrapper">
+              <view class="feature-icon">
+                <text class="icon-text">📚</text>
+              </view>
+            </view>
+            <text class="feature-label">Highway Code + Road Signs</text>
+          </view>
 
+          <!-- 分隔线 -->
+          <view class="subscription-divider"></view>
 
-		<!-- 会员订阅 -->
-		<view class="member-bg tn-flex-direction-column tn-flex">
-			<view class="tn-flex tn-flex-direction-row tn-flex-row-between tn-padding-sm">
-				<view class="tn-flex tn-flex-direction-column">
-					<text class="member-name">Monthly Subscription</text>
-					<text class="member-expire">Expires 08.11.2025</text>
-				</view>
-				<view class="member-useBtn tn-flex-col-center tn-flex-row-center tn-flex">
-					<text>Use Now ></text>
-				</view>
-			</view>
+          <!-- Gold Features - 第二行 -->
+          <view class="feature-item" 
+                :class="getFeatureClass('gold', 'exclusive_questions')"
+                @tap="handleFeatureClick('exclusive_questions')">
+            <view class="feature-icon-wrapper">
+              <view class="feature-icon">
+                <text class="icon-text">⭐</text>
+              </view>
+            </view>
+            <text class="feature-label">Exclusive Question Banks</text>
+          </view>
+          
+          <view class="feature-item" 
+                :class="getFeatureClass('gold', 'exclusive_hazard')"
+                @tap="handleFeatureClick('exclusive_hazard')">
+            <view class="feature-icon-wrapper">
+              <view class="feature-icon">
+                <text class="icon-text">🎯</text>
+              </view>
+            </view>
+            <text class="feature-label">Exclusive Hazard Videos</text>
+          </view>
+          
+          <view class="feature-item" 
+                :class="getFeatureClass('gold', 'exclusive_study')"
+                @tap="handleFeatureClick('exclusive_study')">
+            <view class="feature-icon-wrapper">
+              <view class="feature-icon">
+                <text class="icon-text">🛣️</text>
+              </view>
+            </view>
+            <text class="feature-label">Exclusive Study Material</text>
+          </view>
+          
+          <view class="feature-item" 
+                :class="getFeatureClass('gold', 'priority_support')"
+                @tap="handleFeatureClick('priority_support')">
+            <view class="feature-icon-wrapper">
+              <view class="feature-icon">
+                <text class="icon-text">💎</text>
+              </view>
+            </view>
+            <text class="feature-label">Priority Support</text>
+          </view>
+        </view>
+      </view>
 
-			<view class="tn-flex tn-flex-direction-row">
-				<view
-					class="tn-flex tn-flex-direction-column tn-flex-col-center tn-flex-row-center tn-text-center tn-padding-right-sm tn-padding-left-sm">
-					<image class="member-image" :src="user.avatar" mode="aspectFill"></image>
-					<text class="member-item-des tn-padding-top-xs">Real Exam Simulation</text>
-				</view>
-				<view
-					class="tn-flex tn-flex-direction-column tn-flex-col-center tn-flex-row-center tn-text-center tn-padding-right-sm tn-padding-left-sm">
-					<image class="member-image" :src="user.avatar" mode="aspectFill"></image>
-					<text class="member-item-des tn-padding-top-xs">Community Posts</text>
-				</view>
-				<view
-					class="tn-flex tn-flex-direction-column tn-flex-col-center tn-flex-row-center tn-text-center tn-padding-right-sm tn-padding-left-sm">
-					<image class="member-image" :src="user.avatar" mode="aspectFill"></image>
-					<text class="member-item-des tn-padding-top-xs">All Official Questions</text>
-				</view>
-				<view
-					class="tn-flex tn-flex-direction-column tn-flex-col-center tn-flex-row-center tn-text-center tn-padding-right-sm tn-padding-left-sm">
-					<image class="member-image" :src="user.avatar" mode="aspectFill"></image>
-					<text class="member-item-des tn-padding-top-xs">Exclusive Questions</text>
-				</view>
-			</view>
-		</view>
+      <!-- 测试进度卡片 -->
+      <view class="progress-card">
+        <view class="progress-header">
+          <text class="progress-title">Test Progress</text>
+          <view class="view-details-btn" @tap="viewDetails">
+            <text class="btn-text">View Details›</text>
+          </view>
+        </view>
+        <view class="question-bank-selector">
+          <text class="bank-label">Question Bank:</text>
+          <view class="bank-type" @tap="switchQuestionBank">
+            <text class="bank-type-text">{{ currentQuestionBank }}</text>
+            <text class="arrow">›</text>
+          </view>
+        </view>
+        <view class="pass-rate">
+          <text class="pass-rate-label">Current pass rate: </text>
+          <text class="pass-rate-value">{{ passRate }}%</text>
+        </view>
+      </view>
 
+      <!-- 菜单列表 -->
+      <view class="menu-list">
+        <view class="menu-item" @tap="navigateTo('saved')">
+          <view class="menu-icon star">
+            <text class="menu-icon-text">⭐</text>
+          </view>
+          <text class="menu-text">Saved Items</text>
+          <text class="menu-arrow">›</text>
+        </view>
+        <view class="menu-item" @tap="rateApp">
+          <view class="menu-icon rate">
+            <text class="menu-icon-text">💙</text>
+          </view>
+          <text class="menu-text">Rate the App</text>
+          <text class="menu-arrow">›</text>
+        </view>
+        <view class="menu-item" @tap="shareApp">
+          <view class="menu-icon share">
+            <text class="menu-icon-text">🔗</text>
+          </view>
+          <text class="menu-text">Share App</text>
+          <text class="menu-arrow">›</text>
+        </view>
+        <view class="menu-item" @tap="contactUs">
+          <view class="menu-icon contact">
+            <text class="menu-icon-text">📧</text>
+          </view>
+          <text class="menu-text">Contact Us</text>
+          <text class="menu-arrow">›</text>
+        </view>
+      </view>
 
+      <!-- 政策链接列表 -->
+      <view class="menu-list">
+        <view class="menu-item" @tap="navigateTo('privacy')">
+          <view class="menu-icon">
+            <text class="menu-icon-text">🔒</text>
+          </view>
+          <text class="menu-text">Privacy Policy</text>
+          <text class="menu-arrow">›</text>
+        </view>
+        <view class="menu-item" @tap="navigateTo('terms')">
+          <view class="menu-icon">
+            <text class="menu-icon-text">📄</text>
+          </view>
+          <text class="menu-text">Terms of Use</text>
+          <text class="menu-arrow">›</text>
+        </view>
+      </view>
+    </view>
 
-		<!-- 题库信息 -->
-		<view class="exam-info-section tn-margin-top-xs">
-			<view class="exam-switch">
-				<text>Switch Question Bank：</text>
-				<text class="exam-type" @click="switchQuestionClick()">{{ user.examType }}</text>
-				<u-icon name="arrow-right" size="20" color="#999"></u-icon>
-			</view>
-			<view class="pass-rate-section">
-				<text>Current pass rate:{{ user.passRate }}</text>
-				<view class="tn-flex tn-flex-direction-row" @click="pushExamDetail()">
-					<text class="view-details">View Details</text>
-					<u-icon name="arrow-right" size="16" color="#999"></u-icon>
-				</view>
-			</view>
-		</view>
-
-		<!-- 功能列表 -->
-		<view class="feature-list">
-			<view class="feature-item" v-for="(item, index) in features" :key="index" @click="itemClick(index)">
-				<u--image :src="item.icon" width="34rpx" height="34rpx"></u--image>
-				<text class="feature-text">{{ item.text }}</text>
-				<u-icon name="arrow-right" size="16" color="#999"></u-icon>
-			</view>
-		</view>
-
-		<view class="tn-flex" style="width: 100%;">
-			<u-popup :show="shareshow" @close="shareclose" @open="shareopen">
-				<view class="tn-flex tn-flex-direction-column" style="width: 100%; background-color: #F7F7F7;">
-					<view class="tn-flex tn-flex-direction-row tn-padding-top-sm tn-padding-bottom-sm">
-						<view class="tn-flex tn-flex-col-center tn-flex-row-center tn-flex-direction-column"
-							style="width: 25%;" @click="shareClick('Instagram')">
-							<image src="/static/share/share_instagram.png" class="share-item-image"></image>
-							<text class="share-item-text">Instagram</text>
-						</view>
-						<view class="tn-flex tn-flex-col-center tn-flex-row-center tn-flex-direction-column"
-							style="width: 25%;" @click="shareClick('Tiktok')">
-							<image src="/static/share/share_tiktok.png" class="share-item-image"></image>
-							<text class="share-item-text">Tiktok</text>
-						</view>
-						<view class="tn-flex tn-flex-col-center tn-flex-row-center tn-flex-direction-column"
-							style="width: 25%;" @click="shareClick('Facebook')">
-							<image src="/static/share/share_facebook.png" class="share-item-image"></image>
-							<text class="share-item-text">Facebook</text>
-						</view>
-						<view class="tn-flex tn-flex-col-center tn-flex-row-center tn-flex-direction-column"
-							style="width: 25%;" @click="shareClick('Whatsapp')">
-							<image src="/static/share/share_whatsapp.png" class="share-item-image"></image>
-							<text class="share-item-text">Whatsapp</text>
-						</view>
-					</view>
-					<view class="tn-flex tn-flex-col-center tn-flex-row-center cancelBottom" style="width: 100%;">
-						Cancel
-					</view>
-				</view>
-			</u-popup>
-		</view>
-	</view>
-
-
+    <!-- 底部导航 -->
+    <!-- <view class="bottom-nav">
+      <view class="nav-item" @tap="navigateTo('home')">
+        <view class="nav-icon">
+          <text class="nav-icon-text">🏠</text>
+        </view>
+        <text class="nav-label">Home</text>
+      </view>
+      <view class="nav-item" @tap="navigateTo('forum')">
+        <view class="nav-icon">
+          <text class="nav-icon-text">💬</text>
+        </view>
+        <text class="nav-label">Forum</text>
+      </view>
+      <view class="nav-item active">
+        <view class="nav-icon">
+          <text class="nav-icon-text active">👤</text>
+        </view>
+        <text class="nav-label">Account</text>
+      </view>
+    </view> -->
+  </view>
 </template>
 
 <script>
-	export default {
-		data() {
-			return {
-				shareshow: false,
-				user: {
-					avatar: 'https://img1.baidu.com/it/u=2172818577,3783888802&fm=253&app=138&f=JPEG?w=800&h=1422',
-					name: 'StormChaser',
-					countdown: 14,
-					bio: 'Road to licensure~',
-					following: 18,
-					followers: 99,
-					likes: 999,
-					examType: 'Type 1',
-					passRate: '70%'
-				},
-				features: [{
-						icon: 'star',
-						text: 'Saved items'
-					},
-					{
-						icon: 'heart',
-						text: 'Rate the App'
-					},
-					{
-						icon: 'share',
-						text: 'Share App'
-					},
-					{
-						icon: 'address-book',
-						text: 'Contract Us'
-					},
-					{
-						icon: 'information',
-						text: 'Privacy Policy'
-					},
-					{
-						icon: 'clipboard',
-						text: 'Terms of Use'
-					}
-				],
-			};
-		},
-		methods: {
-			followerClick() {
-				uni.navigateTo({
-					url: '/pages/my/fansAndFollowes'
-				});
-			},
-			fansClick() {
-				uni.navigateTo({
-					url: '/pages/my/fansAndFollowes'
-				});
-			},
-			itemClick(index) {
-				console.log(index);
-				if (index == 0) {
-					uni.navigateTo({
-						url: '/pages/my/mySaved'
-					});
-				} else if (index == 2) {
-					console.log('分享APP');
-					//this.sharePop();
-				}
-			},
-			editClick() {
-				uni.navigateTo({
-					url: '/pages/my/editProfile'
-				});
-			},
-			switchQuestionClick() {
-				uni.navigateTo({
-					url: '/pages/login/index'
-				});
-				// uni.navigateTo({ url: '/pages/my/switchQuestion' });
-			},
-			pushExamDetail() {
-				uni.navigateTo({
-					url: '/pages/my/testAnalysis'
-				});
-			},
-			shareClick(item) {
-				this.shareshow = false;
-			},
-
-			shareclose() {
-				this.shareshow = false;
-			},
-
-			sharePop() {
-				this.shareshow = true;
-			},
-		},
-	};
+export default {
+  data() {
+    return {
+      // 用户数据
+      userData: {
+        username: 'StormChaser',
+        testCentre: 'Birmingham Test Centre', // 可以为空
+        examDate: '25 November 2025', // 考试日期，可以为空
+        bio: 'Road to licensure~',
+        following: 18,
+        followers: 99,
+        likes: 999
+      },
+      // 订阅数据
+      subscriptionData: {
+        type: 'silver', // 可选: 'free', 'silver', 'gold'
+        expiryDate: '08.11.2025'
+      },
+      // 测试进度数据
+      currentQuestionBank: 'Type 1',
+      passRate: 70
+    }
+  },
+  computed: {
+    // 获取用户名首字母
+    userInitial() {
+      return this.userData.username.charAt(0).toUpperCase();
+    },
+    // 获取订阅徽章样式
+    getBadgeClass() {
+      return `badge-${this.subscriptionData.type}`;
+    }
+  },
+  methods: {
+    // 获取功能项的样式类
+    getFeatureClass(requiredLevel, featureName) {
+      const levels = ['free', 'silver', 'gold'];
+      const userLevel = levels.indexOf(this.subscriptionData.type);
+      const requiredLevelIndex = levels.indexOf(requiredLevel);
+      
+      if (userLevel >= requiredLevelIndex) {
+        return `unlocked ${requiredLevel}`;
+      }
+      return 'locked';
+    },
+    // 处理功能点击
+    handleFeatureClick(feature) {
+      const silverFeatures = ['official_questions', 'official_hazard', 'mock_tests', 'study_material'];
+      const goldFeatures = ['exclusive_questions', 'exclusive_hazard', 'exclusive_study', 'priority_support'];
+      
+      const levels = ['free', 'silver', 'gold'];
+      const userLevel = levels.indexOf(this.subscriptionData.type);
+      
+      let requiredLevel = 0; // free
+      if (silverFeatures.includes(feature)) {
+        requiredLevel = 1; // silver
+      } else if (goldFeatures.includes(feature)) {
+        requiredLevel = 2; // gold
+      }
+      
+      if (userLevel >= requiredLevel) {
+        console.log(`Accessing feature: ${feature}`);
+        // 导航到相应功能
+        uni.showToast({
+          title: `Opening ${feature.replace(/_/g, ' ')}`,
+          icon: 'none'
+        });
+      } else {
+        console.log(`Feature locked. Upgrade to ${levels[requiredLevel]} to unlock.`);
+        // 显示升级提示
+        uni.showModal({
+          title: 'Feature Locked',
+          content: `Upgrade to ${levels[requiredLevel].toUpperCase()} to unlock this feature`,
+          confirmText: 'Upgrade',
+          cancelText: 'Cancel',
+          success: (res) => {
+            if (res.confirm) {
+              uni.navigateTo({
+                url: '/pages/my/subscription',
+              })
+            }
+          }
+        });
+      }
+    },
+    // 编辑个人资料
+    editProfile() {
+      console.log('Edit profile clicked');
+      // 实际应用中导航到编辑页面
+      uni.navigateTo({
+        url: '/pages/my/editProfile'
+      });
+    },
+    // 查看详情
+    viewDetails() {
+      console.log('View details clicked');
+      // 实际应用中导航到详情页面
+      uni.navigateTo({
+        url: '/pages/progress/details'
+      });
+    },
+    // 切换题库
+    switchQuestionBank() {
+      console.log('Switch question bank clicked');
+      // 实际应用中显示题库选择器
+      const banks = ['Type 1', 'Type 2', 'Mock Test'];
+      const currentIndex = banks.indexOf(this.currentQuestionBank);
+      this.currentQuestionBank = banks[(currentIndex + 1) % banks.length];
+    },
+    // 评价应用
+    rateApp() {
+      console.log('Rate app clicked');
+      // 实际应用中打开应用商店评价页面
+      uni.showToast({
+        title: 'Opening App Store',
+        icon: 'none'
+      });
+    },
+    // 分享应用
+    shareApp() {
+      console.log('Share app clicked');
+      // 实际应用中调用系统分享功能
+      uni.share({
+        provider: 'weixin',
+        type: 0,
+        title: 'UK Driving Theory Test',
+        summary: 'Best app for UK driving theory test preparation!'
+      });
+    },
+    // 联系我们
+    contactUs() {
+      console.log('Contact us clicked');
+      // 实际应用中打开联系页面或邮件客户端
+      uni.navigateTo({
+        url: '/pages/my/contact'
+      });
+    },
+    // 导航到其他页面
+    navigateTo(page) {
+      console.log(`Navigate to ${page}`);
+      // 实际应用中进行页面导航
+      const pages = {
+        'home': '/pages/index/index',
+        'forum': '/pages/forum/index',
+        'saved': '/pages/my/mySaved',
+        'privacy': '/pages/my/privacy',
+        'terms': '/pages/my/terms'
+      };
+      
+      if (pages[page]) {
+        if (page === 'home') {
+          uni.switchTab({
+            url: pages[page]
+          });
+        } else {
+          uni.navigateTo({
+            url: pages[page]
+          });
+        }
+      }
+    },
+    // 获取用户数据 - API调用示例
+    async fetchUserData() {
+      try {
+        const [error, response] = await uni.request({
+          url: '/api/user/profile',
+          method: 'GET'
+        });
+        if (!error && response.statusCode === 200) {
+          this.userData = response.data.userData;
+          this.subscriptionData = response.data.subscription;
+          this.passRate = response.data.passRate;
+        }
+      } catch (error) {
+        console.error('Failed to fetch user data:', error);
+      }
+    },
+    // 更新用户统计 - API调用示例
+    async updateStats() {
+      try {
+        const [error, response] = await uni.request({
+          url: '/api/user/stats',
+          method: 'GET'
+        });
+        if (!error && response.statusCode === 200) {
+          this.userData.followers = response.data.followers;
+          this.userData.following = response.data.following;
+          this.userData.likes = response.data.likes;
+        }
+      } catch (error) {
+        console.error('Failed to update stats:', error);
+      }
+    }
+  },
+  onLoad() {
+    // 页面加载时获取数据
+    // this.fetchUserData();
+    // this.updateStats();
+    
+    // 测试不同订阅等级的效果
+    // this.subscriptionData.type = 'free';    // 免费用户
+    // this.subscriptionData.type = 'silver';  // 银牌会员
+    // this.subscriptionData.type = 'gold';    // 金牌会员
+  }
+}
 </script>
 
-<style>
-	.container {
-		flex: 1;
-		padding: 20rpx;
-		background-color: #F7F7F7;
-		background: #F7F7F7;
-	}
+<style lang="scss">
+/* 全局重置样式 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
-	/* 用户信息区域 */
-	.user-info-section {
-		padding-top: 83rpx;
-	}
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  padding-bottom: 140rpx; /* 为底部导航预留空间 */
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+  color: #333;
+  background: #F8F9FA;
+}
 
-	.user-name {
-		font-family: Microsoft YaHei UI;
-		font-weight: 400;
-		font-size: 32rpx;
-		color: #333333;
-		line-height: 13rpx;
-	}
+/* 渐变背景 */
+.gradient-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+}
 
-	.exam-countdown {
-		font-family: Microsoft YaHei UI;
-		font-weight: 400;
-		font-size: 28rpx;
-		color: #999999;
-		margin-top: 30rpx;
-	}
+.gradient-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 45%;
+  background: linear-gradient(180deg, #E3F2FD 0%, #FFFFFF 100%);
+}
 
-	.exam-countdownday {
-		font-family: Microsoft YaHei UI;
-		font-weight: 400;
-		font-size: 28rpx;
-		color: #419FFF;
-	}
+.gradient-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 55%;
+  background: linear-gradient(180deg, #FFFFFF 0%, #FFF4F4 100%);
+}
 
+/* 容器 */
+.container {
+  flex: 1;
+  padding: 60rpx 40rpx 40rpx;
+  position: relative;
+  z-index: 10;
+}
 
+/* 用户信息卡片 */
+.profile-card {
+  background: white;
+  border-radius: 40rpx;
+  padding: 50rpx;
+  margin-bottom: 40rpx;
+  box-shadow: 0 16rpx 50rpx rgba(0,0,0,0.08);
+  position: relative;
+}
 
-	.edit-btn {
-		width: 180rpx;
-		height: 51rpx;
-		border-radius: 26rpx;
-		border: 2rpx solid #D7D7D7;
+.edit-profile-btn {
+  position: absolute;
+  top: 40rpx;
+  right: 40rpx;
+  width: 64rpx;
+  height: 64rpx;
+  background: #F8F9FA;
+  border-radius: 20rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-		font-family: Microsoft YaHei UI;
-		font-weight: 400;
-		font-size: 22rpx;
-		color: #999999;
-	}
+.edit-profile-btn:active {
+  background: #E0E0E0;
+  transform: scale(0.95);
+}
 
-	/* 个人简介 */
-	.bio-section {
-		font-size: 28rpx;
-		color: #999999;
-		margin-top: 27rpx;
-		margin-bottom: 20rpx;
-	}
+.edit-icon {
+  font-size: 32rpx;
+}
 
-	.bio-label {
-		font-weight: bold;
-		color: #333;
-	}
+.profile-content {
+  text-align: center;
+}
 
-	/* 统计数据 */
-	.stats-section {
-		display: flex;
-		justify-content: space-around;
-		margin-bottom: 20rpx;
-	}
+.avatar-container {
+  position: relative;
+  width: 200rpx;
+  height: 200rpx;
+  margin: 0 auto 30rpx;
+}
 
+.avatar {
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
 
-	.stat-number {
-		font-family: Microsoft YaHei UI;
-		font-weight: 400;
-		font-size: 36rpx;
-		color: #333333;
-	}
+.avatar-text {
+  font-size: 80rpx;
+  color: white;
+  font-weight: 600;
+}
 
-	.stat-label {
-		font-family: Microsoft YaHei UI;
-		font-weight: 400;
-		font-size: 22rpx;
-		color: #999999;
-	}
+.username {
+  font-size: 44rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 16rpx;
+  display: block;
+}
 
-	/* 题库信息 */
-	.exam-info-section {
-		background: white;
-		border-radius: 16rpx;
-		padding: 20rpx;
-		margin-bottom: 20rpx;
-	}
+.test-centre {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10rpx;
+  margin-bottom: 10rpx;
+}
 
-	.exam-switch {
-		font-family: Microsoft YaHei UI;
-		font-weight: 400;
-		font-size: 28rpx;
-		color: #333333;
-		display: flex;
-		align-items: center;
-		margin-bottom: 10rpx;
-	}
+.location-icon {
+  font-size: 28rpx;
+}
 
-	.exam-type {
-		color: #419FFF;
-		margin: 0 10rpx;
-		font-family: Microsoft YaHei UI;
-		font-weight: 400;
-		font-size: 28rpx;
-	}
+.test-centre-text {
+  font-size: 28rpx;
+  color: #666;
+}
 
-	.pass-rate-section {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
+.next-attempt {
+  font-size: 26rpx;
+  color: #FF6B6B;
+  margin-bottom: 24rpx;
+  display: block;
+}
 
-		font-family: Microsoft YaHei UI;
-		font-weight: 400;
-		font-size: 24rpx;
-		color: #333333;
+.bio {
+  font-size: 28rpx;
+  color: #666;
+  margin-bottom: 40rpx;
+  line-height: 1.4;
+  display: block;
+}
 
-	}
+.stats-row {
+  display: flex;
+  justify-content: space-around;
+  padding-top: 40rpx;
+  border-top: 1rpx solid #F0F0F0;
+}
 
-	.view-details {
-		font-family: Microsoft YaHei UI;
-		font-weight: 400;
-		font-size: 24rpx;
-		color: #999999;
-	}
+.stat-item {
+  text-align: center;
+}
 
-	/* 功能列表 */
-	.feature-list {
-		background-color: #fff;
-		border-radius: 12rpx;
-		overflow: hidden;
-	}
+.stat-value {
+  font-size: 48rpx;
+  font-weight: 700;
+  color: #333;
+  display: block;
+  margin-bottom: 8rpx;
+}
 
-	.feature-item {
-		display: flex;
-		align-items: center;
-		padding: 20rpx;
-		height: 123rpx;
-		border-bottom: 1px solid #f0f0f0;
-	}
+.stat-label {
+  font-size: 26rpx;
+  color: #999;
+  display: block;
+}
 
-	.feature-item:last-child {
-		border-bottom: none;
-	}
+/* 订阅卡片 - 增加轻微对比度 */
+.subscription-card {
+  background: linear-gradient(135deg, #FAFBFC 0%, #F5F7FA 100%);
+  border-radius: 40rpx;
+  padding: 50rpx;
+  margin-bottom: 40rpx;
+  box-shadow: 0 16rpx 50rpx rgba(0,0,0,0.1);
+  border: 2rpx solid rgba(74, 158, 255, 0.08);
+}
 
-	.feature-text {
-		flex: 1;
-		margin: 0 20rpx;
-		font-family: Microsoft YaHei UI;
-		font-weight: 400;
-		font-size: 28rpx;
-		color: #333333;
-	}
+.subscription-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40rpx;
+}
 
-	.member-bg {
-		background: linear-gradient(118deg, #0057E3 0%, #1F83FF 100%);
-		border-radius: 16px;
-		height: 326rpx;
+.subscription-title {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #333;
+}
 
-		.member-name {
-			font-family: Microsoft YaHei UI;
-			font-weight: 400;
-			font-size: 28rpx;
-			color: #FFFFFF;
-		}
+.subscription-badge {
+  padding: 12rpx 28rpx;
+  border-radius: 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-		.member-expire {
-			font-family: Microsoft YaHei UI;
-			font-weight: 400;
-			font-size: 20rpx;
-			color: #FFFFFF;
-		}
+.badge-text {
+  font-size: 26rpx;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1rpx;
+  color: white;
+}
 
-		.member-useBtn {
-			width: 169rpx;
-			height: 49rpx;
-			background: #FFFFFF;
-			border-radius: 25rpx;
+.badge-free {
+  background: #F5F5F5;
+}
 
-			font-family: Microsoft YaHei UI;
-			font-weight: 400;
-			font-size: 24rpx;
-			color: #419FFF;
-		}
+.badge-free .badge-text {
+  color: #666;
+}
 
-		.member-image {
-			width: 77rpx;
-			height: 77rpx;
-			border-radius: 50%;
-			border: 1px solid #FFFFFF;
-		}
+.badge-silver {
+  background: linear-gradient(135deg, #C0C0C0 0%, #999999 100%);
+}
 
-		.member-item-des {
-			font-family: Microsoft YaHei UI;
-			font-weight: 400;
-			font-size: 20rpx;
-			color: #FFFFFF;
-		}
+.badge-gold {
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+}
 
-		.share-item-image {
-			width: 93rpx;
-			height: 93rpx;
-			background: #FFFFFF;
-			border-radius: 50%;
-		}
+.expires-text {
+  font-size: 26rpx;
+  color: #999;
+  margin-bottom: 40rpx;
+  display: block;
+}
 
-		.share-item-text {
-			font-family: Microsoft YaHei UI;
-			font-weight: 400;
-			font-size: 24rpx;
-			color: #333333;
-		}
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 30rpx;
+}
 
-	}
+.feature-item {
+  text-align: center;
+}
+
+.feature-item:active {
+  transform: scale(0.95);
+}
+
+.feature-icon-wrapper {
+  width: 120rpx;
+  height: 120rpx;
+  margin: 0 auto 16rpx;
+  position: relative;
+}
+
+.feature-icon {
+  width: 100%;
+  height: 100%;
+  background: #F8F9FA;
+  border-radius: 30rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 4rpx solid transparent;
+  position: relative;
+}
+
+.icon-text {
+  font-size: 48rpx;
+}
+
+/* 不同订阅等级的图标样式 */
+.feature-item.unlocked.silver .feature-icon {
+  background: linear-gradient(135deg, #F5F5F5 0%, #E8E8E8 100%);
+  border-color: #C0C0C0;
+}
+
+.feature-item.unlocked.gold .feature-icon {
+  background: linear-gradient(135deg, #FFF9E6 0%, #FFF3CD 100%);
+  border-color: #FFD700;
+}
+
+.feature-item.locked .feature-icon {
+  background: #F5F5F5;
+  position: relative;
+  overflow: hidden;
+}
+
+.feature-item.locked .icon-text {
+  opacity: 0.5;
+}
+
+.feature-item.locked .feature-icon::after {
+  content: '🔒';
+  position: absolute;
+  bottom: 4rpx;
+  right: 4rpx;
+  width: 32rpx;
+  height: 32rpx;
+  background: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20rpx;
+}
+
+.feature-label {
+  font-size: 20rpx;
+  line-height: 1.2;
+  color: #666;
+  display: block;
+}
+
+.feature-item.unlocked .feature-label {
+  color: #333;
+  font-weight: 500;
+}
+
+.subscription-divider {
+  grid-column: 1 / -1;
+  height: 2rpx;
+  background: #E0E0E0;
+  margin: 10rpx 0;
+}
+
+/* 测试进度卡片 */
+.progress-card {
+  background: white;
+  border-radius: 40rpx;
+  padding: 40rpx;
+  margin-bottom: 40rpx;
+  box-shadow: 0 10rpx 36rpx rgba(0,0,0,0.06);
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30rpx;
+}
+
+.progress-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.view-details-btn {
+  padding: 12rpx 28rpx;
+  background: transparent;
+  border: 2rpx solid #4A9EFF;
+  border-radius: 30rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.view-details-btn:active {
+  background: #F8FBFF;
+}
+
+.btn-text {
+  font-size: 26rpx;
+  color: #4A9EFF;
+}
+
+.question-bank-selector {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-bottom: 24rpx;
+}
+
+.bank-label {
+  font-size: 30rpx;
+  color: #666;
+}
+
+.bank-type {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+}
+
+.bank-type-text {
+  color: #4A9EFF;
+  font-weight: 600;
+  font-size: 30rpx;
+}
+
+.arrow {
+  color: #999;
+  font-size: 30rpx;
+}
+
+.pass-rate {
+  display: flex;
+  align-items: baseline;
+}
+
+.pass-rate-label {
+  font-size: 30rpx;
+  color: #666;
+}
+
+.pass-rate-value {
+  font-weight: 700;
+  color: #4CAF50;
+  font-size: 36rpx;
+}
+
+/* 菜单列表 */
+.menu-list {
+  background: white;
+  border-radius: 40rpx;
+  overflow: hidden;
+  box-shadow: 0 10rpx 36rpx rgba(0,0,0,0.06);
+  margin-bottom: 40rpx;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  padding: 36rpx 40rpx;
+  border-bottom: 2rpx solid #F5F5F5;
+}
+
+.menu-item:last-child {
+  border-bottom: none;
+}
+
+.menu-item:active {
+  background: #F8F9FA;
+}
+
+.menu-icon {
+  width: 80rpx;
+  height: 80rpx;
+  background: #F8F9FA;
+  border-radius: 24rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 30rpx;
+}
+
+.menu-icon-text {
+  font-size: 40rpx;
+}
+
+.menu-icon.star { background: #FFF8E1; }
+.menu-icon.rate { background: #E3F2FD; }
+.menu-icon.share { background: #F3E5F5; }
+.menu-icon.contact { background: #E8F5E9; }
+
+.menu-text {
+  flex: 1;
+  font-size: 32rpx;
+  color: #333;
+  font-weight: 500;
+}
+
+.menu-arrow {
+  color: #C0C0C0;
+  font-size: 36rpx;
+}
+
+/* 底部导航 */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 140rpx;
+  background: white;
+  box-shadow: 0 -4rpx 20rpx rgba(0,0,0,0.05);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 20;
+}
+
+.nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16rpx;
+}
+
+.nav-item:active {
+  transform: scale(0.95);
+}
+
+.nav-icon {
+  margin-bottom: 8rpx;
+}
+
+.nav-icon-text {
+  font-size: 48rpx;
+  color: #999;
+}
+
+.nav-icon-text.active {
+  color: #4A9EFF;
+}
+
+.nav-label {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.nav-item.active .nav-label {
+  color: #4A9EFF;
+}
+
+/* 响应式优化 */
+@media screen and (max-width: 375px) {
+  .container {
+    padding: 40rpx 30rpx;
+  }
+
+  .features-grid {
+    gap: 20rpx;
+  }
+
+  .feature-icon-wrapper {
+    width: 100rpx;
+    height: 100rpx;
+  }
+
+  .icon-text {
+    font-size: 40rpx;
+  }
+
+  .feature-label {
+    font-size: 18rpx;
+  }
+}
 </style>

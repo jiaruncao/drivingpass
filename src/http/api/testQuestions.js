@@ -61,3 +61,13 @@ export function wrongAdd(params) {
 export function recordAdd(params) {
   return fly.post("/exam/question/recordAdd", params);
 }
+
+/*
+ * 模考试卷列表
+ * author：huanyun
+ * create by date：2025/08/12
+ */
+export function getPaperList(params) {
+  return fly.post("/exam/paper/index", params);
+}
+

@@ -1,270 +1,995 @@
 <template>
-	<view class="profile-container">
-		<u-navbar leftText="Edit Profile" :safeAreaInsetTop="true" :autoBack="true"
-			:style="{ paddingTop: safeAreaTop + 'rpx' }" left-icon="arrow-leftward">
-		</u-navbar>
+  <view class="app">
+    <view class="gradient-bg">
+      <view class="gradient-top"></view>
+      <view class="gradient-bottom"></view>
+    </view>
 
-		<view class="content">
-			<!-- 头像 -->
-			<view class="profile-item" @click="showAvatarPopup = true">
-				<text class="item-label">Profile Photo</text>
-				<view class="item-content">
-					<image :src="userInfo.avatar" class="avatar" mode="aspectFill"></image>
-					<u-icon name="arrow-right" size="18" color="#999"></u-icon>
-				</view>
-			</view>
+    <!-- Header -->
+    <view class="header">
+      <text class="cancel-button" @tap="cancelEdit">Cancel</text>
+      <text class="page-title">Edit Profile</text>
+      <text class="save-button" @tap="saveProfile" :class="{disabled: !hasChanges}">Save</text>
+    </view>
 
-			<!-- 用户名 -->
-			<view class="profile-item" @click="goEditUsername()">
-				<text class="item-label">Username</text>
-				<view class="item-content">
-					<text class="item-value">{{ userInfo.username }}</text>
-					<u-icon name="arrow-right" size="18" color="#999"></u-icon>
-				</view>
-			</view>
+    <!-- Main Content -->
+    <view class="container">
+      <!-- Avatar Section -->
+      <view class="avatar-section">
+        <view class="avatar-container">
+          <view class="avatar">
+            <text v-if="!formData.avatarUrl">{{ userInitial }}</text>
+            <image v-else :src="formData.avatarUrl" mode="aspectFill"></image>
+          </view>
+          <view class="avatar-edit-button" @tap="showAvatarModal = true">
+            <view class="avatar-edit-icon">👤</view>
+          </view>
+        </view>
+        <text class="change-avatar-text">Change Photo</text>
+      </view>
 
-			<!-- 简介 -->
-			<view class="profile-item" @click="goEditBio()">
-				<text class="item-label">Bio</text>
-				<view class="item-content">
-					<text class="item-value">{{ userInfo.bio || 'Road to licensure~' }}</text>
-					<u-icon name="arrow-right" size="18" color="#999"></u-icon>
-				</view>
-			</view>
+      <!-- Basic Information -->
+      <view class="form-card">
+        <view class="section-title">Basic Information</view>
+        
+        <view class="input-group">
+          <text class="input-label">Username</text>
+          <input type="text" 
+                 class="input-field" 
+                 v-model="formData.username"
+                 placeholder="Enter your username"
+                 maxlength="20" />
+          <text class="char-counter">{{ formData.username.length }}/20</text>
+        </view>
 
-			<!-- 邮箱 -->
-			<view class="profile-item" @click="goEditEmail()">
-				<text class="item-label">Linked Email</text>
-				<view class="item-content">
-					<text class="item-value">{{ userInfo.email || '1144@mail.com' }}</text>
-					<u-icon name="arrow-right" size="18" color="#999"></u-icon>
-				</view>
-			</view>
+        <view class="input-group">
+          <text class="input-label">Email</text>
+          <input type="email" 
+                 class="input-field" 
+                 v-model="formData.email"
+                 placeholder="your@email.com"
+                 disabled />
+        </view>
 
-			<!-- 退出登录 -->
-			<view class="action-button" @click="handleSignOut">Sign Out</view>
+        <view class="input-group">
+          <text class="input-label">Bio</text>
+          <textarea class="input-field textarea-field" 
+                    v-model="formData.bio"
+                    placeholder="Tell us about yourself..."
+                    maxlength="100"></textarea>
+          <text class="char-counter">{{ formData.bio.length }}/100</text>
+        </view>
+      </view>
 
-			<!-- 删除账户 -->
-			<view class="action-button danger" @click="handleDeleteAccount">Delete Account</view>
+      <!-- Test Information -->
+      <view class="form-card">
+        <view class="section-title">Test Information</view>
+        
+        <view class="input-group">
+          <text class="input-label">Test Centre</text>
+          <view class="select-field" @tap="showTestCentreModal = true">
+            <view class="select-display">
+              <text>{{ formData.testCentre || 'Select a test centre' }}</text>
+              <text class="select-arrow">›</text>
+            </view>
+          </view>
+        </view>
 
-		</view>
+        <view class="input-group">
+          <text class="input-label">Test Date</text>
+          <view class="date-picker">
+            <picker mode="date" 
+                    :value="formData.testDate" 
+                    :start="minDate"
+                    @change="onDateChange">
+              <view class="date-input">
+                <text>{{ formData.testDate || 'Select date' }}</text>
+                <text class="date-icon">📅</text>
+              </view>
+            </picker>
+          </view>
+        </view>
 
-		<!-- 选择头像弹窗 -->
-		<u-popup :show="showAvatarPopup" mode="bottom">
-			<view class="popup-content">
-				<view class="popup-title">Change Profile Photo</view>
-				<view class="popup-option" @click="chooseImage('camera')">
-					<text>Take Photo</text>
-				</view>
-				<view class="popup-option" @click="chooseImage('album')">
-					<text>Choose from Album</text>
-				</view>
-				<view class="popup-cancel" @click="showAvatarPopup = false">
-					<text>Cancel</text>
-				</view>
-			</view>
-		</u-popup>
+        <view class="input-group">
+          <text class="input-label">Preparation Level</text>
+          <view class="select-field" @tap="showLevelModal = true">
+            <view class="select-display">
+              <text>{{ formData.preparationLevel }}</text>
+              <text class="select-arrow">›</text>
+            </view>
+          </view>
+        </view>
 
-	</view>
+        <!-- Test Date Reminder Toggle -->
+        <view class="toggle-group toggle-group-top">
+          <text class="toggle-label">Test Date Reminder</text>
+          <view class="toggle-switch" 
+                :class="{active: formData.testDateReminder}"
+                @tap="formData.testDateReminder = !formData.testDateReminder"></view>
+        </view>
+      </view>
+
+      <!-- Account Actions -->
+      <view class="form-card">
+        <view class="section-title">Account</view>
+        
+        <view class="action-button sign-out-button" @tap="signOut">
+          <text class="button-text">Sign Out</text>
+        </view>
+        
+        <view class="action-button delete-account-button" @tap="deleteAccount">
+          <text class="button-text delete-text">Delete Account</text>
+        </view>
+      </view>
+    </view>
+
+    <!-- Test Centre Selection Modal -->
+    <view v-if="showTestCentreModal" class="modal-backdrop" @tap.self="showTestCentreModal = false">
+      <view class="modal-content" @tap.stop>
+        <view class="modal-header">
+          <text class="modal-title">Select Test Centre</text>
+          <text class="modal-close" @tap="showTestCentreModal = false">✕</text>
+        </view>
+        <scroll-view scroll-y class="option-scroll">
+          <view class="option-list">
+            <view v-for="centre in testCentres" 
+                  :key="centre"
+                  class="option-item"
+                  :class="{selected: formData.testCentre === centre}"
+                  @tap="selectTestCentre(centre)">
+              <text class="option-text">{{ centre }}</text>
+              <view class="option-check"></view>
+            </view>
+          </view>
+        </scroll-view>
+      </view>
+    </view>
+
+    <!-- Preparation Level Modal -->
+    <view v-if="showLevelModal" class="modal-backdrop" @tap.self="showLevelModal = false">
+      <view class="modal-content" @tap.stop>
+        <view class="modal-header">
+          <text class="modal-title">Select Preparation Level</text>
+          <text class="modal-close" @tap="showLevelModal = false">✕</text>
+        </view>
+        <view class="option-list">
+          <view v-for="level in preparationLevels" 
+                :key="level"
+                class="option-item"
+                :class="{selected: formData.preparationLevel === level}"
+                @tap="selectLevel(level)">
+            <text class="option-text">{{ level }}</text>
+            <view class="option-check"></view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- Avatar Options Modal -->
+    <view v-if="showAvatarModal" class="modal-backdrop" @tap.self="showAvatarModal = false">
+      <view class="modal-content" @tap.stop>
+        <view class="modal-header">
+          <text class="modal-title">Change Photo</text>
+          <text class="modal-close" @tap="showAvatarModal = false">✕</text>
+        </view>
+        <view class="avatar-options">
+          <view class="avatar-option" @tap="takePhoto">
+            <text>📷 Take Photo</text>
+          </view>
+          <view class="avatar-option" @tap="chooseFromGallery">
+            <text>🖼️ Choose from Gallery</text>
+          </view>
+          <view class="avatar-option" @tap="removePhoto" v-if="formData.avatarUrl">
+            <text>🗑️ Remove Photo</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- Success Toast -->
+    <view v-if="showSuccessToast" class="success-toast">
+      <text class="toast-text">Profile Updated Successfully!</text>
+    </view>
+  </view>
 </template>
 
 <script>
-	export default {
-		data() {
-			return {
-				userInfo: {
-					avatar: 'https://img0.baidu.com/it/u=605907382,111954907&fm=253&app=138&f=JPEG?w=500&h=500', // 头像 URL
-					username: 'StormChaser',
-					bio: 'Road to licensure~',
-					email: '1144@mail.com'
-				},
-				showAvatarPopup: false,
-				tempAvatar: ''
-			};
-		},
-		methods: {
-			// 选择图片
-			chooseImage(sourceType) {
-				uni.chooseImage({
-					count: 1, // 最多选择 1 张图片
-					sourceType: [sourceType], // 选择图片的来源：相册或相机
-					success: (res) => {
-						const tempFilePath = res.tempFilePaths[0];
-						// 上传图片到服务器
-						this.uploadImage(tempFilePath);
-					},
-					fail: (err) => {
-						console.error('选择图片失败', err);
-					}
-				});
-			},
-			// 上传图片
-			uploadImage(filePath) {
-				// 模拟上传图片到服务器
-				console.log('上传图片到服务器:', filePath);
-				// 上传成功后更新头像 URL
-				this.userInfo.avatar = filePath;
-				// 关闭弹窗
-				this.showAvatarPopup = false;
-			},
-			// 前往编辑用户名页面（移动到这里）
-			goEditUsername() {
-				uni.showModal({
-					title: '编辑用户名',
-					content: '请输入新的用户名',
-					editable: true,
-					success: (res) => {
-						if (res.confirm && res.content) {
-							this.userInfo.username = res.content; // 注意这里需要修改为 this.userInfo.username
-						}
-					}
-				});
-			},
-			// 前往编辑个人简介页面（移动到这里）
-			goEditBio() {
-				uni.showModal({
-					title: '编辑个人简介',
-					content: '请输入新的简介内容',
-					editable: true,
-					success: (res) => {
-						if (res.confirm && res.content) {
-							this.userInfo.bio = res.content; // 注意这里需要修改为 this.userInfo.bio
-						}
-					}
-				});
-			},
-			// 前往编辑邮箱页面（移动到这里）
-			goEditEmail() {
-				uni.showModal({
-					title: '编辑邮箱',
-					content: '请输入新的邮箱',
-					editable: true,
-					success: (res) => {
-						if (res.confirm && res.content) {
-							this.userInfo.email = res.content; // 注意这里需要修改为 this.userInfo.email
-						}
-					}
-				});
-			},
-			// 退出登录
-			handleSignOut() {
-				uni.showModal({
-					title: '确认退出',
-					content: '确定要退出登录吗？',
-					success: (res) => {
-						if (res.confirm) {
-							// 调用退出登录接口
-							console.log('用户点击确定');
-							// 退出后跳转到登录页
-							uni.reLaunch({
-								url: '/pages/login/login'
-							});
-						}
-					}
-				});
-			},
-			// 删除账户
-			handleDeleteAccount() {
-				uni.showModal({
-					title: '警告',
-					content: '删除账户将无法恢复，确定要删除吗？',
-					success: (res) => {
-						if (res.confirm) {
-							// 调用删除账户接口
-							console.log('用户点击确定');
-							// 删除后跳转到登录页
-							uni.reLaunch({
-								url: '/pages/login/login'
-							});
-						}
-					}
-				});
-			}
-		}
-	}
+export default {
+  data() {
+    return {
+      // 原始数据 - 用于检测变化
+      originalData: {},
+      
+      // 表单数据
+      formData: {
+        username: 'StormChaser',
+        email: 'user@example.com',
+        bio: 'Road to licensure~',
+        avatarUrl: '',
+        testCentre: 'Birmingham Test Centre',
+        testDate: '2025-11-25',
+        preparationLevel: 'Intermediate',
+        testDateReminder: true
+      },
+      
+      // 模态框状态
+      showTestCentreModal: false,
+      showLevelModal: false,
+      showAvatarModal: false,
+      showSuccessToast: false,
+      
+      // 选项数据
+      testCentres: [
+        'Birmingham Test Centre',
+        'London Test Centre',
+        'Manchester Test Centre',
+        'Liverpool Test Centre',
+        'Leeds Test Centre',
+        'Sheffield Test Centre',
+        'Bristol Test Centre',
+        'Newcastle Test Centre',
+        'Cardiff Test Centre',
+        'Glasgow Test Centre',
+        'Edinburgh Test Centre',
+        'Belfast Test Centre'
+      ],
+      
+      preparationLevels: [
+        'Beginner',
+        'Elementary',
+        'Intermediate',
+        'Advanced',
+        'Ready for Test'
+      ]
+    }
+  },
+  
+  computed: {
+    // 获取用户名首字母
+    userInitial() {
+      return this.formData.username ? this.formData.username.charAt(0).toUpperCase() : 'U';
+    },
+    
+    // 检查是否有更改
+    hasChanges() {
+      return JSON.stringify(this.formData) !== JSON.stringify(this.originalData);
+    },
+    
+    // 最小日期 - 今天
+    minDate() {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+  },
+  
+  methods: {
+    // 日期变化
+    onDateChange(e) {
+      this.formData.testDate = e.detail.value;
+    },
+    
+    // 选择测试中心
+    selectTestCentre(centre) {
+      this.formData.testCentre = centre;
+      this.showTestCentreModal = false;
+    },
+    
+    // 选择准备级别
+    selectLevel(level) {
+      this.formData.preparationLevel = level;
+      this.showLevelModal = false;
+    },
+    
+    // 拍照
+    takePhoto() {
+      const that = this;
+      uni.chooseImage({
+        count: 1,
+        sourceType: ['camera'],
+        success: (res) => {
+          that.formData.avatarUrl = res.tempFilePaths[0];
+          that.showAvatarModal = false;
+        },
+        fail: (err) => {
+          console.error('Failed to take photo:', err);
+        }
+      });
+    },
+    
+    // 从相册选择
+    chooseFromGallery() {
+      const that = this;
+      uni.chooseImage({
+        count: 1,
+        sourceType: ['album'],
+        success: (res) => {
+          that.formData.avatarUrl = res.tempFilePaths[0];
+          that.showAvatarModal = false;
+        },
+        fail: (err) => {
+          console.error('Failed to choose from gallery:', err);
+        }
+      });
+    },
+    
+    // 移除照片
+    removePhoto() {
+      this.formData.avatarUrl = '';
+      this.showAvatarModal = false;
+    },
+    
+    // 保存配置
+    async saveProfile() {
+      if (!this.hasChanges) return;
+      
+      console.log('Saving profile...', this.formData);
+      
+      try {
+        // 实际应用中调用API保存数据
+        uni.showLoading({
+          title: 'Saving...'
+        });
+        
+        // 模拟API调用
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        uni.hideLoading();
+        
+        // 更新原始数据
+        this.originalData = JSON.parse(JSON.stringify(this.formData));
+        this.showSuccessToast = true;
+        
+        setTimeout(() => {
+          this.showSuccessToast = false;
+          // 返回上一页
+          this.goBack();
+        }, 2000);
+        
+      } catch (error) {
+        uni.hideLoading();
+        uni.showToast({
+          title: 'Save failed',
+          icon: 'none'
+        });
+        console.error('Failed to save profile:', error);
+      }
+    },
+    
+    // 取消编辑
+    cancelEdit() {
+      if (this.hasChanges) {
+        uni.showModal({
+          title: 'Unsaved Changes',
+          content: 'You have unsaved changes. Are you sure you want to cancel?',
+          success: (res) => {
+            if (res.confirm) {
+              this.goBack();
+            }
+          }
+        });
+      } else {
+        this.goBack();
+      }
+    },
+    
+    // 登出
+    signOut() {
+      uni.showModal({
+        title: 'Sign Out',
+        content: 'Are you sure you want to sign out?',
+        success: (res) => {
+          if (res.confirm) {
+            console.log('Signing out...');
+            // 清除本地存储
+            uni.clearStorageSync();
+            // 跳转到登录页
+            uni.reLaunch({
+              url: '/pages/login/login'
+            });
+          }
+        }
+      });
+    },
+    
+    // 删除账号
+    deleteAccount() {
+      uni.showModal({
+        title: 'Delete Account',
+        content: 'Are you sure you want to delete your account? This action cannot be undone.',
+        success: (res) => {
+          if (res.confirm) {
+            uni.showModal({
+              title: 'Final Confirmation',
+              content: 'This will permanently delete all your data. Are you absolutely sure?',
+              success: (res2) => {
+                if (res2.confirm) {
+                  console.log('Deleting account...');
+                  // 实际应用中调用API删除账号
+                  uni.showToast({
+                    title: 'Account deleted',
+                    icon: 'success'
+                  });
+                }
+              }
+            });
+          }
+        }
+      });
+    },
+    
+    // 返回上一页
+    goBack() {
+      console.log('Going back to profile page...');
+      uni.navigateBack({
+        delta: 1
+      });
+    },
+    
+    // 加载用户数据
+    async loadUserData() {
+      try {
+        // 实际应用中从API获取数据
+        uni.showLoading({
+          title: 'Loading...'
+        });
+        
+        // 模拟API调用
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        uni.hideLoading();
+        
+        // 保存原始数据副本
+        this.originalData = JSON.parse(JSON.stringify(this.formData));
+      } catch (error) {
+        uni.hideLoading();
+        console.error('Failed to load user data:', error);
+      }
+    }
+  },
+  
+  onLoad() {
+    // 页面加载时获取用户数据
+    this.loadUserData();
+  }
+}
 </script>
 
-<style scoped>
-	.profile-container {
-		background-color: #fff;
-		padding: 20rpx;
-	}
+<style lang="scss">
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+/* 全局重置样式 */
+page {
+  background: #F8F9FA;
+}
 
-	.content {
-		margin-top: 64px;
-		/* 给内容底部留出按钮高度的空间，避免被按钮遮挡 */
-		padding-bottom: 80rpx;
-	}
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+  color: #333;
+}
 
-	.profile-item {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		padding: 20rpx 0;
-		border-bottom: 1rpx solid #f5f5f5;
-	}
+/* 渐变背景 - 与主题保持一致 */
+.gradient-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+}
 
-	.item-label {
-		font-size: 28rpx;
-		color: #333;
-	}
+.gradient-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 45%;
+  background: linear-gradient(180deg, #E3F2FD 0%, #FFFFFF 100%);
+}
 
-	.item-content {
-		display: flex;
-		align-items: center;
-	}
+.gradient-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 55%;
+  background: linear-gradient(180deg, #FFFFFF 0%, #FFF4F4 100%);
+}
 
-	.item-value {
-		font-size: 28rpx;
-		color: #999;
-		margin-right: 10rpx;
-	}
+/* Header 样式 */
+.header {
+  padding: 30rpx 40rpx;
+  display: flex;
+  align-items: center;
+  background: transparent;
+  position: relative;
+  z-index: 10;
+  min-height: 120rpx;
+}
 
-	.avatar {
-		width: 60rpx;
-		height: 60rpx;
-		border-radius: 50%;
-		margin-right: 10rpx;
-	}
+.cancel-button {
+  color: #666;
+  font-size: 32rpx;
+  padding: 16rpx;
+  font-weight: 500;
+}
 
-	.action-button {
-		margin: 40rpx 20rpx;
-		padding: 20rpx;
-		text-align: center;
-		font-size: 28rpx;
-		background-color: #f5f5f5;
-		border-radius: 8rpx;
-	}
+.page-title {
+  font-size: 48rpx;
+  font-weight: 600;
+  color: #333;
+  flex: 1;
+  text-align: center;
+}
 
-	.danger {
-		color: #ff4d4f;
-	}
+.save-button {
+  color: #4A9EFF;
+  font-size: 32rpx;
+  padding: 16rpx;
+  font-weight: 600;
+  transition: opacity 0.3s;
+  
+  &.disabled {
+    opacity: 0.5;
+  }
+}
 
-	/* 弹窗样式 */
-	.popup-content {
-		background-color: #fff;
-		padding: 30rpx;
-	}
+/* 容器 */
+.container {
+  flex: 1;
+  padding: 40rpx;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 10;
+  max-width: 800rpx;
+  width: 100%;
+  margin: 0 auto;
+}
 
-	.popup-title {
-		font-size: 32rpx;
-		font-weight: bold;
-		text-align: center;
-		margin-bottom: 40rpx;
-	}
+/* 头像编辑区域 */
+.avatar-section {
+  text-align: center;
+  margin-bottom: 60rpx;
+}
 
-	.popup-option {
-		padding: 20rpx;
-		text-align: center;
-		font-size: 28rpx;
-		border-bottom: 1rpx solid #f5f5f5;
-	}
+.avatar-container {
+  position: relative;
+  width: 240rpx;
+  height: 240rpx;
+  margin: 0 auto 30rpx;
+}
 
-	.popup-cancel {
-		padding: 20rpx;
-		text-align: center;
-		font-size: 28rpx;
-		color: #999;
-		margin-top: 20rpx;
-	}
+.avatar {
+  width: 240rpx;
+  height: 240rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 96rpx;
+  color: white;
+  font-weight: 600;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 16rpx 50rpx rgba(0,0,0,0.1);
+  
+  image {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.avatar-edit-button {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 72rpx;
+  height: 72rpx;
+  background: #4A9EFF;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.2);
+}
+
+.avatar-edit-icon {
+  font-size: 36rpx;
+  color: white;
+}
+
+.change-avatar-text {
+  color: #4A9EFF;
+  font-size: 28rpx;
+  font-weight: 500;
+}
+
+/* 表单卡片 */
+.form-card {
+  background: white;
+  border-radius: 40rpx;
+  padding: 50rpx;
+  margin-bottom: 40rpx;
+  box-shadow: 0 16rpx 50rpx rgba(0,0,0,0.08);
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 40rpx;
+  padding-bottom: 20rpx;
+  border-bottom: 1px solid #F0F0F0;
+  width: 100%;
+}
+
+/* 输入组 */
+.input-group {
+  margin-bottom: 40rpx;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.input-label {
+  font-size: 28rpx;
+  color: #666;
+  margin-bottom: 16rpx;
+  display: block;
+  font-weight: 500;
+}
+
+.input-field {
+  width: 100%;
+  padding: 28rpx 32rpx;
+  border: 4rpx solid #F0F0F0;
+  border-radius: 24rpx;
+  font-size: 32rpx;
+  color: #333;
+  transition: all 0.3s;
+  background: #FAFAFA;
+  height: 100%;
+  &:focus {
+    border-color: #4A9EFF;
+    background: white;
+  }
+  
+  &:disabled {
+    background: #F5F5F5;
+    color: #999;
+  }
+}
+
+.textarea-field {
+  min-height: 160rpx;
+  font-family: inherit;
+}
+
+.char-counter {
+  font-size: 24rpx;
+  color: #999;
+  text-align: right;
+  margin-top: 10rpx;
+}
+
+/* 选择器样式 */
+.select-field {
+  position: relative;
+}
+
+.select-display {
+  width: 100%;
+  padding: 28rpx 32rpx;
+  border: 4rpx solid #F0F0F0;
+  border-radius: 24rpx;
+  font-size: 32rpx;
+  color: #333;
+  background: #FAFAFA;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.3s;
+}
+
+.select-arrow {
+  color: #999;
+  font-size: 36rpx;
+}
+
+/* 日期选择器 */
+.date-picker {
+  position: relative;
+}
+
+.date-input {
+  width: 100%;
+  padding: 28rpx 32rpx;
+  border: 4rpx solid #F0F0F0;
+  border-radius: 24rpx;
+  font-size: 32rpx;
+  color: #333;
+  background: #FAFAFA;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.date-icon {
+  font-size: 32rpx;
+}
+
+/* 切换开关 */
+.toggle-group {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 30rpx 0;
+  border-bottom: 1px solid #F5F5F5;
+  
+  &:last-child {
+    border-bottom: none;
+  }
+  
+  &.toggle-group-top {
+    margin-top: 40rpx;
+    padding-top: 40rpx;
+    border-top: 1px solid #F0F0F0;
+    border-bottom: none;
+  }
+}
+
+.toggle-label {
+  font-size: 32rpx;
+  color: #333;
+  font-weight: 500;
+}
+
+.toggle-switch {
+  width: 104rpx;
+  height: 64rpx;
+  background: #E0E0E0;
+  border-radius: 32rpx;
+  position: relative;
+  transition: background 0.3s;
+  
+  &.active {
+    background: #4A9EFF;
+  }
+  
+  &::after {
+    content: '';
+    position: absolute;
+    width: 52rpx;
+    height: 52rpx;
+    background: white;
+    border-radius: 50%;
+    top: 6rpx;
+    left: 6rpx;
+    transition: transform 0.3s;
+    box-shadow: 0 4rpx 8rpx rgba(0,0,0,0.2);
+  }
+  
+  &.active::after {
+    transform: translateX(40rpx);
+  }
+}
+
+/* 操作按钮 */
+.action-button {
+  width: 100%;
+  padding: 32rpx;
+  border-radius: 50rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+  transition: all 0.3s;
+  margin-bottom: 30rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.button-text {
+  color: white;
+  
+  &.delete-text {
+    color: #FF6B6B;
+  }
+}
+
+.sign-out-button {
+  background: linear-gradient(135deg, #4A9EFF 0%, #2196F3 100%);
+  box-shadow: 0 12rpx 40rpx rgba(74, 158, 255, 0.35);
+}
+
+.delete-account-button {
+  background: transparent;
+  border: 4rpx solid #FF6B6B;
+}
+
+/* 模态框 */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 50rpx 50rpx 0 0;
+  padding: 50rpx 40rpx 70rpx;
+  width: 100%;
+  animation: slideUp 0.3s ease;
+}
+
+.modal-header {
+  text-align: center;
+  margin-bottom: 50rpx;
+  position: relative;
+}
+
+.modal-title {
+  font-size: 40rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.modal-close {
+  position: absolute;
+  right: 0;
+  top: 0;
+  color: #999;
+  font-size: 40rpx;
+  padding: 10rpx 20rpx;
+}
+
+/* 选项列表 */
+.option-scroll {
+  max-height: 70vh;
+}
+
+.option-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.option-item {
+  padding: 30rpx;
+  background: #F8F9FA;
+  border-radius: 24rpx;
+  transition: all 0.3s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  
+  &.selected {
+    background: #E8F3FF;
+    border: 4rpx solid #4A9EFF;
+    padding: 26rpx;
+  }
+}
+
+.option-text {
+  font-size: 32rpx;
+  color: #333;
+}
+
+.option-check {
+  width: 40rpx;
+  height: 40rpx;
+  border-radius: 50%;
+  border: 4rpx solid #4A9EFF;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  
+  .option-item.selected & {
+    display: flex;
+    
+    &::after {
+      content: '';
+      width: 20rpx;
+      height: 20rpx;
+      background: #4A9EFF;
+      border-radius: 50%;
+    }
+  }
+}
+
+/* 头像选择模态框 */
+.avatar-options {
+  display: flex;
+  flex-direction: column;
+  gap: 30rpx;
+}
+
+.avatar-option {
+  padding: 32rpx;
+  background: white;
+  border: 4rpx solid #F0F0F0;
+  border-radius: 24rpx;
+  font-size: 32rpx;
+  color: #333;
+  font-weight: 500;
+  transition: all 0.3s;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 成功提示 */
+.success-toast {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.8);
+  padding: 30rpx 60rpx;
+  border-radius: 50rpx;
+  z-index: 200;
+  animation: fadeInOut 2s ease;
+}
+
+.toast-text {
+  color: white;
+  font-size: 32rpx;
+}
+
+/* 动画 */
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; }
+  20% { opacity: 1; }
+  80% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+/* 响应式优化 */
+@media screen and (max-width: 375px) {
+  .container {
+    padding: 30rpx;
+  }
+  
+  .form-card {
+    padding: 40rpx;
+  }
+  
+  .avatar-container {
+    width: 200rpx;
+    height: 200rpx;
+  }
+  
+  .avatar {
+    width: 200rpx;
+    height: 200rpx;
+    font-size: 80rpx;
+  }
+}
 </style>

@@ -191,6 +191,34 @@
       }
     },
     {
+      "path": "pages/my/contact",
+      "style": {
+        "navigationBarBackgroundColor": "#fff",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/my/privacy",
+      "style": {
+        "navigationBarBackgroundColor": "#fff",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/my/terms",
+      "style": {
+        "navigationBarBackgroundColor": "#fff",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/my/subscription",
+      "style": {
+        "navigationBarBackgroundColor": "#fff",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/servers/servers",
       "style": {
         "navigationBarBackgroundColor": "#fff",
