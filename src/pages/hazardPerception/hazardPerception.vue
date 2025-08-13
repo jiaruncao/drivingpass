@@ -272,6 +272,9 @@ export default {
         title: '开始学习',
         icon: 'success'
       });
+      uni.navigateTo({
+        url: '/pages/hazardPerception/hazardTest'
+      })
     },
     // 获取用户进度数据 - API调用示例
     async fetchUserProgress() {

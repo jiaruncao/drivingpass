@@ -55,18 +55,11 @@ export function createPost(params) {
 }
 
 export function queryPostList(params) {
-  return fly.post("/exam/forum/queryPostList", params, {
-    
-  });
+  return fly.post("/exam/forum/queryPostList", params, {});
 }
 
-
 export function supportPost(params) {
-  return fly.get("forum/supportPost", params, {
-     otherQuery: {
-     
-     },
-  });
+  return fly.post("/exam/forum/supportPost", params, {});
 }
 
 export function collectPost(params) {

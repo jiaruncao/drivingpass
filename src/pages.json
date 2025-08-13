@@ -318,6 +318,22 @@
       }
     },
     {
+      "path" : "pages/hazardPerception/hazardLearn",
+      "style" : 
+      {
+        "navigationBarTitleText" : "",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path" : "pages/hazardPerception/hazardTest",
+      "style" : 
+      {
+        "navigationBarTitleText" : "",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path" : "pages/mockTest/mockTest",
       "style" : 
       {
