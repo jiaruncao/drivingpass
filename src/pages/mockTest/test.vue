@@ -2,38 +2,38 @@
   <view class="container">
     <!-- 顶部栏 -->
     <view class="top-bar">
-      <text class="question-counter">Question {{ currentQuestion }} of 50</text>
+      <text class="question-counter">Question {{ currentQuestion }} of {{paperInfo.quantity}}</text>
       <text :class="['time-remaining', timeRemaining <= 300 ? 'warning' : '']">
         Time: {{ formattedTime }}
       </text>
     </view>
 
     <!-- 主要内容区域 -->
-    <view :class="['main-content', !currentQuestionData.hasImage ? 'no-image' : '']">
+    <view :class="['main-content', !currentQuestionData.title_video_url ? 'no-image' : '']">
       <!-- 左侧问题区域 -->
       <view class="question-section">
         <view class="question-header">
-          <text class="question-text">{{ currentQuestionData.questionText }}</text>
+          <text class="question-text">{{ currentQuestionData.title }}</text>
           <view class="mark-instruction">Mark one answer</view>
         </view>
 
         <view class="answer-options">
           <view 
-            v-for="(option, index) in currentQuestionData.options" 
+            v-for="(option, index) in currentQuestionData.options_json" 
             :key="index"
-            :class="['answer-option', currentQuestionData.selectedOption === index ? 'selected' : '']"
-            @click="selectAnswer(index)"
+            :class="['answer-option', currentQuestionData.selectedOption === option.key ? 'selected' : '']"
+            @click="selectAnswer(option.key, index)"
           >
             <view class="answer-checkbox"></view>
-            <text class="answer-text">{{ option }}</text>
+            <text class="answer-text">{{ option.value }}</text>
           </view>
         </view>
       </view>
 
       <!-- 右侧图片区域 -->
-      <view v-if="currentQuestionData.hasImage" class="image-section">
+      <view v-if="currentQuestionData.title_video_url" class="image-section">
         <image 
-          :src="currentQuestionData.imageUrl" 
+          :src="currentQuestionData.title_video_url" 
           class="question-image"
           mode="aspectFit"
         />
@@ -104,7 +104,7 @@
               ]"
               @click="goToQuestionFromReview(state.id)"
             >
-              <text>{{ state.id }}</text>
+              <text>{{ state.index }}</text>
             </view>
           </view>
         </scroll-view>
@@ -119,11 +119,17 @@
 </template>
 
 <script>
+import {getExamQuestion, submitExamQuestion} from '@/http/api/testQuestions.js'
 export default {
   data() {
     return {
+      // 题目数据
+      paperInfo: {
+        limit_time: 0,
+        quantity: 0
+      },
       // 当前题目编号
-      currentQuestion: 9,
+      currentQuestion: 1,
       // 倒计时剩余秒数
       timeRemaining: 54 * 60 + 24,
       // Review面板是否显示
@@ -135,32 +141,7 @@ export default {
       questionStates: [],
       
       // 题目数据
-      questionsData: {
-        9: {
-          questionText: 'You want to turn left at this junction. The view of the main road is restricted. What should you do?',
-          options: [
-            'Stay well back and wait to see if something comes',
-            'Stop and apply the handbrake even if the road is clear',
-            'Build up your speed so that you can emerge quickly',
-            'Approach slowly and edge out until you can see more clearly'
-          ],
-          hasImage: true,
-          imageUrl: 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\' viewBox=\'0 0 400 300\'%3E%3Crect fill=\'%23587A8A\' width=\'400\' height=\'300\'/%3E%3Crect fill=\'%23404040\' x=\'0\' y=\'180\' width=\'400\' height=\'120\'/%3E%3Crect fill=\'%23FFF\' stroke-dasharray=\'15,8\' stroke=\'%23FFF\' stroke-width=\'2\' fill=\'none\' x=\'195\' y=\'180\' width=\'10\' height=\'120\'/%3E%3Crect fill=\'%238B7355\' x=\'300\' y=\'130\' width=\'80\' height=\'60\'/%3E%3Cpolygon fill=\'%23A0522D\' points=\'300,130 340,110 380,130\'/%3E%3Crect fill=\'%23228B22\' x=\'0\' y=\'170\' width=\'150\' height=\'10\'/%3E%3Crect fill=\'%23228B22\' x=\'250\' y=\'170\' width=\'150\' height=\'10\'/%3E%3Cpath d=\'M 170 250 Q 190 230 200 180\' stroke=\'%23FFF\' stroke-width=\'2\' fill=\'none\'/%3E%3Cpolygon fill=\'%23FFF\' points=\'197,183 200,180 203,183 200,175\'/%3E%3C/svg%3E',
-          selectedOption: null
-        },
-        10: {
-          questionText: 'What is the maximum penalty for driving without insurance in the UK? Consider both the fixed penalty and potential court penalties.',
-          options: [
-            'Fixed penalty of £300 and 6 penalty points',
-            'Fixed penalty of £200 and 3 penalty points',
-            'Fixed penalty of £100 and 3 penalty points',
-            'Fixed penalty of £500 and 9 penalty points'
-          ],
-          hasImage: false,
-          imageUrl: '',
-          selectedOption: null
-        }
-      }
+      questionsData: []
     }
   },
   
@@ -175,29 +156,18 @@ export default {
     // 当前题目数据
     currentQuestionData() {
       // 如果当前题号有特定数据，使用特定数据，否则使用默认数据
-      if (this.questionsData[this.currentQuestion]) {
-        const data = this.questionsData[this.currentQuestion]
+      if (this.questionsData[this.currentQuestion - 1]) {
+        const data = this.questionsData[this.currentQuestion - 1]
+        console.log(data)
         const state = this.questionStates[this.currentQuestion - 1]
+        console.log('state', state)
         return {
           ...data,
           selectedOption: state ? state.selectedOption : null
         }
       }
-      
-      // 默认题目数据
-      return {
-        questionText: 'You want to turn left at this junction. The view of the main road is restricted. What should you do?',
-        options: [
-          'Stay well back and wait to see if something comes',
-          'Stop and apply the handbrake even if the road is clear',
-          'Build up your speed so that you can emerge quickly',
-          'Approach slowly and edge out until you can see more clearly'
-        ],
-        hasImage: true,
-        imageUrl: 'data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'300\' viewBox=\'0 0 400 300\'%3E%3Crect fill=\'%23587A8A\' width=\'400\' height=\'300\'/%3E%3Crect fill=\'%23404040\' x=\'0\' y=\'180\' width=\'400\' height=\'120\'/%3E%3Crect fill=\'%23FFF\' stroke-dasharray=\'15,8\' stroke=\'%23FFF\' stroke-width=\'2\' fill=\'none\' x=\'195\' y=\'180\' width=\'10\' height=\'120\'/%3E%3Crect fill=\'%238B7355\' x=\'300\' y=\'130\' width=\'80\' height=\'60\'/%3E%3Cpolygon fill=\'%23A0522D\' points=\'300,130 340,110 380,130\'/%3E%3Crect fill=\'%23228B22\' x=\'0\' y=\'170\' width=\'150\' height=\'10\'/%3E%3Crect fill=\'%23228B22\' x=\'250\' y=\'170\' width=\'150\' height=\'10\'/%3E%3Cpath d=\'M 170 250 Q 190 230 200 180\' stroke=\'%23FFF\' stroke-width=\'2\' fill=\'none\'/%3E%3Cpolygon fill=\'%23FFF\' points=\'197,183 200,180 203,183 200,175\'/%3E%3C/svg%3E',
-        selectedOption: this.questionStates[this.currentQuestion - 1] ? 
-          this.questionStates[this.currentQuestion - 1].selectedOption : null
-      }
+
+      return {}
     },
     
     // 已回答题目数
@@ -212,13 +182,12 @@ export default {
     
     // 未回答题目数
     unansweredCount() {
-      return 50 - this.answeredCount
+      return this.questionsData.length - this.answeredCount
     }
   },
   
   mounted() {
-    // 初始化题目状态
-    this.initQuestionStates()
+    this.getExamQuestion()
     // 启动倒计时
     this.startTimer()
   },
@@ -239,26 +208,43 @@ export default {
   // },
   
   methods: {
+    // 取题
+    getExamQuestion () {
+      getExamQuestion({
+        paper_id: 2
+      }).then(res => {
+        console.log(res)
+        if (res.code == 1) {
+          this.paperInfo = res.data.paper
+          this.timeRemaining = this.paperInfo.limit_time
+          this.questionsData = res.data.questions
+          // 初始化题目状态
+          this.initQuestionStates()
+        }
+      })
+    },
     // 初始化题目状态
     initQuestionStates() {
-      this.questionStates = Array(50).fill(null).map((_, index) => ({
-        id: index + 1,
+      console.log('this.questionsData', this.questionsData)
+      this.questionStates = this.questionsData.map((item, index) => ({
+        index: index + 1,
+        id: item.id,
         answered: false,
         flagged: false,
         selectedOption: null,
-        hasImage: index % 3 !== 0
+        hasImage: item.title_video_url ? true : false
       }))
-      
+      console.log('this.questionStates', this.questionStates)
       // 模拟一些已答题目
-      ;[1, 2, 3, 4, 5, 6, 7, 8].forEach(q => {
-        this.questionStates[q - 1].answered = true
-        this.questionStates[q - 1].selectedOption = Math.floor(Math.random() * 4)
-      })
+      // ;[1, 2, 3, 4, 5, 6, 7, 8].forEach(q => {
+      //   this.questionStates[q - 1].answered = true
+      //   this.questionStates[q - 1].selectedOption = Math.floor(Math.random() * 4)
+      // })
       
-      // 模拟一些标记的题目
-      ;[3, 5, 7].forEach(q => {
-        this.questionStates[q - 1].flagged = true
-      })
+      // // 模拟一些标记的题目
+      // ;[3, 5, 7].forEach(q => {
+      //   this.questionStates[q - 1].flagged = true
+      // })
     },
     
     // 启动倒计时
@@ -281,9 +267,9 @@ export default {
     },
     
     // 选择答案
-    selectAnswer(index) {
+    selectAnswer(key, index) {
       this.questionStates[this.currentQuestion - 1].answered = true
-      this.questionStates[this.currentQuestion - 1].selectedOption = index
+      this.questionStates[this.currentQuestion - 1].selectedOption = key
     },
     
     // 切换标记状态
@@ -294,7 +280,8 @@ export default {
     
     // 下一题
     nextQuestion() {
-      if (this.currentQuestion < 50) {
+      console.log(this.questionStates)
+      if (this.currentQuestion < this.questionsData.length) {
         this.goToQuestion(this.currentQuestion + 1)
       } else {
         uni.showToast({
@@ -374,6 +361,15 @@ export default {
             })
             this.closeReview()
             // 这里可以添加跳转到结果页面的逻辑
+            submitExamQuestion({
+              paper_id: 2,
+              questions: this.questionStates.map(q => ({
+                id: q.id,
+                answer: q.selectedOption
+              }))
+            }).then(res => {
+              console.log(res)
+            })
           }
         }
       })
@@ -667,7 +663,7 @@ export default {
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
   display: none;
-  z-index: 1000;
+  z-index: 500;
 }
 
 .review-overlay.active {

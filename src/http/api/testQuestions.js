@@ -70,4 +70,22 @@ export function recordAdd(params) {
 export function getPaperList(params) {
   return fly.post("/exam/paper/index", params);
 }
-
+/*
+ * 模考试卷取题
+ * author：huanyun
+ * paper_id 试卷ID
+ * create by date：2025/08/12
+ */
+export function getExamQuestion(params) {
+  return fly.post("/exam/paper/getExamQuestion", params);
+}
+/*
+ * 模考试卷交卷
+ * author：huanyun
+ * paper_id 试卷ID
+ * questions ["[{'id' => '试题ID', 'answer' => '答案'}]"]
+ * create by date：2025/08/12
+ */
+export function submitExamQuestion(params) {
+  return fly.post("/exam/paper/submit", params);
+}

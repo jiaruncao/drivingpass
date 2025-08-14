@@ -178,7 +178,7 @@
       // 导航到测试页面
       navigateToTest() {
         uni.navigateTo({
-          url: '/pages/mockTest/test',
+          url: '/pages/mockTest/test?paper_id=2',
           success: () => {
             console.log('导航到多选题测试页面');
           }
