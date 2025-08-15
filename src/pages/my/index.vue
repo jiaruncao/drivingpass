@@ -14,11 +14,14 @@
         </view>
         <view class="profile-content">
           <view class="avatar-container">
-            <view class="avatar">
+            <view class="avatar" v-if="userData.avatar">
+              <image class="image" :src="userData.avatar" mode="aspectFill"></image>
+            </view>
+            <view class="avatar" v-else>
               <text class="avatar-text">{{ userInitial }}</text>
             </view>
           </view>
-          <text class="username">{{ userData.username }}</text>
+          <text class="username">{{ userData.nickname }}</text>
           <view v-if="userData.testCentre" class="test-centre">
             <text class="location-icon">📍</text>
             <text class="test-centre-text">{{ userData.testCentre }}</text>
@@ -247,6 +250,7 @@
 </template>
 
 <script>
+import {getUserInfo} from '@/http/api/login.js'
 export default {
   data() {
     return {
@@ -273,7 +277,7 @@ export default {
   computed: {
     // 获取用户名首字母
     userInitial() {
-      return this.userData.username.charAt(0).toUpperCase();
+      return this.userData.nickname.charAt(0).toUpperCase();
     },
     // 获取订阅徽章样式
     getBadgeClass() {
@@ -408,20 +412,25 @@ export default {
         }
       }
     },
-    // 获取用户数据 - API调用示例
+    // 获取用户数据
     async fetchUserData() {
-      try {
-        const [error, response] = await uni.request({
-          url: '/api/user/profile',
-          method: 'GET'
-        });
-        if (!error && response.statusCode === 200) {
-          this.userData = response.data.userData;
-          this.subscriptionData = response.data.subscription;
-          this.passRate = response.data.passRate;
-        }
-      } catch (error) {
-        console.error('Failed to fetch user data:', error);
+      // try {
+      //   const [error, response] = await uni.request({
+      //     url: '/api/user/profile',
+      //     method: 'GET'
+      //   });
+      //   if (!error && response.statusCode === 200) {
+      //     this.userData = response.data.userData;
+      //     this.subscriptionData = response.data.subscription;
+      //     this.passRate = response.data.passRate;
+      //   }
+      // } catch (error) {
+      //   console.error('Failed to fetch user data:', error);
+      // }
+      const response = await getUserInfo()
+      if (response.code == 1) {
+        console.log(response)
+        this.userData = response.data
       }
     },
     // 更新用户统计 - API调用示例
@@ -443,7 +452,7 @@ export default {
   },
   onLoad() {
     // 页面加载时获取数据
-    // this.fetchUserData();
+    this.fetchUserData();
     // this.updateStats();
     
     // 测试不同订阅等级的效果
@@ -562,6 +571,12 @@ export default {
   justify-content: center;
   position: relative;
   overflow: hidden;
+}
+
+.avatar .image {
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: 50%;
 }
 
 .avatar-text {

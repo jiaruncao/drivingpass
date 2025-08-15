@@ -19,13 +19,8 @@ export function register(params) {
  * content：获取个人信息
  */
 export function getUserInfo(params) {
-  return fly.get("users/userinfo", params, {
-    otherQuery: {
-      baseUrl: "VUE_APP_APIURL",
-    },
-  });
+  return fly.post("/exam/user/info", params);
 }
-
 /*
  * author：Gengbaodada
  * create by date：2024/11/11
