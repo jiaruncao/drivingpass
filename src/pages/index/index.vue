@@ -16,24 +16,24 @@
       </div>
       <div class="right_item">
         <div class="right_item_top" @click="modeSelect('Theory Test')">
-          <div class="item_title" style="color: #4379bb">{{drivingTest[0].name}}</div>
-          <div class="item_score" style="color: #4379bb">Score：{{drivingTest[0].score}}</div>
+          <div class="item_title" style="color: #4379bb">Theory Test</div>
+          <div class="item_score" style="color: #4379bb">Score：{{getScore('Theory Test')}}</div>
         </div>
         <div class="right_item_bottom" @click="modeSelect('Hazard Test')">
-          <div class="item_title" style="color: #b77a2a">{{drivingTest[1].name}}</div>
-          <div class="item_score" style="color: #b77a2a">Score：{{drivingTest[1].score}}</div>
+          <div class="item_title" style="color: #b77a2a">Hazard Test</div>
+          <div class="item_score" style="color: #b77a2a">Score：{{getScore('Hazard Test')}}</div>
         </div>
       </div>
     </div>
     <div class="practice_main_bottom">
       <div class="left_item" @click="modeSelect('Highway Code')">
-        <div class="item_title" style="color: #4fa62a">{{drivingTest[2].name}}</div>
-        <div class="item_score" style="color: #4fa62a">Score：{{drivingTest[2].score}}</div>
+        <div class="item_title" style="color: #4fa62a">Highway Code</div>
+        <div class="item_score" style="color: #4fa62a">Score：{{getScore('Highway Code')}}</div>
       </div>
       <div class="right_item">
         <div class="right_item_top" @click="modeSelect('Rode Sign')">
-          <div class="item_title" style="color: #336cb5">{{drivingTest[3].name}}</div>
-          <div class="item_score" style="color: #336cb5">Score：{{drivingTest[3].score}}</div>
+          <div class="item_title" style="color: #336cb5">Rode Sign</div>
+          <div class="item_score" style="color: #336cb5">Score：{{getScore('Rode Sign')}}</div>
         </div>
       </div>
     </div>
@@ -71,6 +71,7 @@ export default {
        * create by date：2025/07/27
        * content：mock : 模拟考试  theory:理论考试  Hazard Test: 危险测试  Highway Code:公用通道法规   Rode Sign: 道路标识
        */
+      const id = this.drivingTest.find(item => item.name === title) ? this.drivingTest.find(item => item.name === title).id : null
       switch (title){
         case 'Rode Sign':
           uni.navigateTo({
@@ -79,7 +80,7 @@ export default {
           break;
         case 'Theory Test':
           uni.navigateTo({
-            url: "/pages/theoryTest/theoryTest"
+            url: "/pages/theoryTest/theoryTest?id=" + id
           });
           break;
         case 'Highway Code':
@@ -104,6 +105,10 @@ export default {
       getTypeFind().then((res) => {
         this.drivingTest = res.data[0].children
       });
+    },
+    getScore (name) {
+      const scoreInfo = this.drivingTest.find(item => item.name === name)
+      return scoreInfo ? scoreInfo.score : 0
     }
   },
 };

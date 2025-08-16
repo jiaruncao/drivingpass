@@ -127,6 +127,7 @@ import {getThree} from '@/http/api/testQuestions.js'
 export default {
   data() {
     return {
+      subject_id: null,
       currentView: 'home', // 当前视图状态
       overallProgress: 81, // 整体学习进度
       testsPracticed: 12, // 测试练习次数
@@ -245,7 +246,7 @@ export default {
       try {
         const response = await getThree({
           kind: 'QUESTION',
-          subject_id: 2
+          subject_id: this.subject_id
         })
         if (response.code === 1) {
           this.categories = response.data;
@@ -255,10 +256,9 @@ export default {
       }
     }
   },
-  onLoad() {
-    // 页面加载时获取数据
-    // this.fetchUserProgress();
-    this.fetchCategories();
+  onLoad(options) {
+    this.subject_id = options.id
+    // this.fetchCategories();
   }
 }
 </script>

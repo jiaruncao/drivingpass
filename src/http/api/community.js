@@ -13,13 +13,14 @@ export function userFollowedList(params) {
      },
   });
 }
-
+/*
+ * 关注/取消关注
+ * author：huanyun
+ * follow_user_id 关注/取消关注用户ID
+ * create by date：2025/08/16
+ */
 export function userFollowed(params) {
-  return fly.get("user/userFollowed", params, {
-     otherQuery: {
-     
-     },
-  });
+  return fly.post("/exam/user/userFollowed", params);
 }
 
 
@@ -57,42 +58,55 @@ export function createPost(params) {
 export function queryPostList(params) {
   return fly.post("/exam/forum/queryPostList", params, {});
 }
-
+/*
+ * 点赞/取消点赞帖子
+ * author：huanyun
+ * post_id 帖子ID
+ * create by date：2025/08/16
+ */
 export function supportPost(params) {
   return fly.post("/exam/forum/supportPost", params, {});
 }
 
+/*
+ * 收藏/取消收藏帖子
+ * author：huanyun
+ * post_id 帖子ID
+ * create by date：2025/08/16
+ */
 export function collectPost(params) {
-  return fly.get("forum/collectPost", params, {
-     otherQuery: {
-     
-     },
-  });
+  return fly.post("/exam/forum/collectPost", params);
 }
 
-
+/*
+ * 回复帖子
+ * author：huanyun
+ * post_id 帖子ID
+ * content 内容
+ * pid 父级评论ID(为空则评论帖子)
+ * create by date：2025/08/16
+ */
 export function replyPost(params) {
-  return fly.get("forum/replyPost", params, {
-     otherQuery: {
-     
-     },
-  });
+  return fly.post("/exam/forum/replyPost", params);
 }
-
+/*
+ * 查询帖子详情
+ * author：huanyun
+ * post_id 帖子ID
+ * create by date：2025/08/16
+ */
 export function queryPostDetail(params) {
-  return fly.get("forum/queryPostDetail", params, {
-     otherQuery: {
-     
-     },
-  });
+  return fly.post("/exam/forum/queryPostDetail", params);
 }
-
+/*
+ * 点赞/取消点赞评论
+ * author：huanyun
+ * post_id 帖子ID
+ * reply_id 评论ID
+ * create by date：2025/08/16
+ */
 export function supportReply(params) {
-  return fly.get("forum/supportReply", params, {
-     otherQuery: {
-     
-     },
-  });
+  return fly.post("/exam/forum/supportReply", params);
 }
 
 export function collectList(params) {

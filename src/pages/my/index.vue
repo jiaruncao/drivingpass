@@ -30,15 +30,15 @@
           <text class="bio">{{ userData.bio }}</text>
           <view class="stats-row">
             <view class="stat-item">
-              <text class="stat-value">{{ userData.following }}</text>
+              <text class="stat-value">{{ userData.following || 0 }}</text>
               <text class="stat-label">Following</text>
             </view>
             <view class="stat-item">
-              <text class="stat-value">{{ userData.followers }}</text>
+              <text class="stat-value">{{ userData.followers || 0 }}</text>
               <text class="stat-label">Followers</text>
             </view>
             <view class="stat-item">
-              <text class="stat-value">{{ userData.likes }}</text>
+              <text class="stat-value">{{ userData.likes || 0 }}</text>
               <text class="stat-label">Likes</text>
             </view>
           </view>
