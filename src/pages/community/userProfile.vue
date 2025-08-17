@@ -1,574 +1,917 @@
 <template>
-	<view class="container">
-		<u-navbar leftText="user Profile" :safeAreaInsetTop="true" :autoBack="true" left-icon="arrow-leftward">
-		</u-navbar>
+  <view class="app">
+    <view class="gradient-bg">
+      <view class="gradient-top"></view>
+      <view class="gradient-bottom"></view>
+    </view>
 
+    <!-- Header导航栏 -->
+    <view class="header">
+      <view class="header-left">
+        <view class="back-button" @tap="goBack">←</view>
+        <text class="header-title">Profile</text>
+      </view>
+      <view class="header-right">
+        <view class="header-button" @tap="shareProfile">
+          <text>🔗</text>
+        </view>
+      </view>
+    </view>
 
-		<!-- 内容区域 -->
-		<view class="content tn-padding-sm" :style="{ paddingTop: safeAreaTop + 'rpx' }">
-			<view>
-				<!-- 用户信息 -->
-				<view class="user-info">
-					<!-- 头像 -->
-					<view class="avatar-container">
-						<u-avatar :src="userInfo.avatar" size="120rpx" shape="circle"></u-avatar>
-					</view>
+    <!-- 主内容容器 -->
+    <view class="container">
+      <!-- 个人信息卡片 -->
+      <view class="profile-card">
+        <view class="profile-header">
+          <view class="avatar-container">
+            <view class="avatar">{{ userInitial }}</view>
+            <view v-if="userData.verified" class="verified-badge">
+              <text class="badge-icon">✓</text>
+            </view>
+          </view>
+          <view class="profile-info">
+            <text class="profile-name">{{ userData.name }}</text>
+            <text class="profile-bio">{{ userData.bio }}</text>
+            <view class="test-centre-info">
+              <text class="centre-icon">🏢</text>
+              <text>{{ userData.testCentre }}</text>
+            </view>
+          </view>
+        </view>
+        
+        <view class="profile-stats">
+          <view class="stat-item">
+            <text class="stat-value">{{ userData.posts }}</text>
+            <text class="stat-label">Posts</text>
+          </view>
+          <view class="stat-item">
+            <text class="stat-value">{{ userData.followers }}</text>
+            <text class="stat-label">Followers</text>
+          </view>
+          <view class="stat-item">
+            <text class="stat-value">{{ userData.following }}</text>
+            <text class="stat-label">Following</text>
+          </view>
+          <view class="stat-item">
+            <text class="stat-value">{{ userData.likes }}</text>
+            <text class="stat-label">Likes</text>
+          </view>
+        </view>
 
-					<!-- 用户名和考试中心 -->
-					<view class="user-details">
-						<text class="username">{{ userInfo.username }}</text>
-						<text class="test-center">{{ userInfo.testCenter }}</text>
-					</view>
-				</view>
+        <view class="profile-actions">
+          <view class="action-button primary" @tap="toggleFollow">
+            {{ isFollowing ? 'Following' : 'Follow' }}
+          </view>
+          <view class="action-button secondary" @tap="sendMessage">Message</view>
+        </view>
+      </view>
 
-				<!-- 简介 -->
-				<view class="bio-section">
-					<text class="bio-label">Bio:</text>
-					<text class="bio-text">{{ userInfo.bio }}</text>
-				</view>
+      <!-- Posts标题 -->
+      <view class="section-header">
+        <text class="section-title">Posts</text>
+      </view>
 
-				<!-- 统计数据 -->
-				<view class="stats-section">
-					<view class="stat-item">
-						<text class="stat-number">{{ userInfo.followed }}</text>
-						<text class="stat-label">Followed</text>
-					</view>
-					<view class="stat-item">
-						<text class="stat-number">{{ userInfo.followers }}</text>
-						<text class="stat-label">Followers</text>
-					</view>
-					<view class="stat-item">
-						<text class="stat-number">{{ userInfo.likes }}</text>
-						<text class="stat-label">Likes</text>
-					</view>
-				</view>
-			</view>
-			<view style="height: 20rpx; width: 100%; background-color: #F7F7F7;"></view>
-			<view>
-				<u-tabs class="tn-flex" :activeStyle="{
-				    color: '#333333',
-				    fontWeight: 'bold',
-				    transform: 'scale(1.05)'
-					
-				}" :inactiveStyle="{
-				    color: '#999999',
-				    transform: 'scale(1)'
-				}" itemStyle="padding-left: 15px; padding-right: 15px; height: 34px;" :list="list1"
-					@click="handleTabChange"></u-tabs>
-			</view>
+      <!-- 内容列表 -->
+      <view class="content-list">
+        <view v-if="posts.length > 0">
+          <view v-for="post in posts" :key="post.id" class="post-card" @tap="viewPost(post.id)">
+            <view class="post-header">
+              <view class="post-category">
+                <text class="category-icon">{{ post.categoryIcon }}</text>
+                <text>{{ post.category }}</text>
+              </view>
+              <text class="post-time">{{ post.time }}</text>
+            </view>
+            <text class="post-content">{{ post.content }}</text>
+            <view v-if="post.images && post.images.length > 0" class="post-media">
+              <image v-for="(img, index) in post.images" 
+                     :key="index" 
+                     :src="img" 
+                     class="post-image"
+                     mode="aspectFill">
+              </image>
+            </view>
+            <!-- 互动栏 -->
+            <view class="actions-bar">
+              <view class="actions-left">
+                <view class="action-button" :class="{liked: post.isLiked}" @tap="toggleLike(post)">
+                  <view class="action-icon">
+                    <image src="/static/icons/heart.svg" class="icon-svg" mode="aspectFit"></image>
+                  </view>
+                  <text class="action-count">{{ post.likes }}</text>
+                </view>
+                <view class="action-button" @tap="openComments(post.id)">
+                  <view class="action-icon">
+                    <image src="/static/icons/comment.svg" class="icon-svg" mode="aspectFit"></image>
+                  </view>
+                  <text class="action-count">{{ post.comments }}</text>
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+        <view v-else class="empty-state">
+          <text class="empty-icon">📝</text>
+          <text class="empty-title">No posts yet</text>
+          <text class="empty-desc">This user hasn't shared any posts</text>
+        </view>
 
-
-			<view :style="{
-                  height: `calc(100vh - ${safeAreaTop + 176}rpx)`
-                }" style="height: 100%;">
-				<swiper :current="swiperCurrent" style="height: 100%;" @change="onSwiperChange">
-					<swiper-item class="swiper-item" v-for="(item, index) in list1" :key="index">
-						<scroll-view scroll-y class="content-wrapper" style="height: 100%;">
-							<view v-if="index == 1">
-								<!-- 帖子列表 -->
-								<view class="post-item" v-for="(item, index) in postList" :key="index">
-									<!-- 用户信息 -->
-									<view class="user-section" @click="userProfileClick">
-										<u-avatar :src="item.avatar" size="40"></u-avatar>
-										<view class="user-info">
-											<text class="username">{{ item.username }}</text>
-											<text class="test-center">{{ item.testCenter }}</text>
-										</view>
-									</view>
-
-									<view class="content-detail">
-										<!-- 帖子内容 -->
-										<view class="post-content">
-											<image src="/static/community/community_essence.png"
-												style="top: 2px; width: 28px; height: 14.5px;">
-											</image>
-											<text class="content-text">{{ item.content }}</text>
-										</view>
-
-										<view class="post-images">
-											<image v-for="(img, index) in item.images" :key="index" :src="img"
-												mode="aspectFill"></image>
-										</view>
-
-
-										<!-- 评论和互动区 -->
-										<view class="interaction-section">
-											<!-- 评论 -->
-											<view class="comment-box" v-if="item.comment.username">
-												<view class="comment-content">
-													<text class="comment-user">{{ item.comment.username }}</text>
-													<text class="comment-text">{{ item.comment.content }}</text>
-													<text class="view-replies" @click="gotoDetail(index)">View all replies wefwef></text>
-												</view>
-											</view>
-
-											<!-- 标签和点赞 -->
-											<view class="bottom-section">
-												<view class="tags">
-													<view v-for="(tag, tagIndex) in item.tags" :key="tagIndex" class="tag-item">#
-														{{tag}}
-													</view>
-												</view>
-												<view class="like-section">
-													<u-icon name="thumb-up" size="18"
-														:color="item.isLiked ? '#419FFF' : '#000000'"
-														@click="likeClick(index)"></u-icon>
-													<text class="like-count">{{ item.likes }}</text>
-												</view>
-												<view class="like-section tn-padding-left">
-													<image src="/static/community/community_comment.png"
-														style="width: 30rpx; height: 30rpx;" @click="addComment(index)">
-													</image>
-													<text
-														class="like-count tn-padding-left-sx">{{ item.commentNo }}</text>
-												</view>
-											</view>
-										</view>
-									</view>
-									<!-- 分隔线 -->
-									<u-line color="#f5f5f5"></u-line>
-								</view>
-							</view>
-							<view v-else>
-								<view class="post-item" v-for="(item, index) in postList" :key="index">
-									<!-- 用户信息 -->
-									<view class="user-section" @click="userProfileClick">
-										<u-avatar :src="item.avatar" size="40"></u-avatar>
-										<view class="user-info">
-											<text class="username">{{ item.username }}</text>
-											<text class="test-center">{{ item.testCenter }}</text>
-										</view>
-									</view>
-
-									<view class="content-detail">
-										<!-- 帖子内容 -->
-										<view class="post-content">
-											<image src="/static/community/community_essence.png"
-												style="top: 2px; width: 28px; height: 14.5px;">
-											</image>
-											<text class="content-text">{{ item.content }}</text>
-										</view>
-
-										<view class="post-images">
-											<image v-for="(img, index) in item.images" :key="index" :src="img"
-												mode="aspectFill"></image>
-										</view>
-
-
-										<!-- 评论和互动区 -->
-										<view class="interaction-section">
-											<!-- 评论 -->
-											<view class="comment-box" v-if="item.comment.username">
-												<view class="comment-content">
-													<text class="comment-user">{{ item.comment.username }}</text>
-													<text class="comment-text">{{ item.comment.content }}</text>
-													<text class="view-replies" @click="gotoDetail(index)">View all replies></text>
-												</view>
-											</view>
-
-											<!-- 标签和点赞 -->
-											<view class="bottom-section">
-												<view class="tags">
-													<view v-for="(tag, tagIndex) in item.tags" :key="tagIndex" class="tag-item">#
-														{{tag}}
-													</view>
-												</view>
-												<view class="like-section">
-													<u-icon name="thumb-up" size="18"
-														:color="item.isLiked ? '#419FFF' : '#000000'"
-														@click="likeClick(index)"></u-icon>
-													<text class="like-count">{{ item.likes }}</text>
-												</view>
-												<view class="like-section tn-padding-left">
-													<image src="/static/community/community_comment.png"
-														style="width: 30rpx; height: 30rpx;" @click="addComment(index)">
-													</image>
-													<text
-														class="like-count tn-padding-left-sx">{{ item.commentNo }}</text>
-												</view>
-											</view>
-										</view>
-									</view>
-
-
-
-									<!-- 分隔线 -->
-									<u-line color="#f5f5f5"></u-line>
-								</view>
-							</view>
-						</scroll-view>
-					</swiper-item>
-				</swiper>
-			</view>
-		</view>
-		<!-- 固定在屏幕底部的Follow按钮 -->
-		<view class="follow-btn" @click="followClick()">
-			<text>Follow</text>
-		</view>
-	</view>
+        <!-- 加载更多 -->
+        <view v-if="hasMore && !loading" class="load-more" @tap="loadMore">
+          <text>Load more</text>
+        </view>
+        <view v-if="loading" class="load-more loading">
+          <text>Loading...</text>
+        </view>
+      </view>
+    </view>
+  </view>
 </template>
 
 <script>
-	export default {
-		data() {
-			return {
-				swiperCurrent: 0,
-				postList: [{
-						avatar: 'https://cdn.uviewui.com/uview/template/niannian.jpg',
-						username: 'StormChaser',
-						testCenter: 'Test Centre: xxx',
-						featured: true,
-						images: [
-							'https://img1.baidu.com/it/u=2172818577,3783888802&fm=253&app=138&f=JPEG?w=800&h=1422',
-							'https://img1.baidu.com/it/u=2172818577,3783888802&fm=253&app=138&f=JPEG?w=800&h=1422',
-							'https://img1.baidu.com/it/u=2172818577,3783888802&fm=253&app=138&f=JPEG?w=800&h=1422'
-						],
-						content: 'Pass your driving theory test in just 3 days! Private tutoring makes ALL the difference, ladies! The exam is simpler than you think - just focus on',
-						comment: {
-							avatar: 'https://cdn.uviewui.com/uview/template/nan.png',
-							username: 'GOOOgo',
-							content: 'Just passed with 97%!'
-						},
-						tags: ['Theory Test', 'Test', 'good lt'],
-						likes: 999,
-						commentNo: 100,
-						isLiked: false
-					},
-					{
-						avatar: 'https://cdn.uviewui.com/uview/template/niannian.jpg',
-						username: 'StormChaser',
-						testCenter: 'Test Centre: xxx',
-						featured: false,
-						content: 'Pass your driving theory test in just 3 days! Private tutoring makes ALL the difference, ladies! The exam is simpler than you think - just focus on',
-						comment: {},
-						tags: ['Theory Test', 'Test', 'good lt'],
-						likes: 999,
-						commentNo: 100,
-						isLiked: false
-					}
-				],
-				list1: [{
-					name: 'Challenges',
-				}, {
-					name: 'Short Videos',
-				}],
-				userInfo: {
-					avatar: 'https://cdn.uviewui.com/uview/template/niannian.jpg',
-					username: 'StormChaser',
-					testCenter: 'Test Centre: xxx',
-					bio: 'Road to licensure~',
-					followed: 18,
-					followers: 99,
-					likes: 999
-				}
-			};
-		},
-		methods: {
-			// 补充缺失的方法定义
-			click(item) {
-				console.log('tab clicked:', item);
-			},
-			followClick() {
-				console.log('follow button clicked');
-			},
-			// 添加点赞方法
-			likeClick(index) {
-				const post = this.postList[index];
-				post.isLiked = !post.isLiked; // 切换点赞状态
-				// 点赞数+1或-1
-				if (post.isLiked) {
-					post.likes += 1;
-				} else {
-					post.likes -= 1;
-				}
-			},
-			addComment(index) {
-				uni.navigateTo({
-					url: '/pages/community/detail'
-				});
-			},
-			// 新增发布按钮点击事件
-			goToPublish() {
-				// 这里可以跳转到发布页面，示例使用路由跳转
-				uni.navigateTo({
-					url: '/pages/community/create'
-				});
-				console.log('点击了发布按钮');
-			},
-			userProfileClick() {
-				uni.navigateTo({
-					url: '/pages/community/userProfile'
-				});
-				console.log('点击了UserProfile');
-			},
-			gotoDetail() {
-				uni.navigateTo({
-					url: '/pages/community/detail'
-				});
-				console.log('点击了detail');
-			},
-			handleTabChange(e) {
-				this.swiperCurrent = e.index;
-			},
-			onSwiperChange(e) {
-				// e.detail.current 是当前滑动到的 swiper-item 索引
-				this.swiperCurrent = e.detail.current;
-			}
-		}
-	};
+export default {
+  data() {
+    return {
+      // 用户数据
+      userData: {
+        id: 'user123',
+        name: 'Sarah Johnson',
+        bio: 'Passed theory test first time! Here to help others succeed 🚗',
+        avatar: '',
+        testCentre: 'Birmingham Test Centre',
+        verified: true,
+        posts: 45,
+        followers: 1234,
+        following: 89,
+        likes: 5678
+      },
+      
+      // 状态
+      isFollowing: false,
+      loading: false,
+      hasMore: true,
+      
+      // 帖子数据
+      posts: [
+        {
+          id: 1,
+          category: 'Theory Test',
+          categoryIcon: '📚',
+          content: 'Just passed my theory test with 49/50! Here are my top tips for the hazard perception section that really helped me...',
+          images: ['https://via.placeholder.com/300x300', 'https://via.placeholder.com/300x300'],
+          time: '2 hours ago',
+          likes: 234,
+          comments: 45,
+          isLiked: false
+        },
+        {
+          id: 2,
+          category: 'Tips & Tricks',
+          categoryIcon: '💡',
+          content: 'Found this amazing app feature that lets you practice hazard perception clips offline. Game changer for commute studying!',
+          time: '1 day ago',
+          likes: 156,
+          comments: 23,
+          isLiked: false
+        },
+        {
+          id: 3,
+          category: 'Success Story',
+          categoryIcon: '🎉',
+          content: 'Finally passed after 3 attempts! Don\'t give up if you fail - each attempt teaches you something new. My journey and what I learned...',
+          time: '3 days ago',
+          likes: 512,
+          comments: 87,
+          isLiked: true
+        }
+      ]
+    }
+  },
+  computed: {
+    // 获取用户名首字母
+    userInitial() {
+      return this.userData.name.charAt(0).toUpperCase();
+    }
+  },
+  methods: {
+    // 返回上一页
+    goBack() {
+      uni.navigateBack({
+        delta: 1,
+        fail: () => {
+          // 如果没有上一页，返回首页
+          uni.switchTab({
+            url: '/pages/index/index'
+          });
+        }
+      });
+    },
+    
+    // 分享个人资料
+    shareProfile() {
+      // UniApp分享功能
+      uni.share({
+        provider: 'weixin',
+        type: 0,
+        title: `${this.userData.name}'s Profile`,
+        summary: 'Check out this driving test learning profile!',
+        success: () => {
+          uni.showToast({
+            title: 'Shared successfully',
+            icon: 'success'
+          });
+        },
+        fail: () => {
+          // 分享失败，复制链接
+          uni.setClipboardData({
+            data: `User Profile: ${this.userData.name}`,
+            success: () => {
+              uni.showToast({
+                title: 'Link copied',
+                icon: 'success'
+              });
+            }
+          });
+        }
+      });
+    },
+    
+    // 切换点赞状态
+    toggleLike(post) {
+      post.isLiked = !post.isLiked;
+      post.likes += post.isLiked ? 1 : -1;
+      
+      // 触发振动反馈（如果支持）
+      uni.vibrateShort({
+        success: () => console.log('Vibrate success')
+      });
+      
+      // 显示提示
+      if (post.isLiked) {
+        uni.showToast({
+          title: 'Liked',
+          icon: 'none',
+          duration: 1000
+        });
+      }
+      
+      // 调用API更新点赞状态
+      this.updateLikeStatus(post.id, post.isLiked);
+    },
+    
+    // 打开评论
+    openComments(postId) {
+      console.log('Opening comments for post:', postId);
+      // 导航到评论页面
+      uni.navigateTo({
+        url: `/pages/post/comments?postId=${postId}`
+      });
+    },
+    
+    // 更新点赞状态 - API调用
+    async updateLikeStatus(postId, isLiked) {
+      try {
+        const response = await uni.request({
+          url: `/api/post/${postId}/like`,
+          method: isLiked ? 'POST' : 'DELETE',
+          header: {
+            'Content-Type': 'application/json'
+          }
+        });
+        if (response[1].statusCode === 200) {
+          console.log('Like status updated');
+        }
+      } catch (error) {
+        console.error('Failed to update like status:', error);
+        // 失败时恢复原状态
+        const post = this.posts.find(p => p.id === postId);
+        if (post) {
+          post.isLiked = !post.isLiked;
+          post.likes += post.isLiked ? 1 : -1;
+        }
+      }
+    },
+    
+    // 切换关注状态
+    toggleFollow() {
+      this.isFollowing = !this.isFollowing;
+      if (this.isFollowing) {
+        this.userData.followers++;
+        uni.showToast({
+          title: 'Followed',
+          icon: 'success',
+          duration: 1500
+        });
+      } else {
+        this.userData.followers--;
+        uni.showToast({
+          title: 'Unfollowed',
+          icon: 'none',
+          duration: 1500
+        });
+      }
+      // 调用API更新关注状态
+      this.updateFollowStatus();
+    },
+    
+    // 发送消息
+    sendMessage() {
+      console.log('Opening message dialog');
+      // 导航到消息页面
+      uni.navigateTo({
+        url: `/pages/message/chat?userId=${this.userData.id}&userName=${this.userData.name}`
+      });
+    },
+    
+    // 加载更多帖子
+    loadMore() {
+      if (this.loading) return;
+      
+      this.loading = true;
+      // 模拟API调用
+      setTimeout(() => {
+        // 模拟加载更多数据
+        const newPosts = [
+          {
+            id: Date.now(),
+            category: 'Question',
+            categoryIcon: '❓',
+            content: 'Anyone have tips for remembering stopping distances? I keep getting these wrong in mock tests.',
+            time: '5 days ago',
+            likes: 89,
+            comments: 12,
+            views: 456
+          }
+        ];
+        this.posts = [...this.posts, ...newPosts];
+        this.loading = false;
+        
+        // 如果没有更多数据
+        if (this.posts.length > 10) {
+          this.hasMore = false;
+        }
+      }, 1500);
+    },
+    
+    // 更新关注状态 - API调用
+    async updateFollowStatus() {
+      try {
+        const response = await uni.request({
+          url: '/api/user/follow',
+          method: 'POST',
+          data: {
+            userId: this.userData.id,
+            isFollowing: this.isFollowing
+          }
+        });
+        if (response[1].statusCode === 200) {
+          console.log('Follow status updated');
+        }
+      } catch (error) {
+        console.error('Failed to update follow status:', error);
+      }
+    },
+    
+    // 获取用户数据 - API调用
+    async fetchUserData() {
+      try {
+        const response = await uni.request({
+          url: `/api/user/profile/${this.userId}`,
+          method: 'GET'
+        });
+        if (response[1].statusCode === 200) {
+          this.userData = response[1].data;
+        }
+      } catch (error) {
+        console.error('Failed to fetch user data:', error);
+        uni.showToast({
+          title: 'Failed to load profile',
+          icon: 'none'
+        });
+      }
+    },
+    
+    // 获取帖子数据 - API调用
+    async fetchPosts() {
+      try {
+        const response = await uni.request({
+          url: `/api/user/posts/${this.userId}`,
+          method: 'GET',
+          data: {
+            page: 1,
+            limit: 10
+          }
+        });
+        if (response[1].statusCode === 200) {
+          this.posts = response[1].data.posts;
+          this.hasMore = response[1].data.hasMore;
+        }
+      } catch (error) {
+        console.error('Failed to fetch posts:', error);
+      }
+    }
+  },
+  onLoad(options) {
+    // 获取用户ID参数
+    this.userId = options.userId || 'user123';
+    
+    // 页面加载时获取数据
+    // this.fetchUserData();
+    // this.fetchPosts();
+    
+    console.log('Profile page loaded for user:', this.userId);
+  },
+  onPullDownRefresh() {
+    // 下拉刷新
+    console.log('Refreshing profile...');
+    // this.fetchUserData();
+    // this.fetchPosts();
+    
+    // 模拟刷新完成
+    setTimeout(() => {
+      uni.stopPullDownRefresh();
+    }, 1000);
+  },
+  onReachBottom() {
+    // 触底加载更多
+    if (this.hasMore && !this.loading) {
+      this.loadMore();
+    }
+  }
+}
 </script>
 
-<style scoped>
-	.container {
-		flex: 1;
-		background-color: #fff;
-		/* 修正背景色为白色，原红色影响视觉 */
-		/* 移除margin-bottom，避免内容被按钮遮挡 */
-	}
+<style lang="scss">
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
 
-	.content {
-		margin-top: 64px;
-		/* 给内容底部留出按钮高度的空间，避免被按钮遮挡 */
-		padding-bottom: 80rpx;
-	}
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+  color: #333;
+  background: #f5f5f5;
+}
 
-	/* 用户信息样式保持不变 */
-	.user-info {
-		display: flex;
-		align-items: center;
-		margin-bottom: 30rpx;
-	}
+/* 渐变背景 */
+.gradient-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+}
 
-	.avatar-container {
-		margin-right: 20rpx;
-	}
+.gradient-top {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 45%;
+  background: linear-gradient(180deg, #E3F2FD 0%, #FFFFFF 100%);
+}
 
-	.user-details {
-		display: flex;
-		flex-direction: column;
-	}
+.gradient-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 55%;
+  background: linear-gradient(180deg, #FFFFFF 0%, #FFF4F4 100%);
+}
 
-	.username {
-		font-size: 36rpx;
-		font-weight: bold;
-		color: #333;
-		margin-bottom: 10rpx;
-	}
+/* Header样式 */
+.header {
+  padding: 30rpx 40rpx;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: transparent;
+  position: relative;
+  z-index: 10;
+  min-height: 120rpx;
+}
 
-	.test-center {
-		font-size: 28rpx;
-		color: #999;
-	}
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 30rpx;
+}
 
-	/* 简介样式保持不变 */
-	.bio-section {
-		margin-bottom: 30rpx;
-	}
+.back-button {
+  width: 80rpx;
+  height: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  font-size: 40rpx;
+}
 
-	.bio-label {
-		font-size: 32rpx;
-		font-weight: bold;
-		color: #333;
-		margin-right: 10rpx;
-	}
+.back-button:active {
+  background: #F0F0F0;
+  border-radius: 50%;
+}
 
-	.bio-text {
-		font-size: 32rpx;
-		color: #666;
-	}
+.header-title {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #333;
+}
 
-	/* 统计数据样式保持不变 */
-	.stats-section {
-		display: flex;
-	}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 20rpx;
+}
 
-	.stat-item {
-		display: flex;
-		flex-direction: row;
-		align-items: center;
-		padding-right: 30rpx;
-	}
+.header-button {
+  width: 80rpx;
+  height: 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  font-size: 40rpx;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.08);
+}
 
-	.stat-number {
-		font-size: 36rpx;
-		font-weight: bold;
-		color: #333;
-		margin-bottom: 10rpx;
-	}
+.header-button:active {
+  transform: scale(0.95);
+  background: #F8F9FA;
+}
 
-	.stat-label {
-		padding-left: 10rpx;
-		font-size: 28rpx;
-		color: #999;
-	}
+/* 主容器 */
+.container {
+  flex: 1;
+  position: relative;
+  z-index: 10;
+  padding-bottom: 40rpx;
+}
 
-	/* 内容滚动区域样式保持不变 */
-	.content-wrapper {
-		flex: 1;
-		padding: 20rpx;
-		box-sizing: border-box;
-	}
+/* 个人信息卡片 */
+.profile-card {
+  background: white;
+  margin: 0 40rpx 40rpx;
+  border-radius: 40rpx;
+  padding: 50rpx;
+  box-shadow: 0 8rpx 30rpx rgba(0,0,0,0.08);
+}
 
-	/* 帖子列表样式保持不变 */
-	.post-item {
-		background-color: #ffffff;
-		border-radius: 12rpx;
-		padding: 24rpx;
-		margin-bottom: 24rpx;
-		box-shadow: 0 2rpx 8rpx rgba(0, 0, 0, 0.05);
+.profile-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 40rpx;
+  margin-bottom: 40rpx;
+}
 
-		.user-section {
-			display: flex;
-			align-items: center;
-			margin-bottom: 20rpx;
+.avatar-container {
+  position: relative;
+  flex-shrink: 0;
+}
 
-			.user-info {
-				margin-left: 16rpx;
-				display: flex;
-				flex-direction: column;
+.avatar {
+  width: 160rpx;
+  height: 160rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4A9EFF 0%, #2196F3 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 64rpx;
+  color: white;
+  font-weight: 600;
+}
 
-				.username {
-					font-family: Microsoft YaHei UI;
-					font-weight: 400;
-					font-size: 13px;
-					color: #333333;
+.verified-badge {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 48rpx;
+  height: 48rpx;
+  background: #4CAF50;
+  border: 4rpx solid white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-				}
+.badge-icon {
+  color: white;
+  font-size: 24rpx;
+}
 
-				.test-center {
-					font-family: Microsoft YaHei UI;
-					font-weight: 400;
-					font-size: 10px;
-					color: #999999;
+.profile-info {
+  flex: 1;
+}
 
-				}
-			}
-		}
+.profile-name {
+  font-size: 44rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 16rpx;
+  display: block;
+}
 
-		.post-content {
-			margin-bottom: 24rpx;
+.profile-bio {
+  font-size: 28rpx;
+  color: #666;
+  line-height: 1.5;
+  margin-bottom: 24rpx;
+  display: block;
+}
 
-			.content-text {
-				font-family: Microsoft YaHei UI;
-				font-weight: 400;
-				font-size: 15px;
-				color: #333333;
-				margin-left: 5px;
-			}
-		}
+.test-centre-info {
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  font-size: 26rpx;
+  color: #999;
+}
 
-		.post-images {
-			display: flex;
-			flex-wrap: wrap;
-			margin-bottom: 16rpx;
-		}
+.centre-icon {
+  font-size: 28rpx;
+}
 
-		.post-images image {
-			width: 180rpx;
-			height: 180rpx;
-			margin-right: 16rpx;
-			margin-bottom: 16rpx;
-			border-radius: 8rpx;
-		}
+.profile-stats {
+  display: flex;
+  justify-content: space-around;
+  padding: 40rpx 0;
+  border-top: 1rpx solid #F5F5F5;
+  border-bottom: 1rpx solid #F5F5F5;
+}
 
-		.interaction-section {
+.stat-item {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+}
 
+.stat-item:active {
+  transform: scale(0.95);
+}
 
-			.comment-box {
-				background: #F7F7F7;
-				border-radius: 4px;
-				display: flex;
-				padding: 16rpx 0;
+.stat-value {
+  font-size: 48rpx;
+  font-weight: 700;
+  color: #333;
+  display: block;
+  margin-bottom: 8rpx;
+}
 
-				.comment-content {
-					margin-left: 12rpx;
-					flex: 1;
+.stat-label {
+  font-size: 26rpx;
+  color: #999;
+}
 
-					.comment-user {
-						font-size: 26rpx;
-						font-weight: bold;
-						color: #333;
-						margin-right: 12rpx;
-					}
+.profile-actions {
+  display: flex;
+  gap: 24rpx;
+  margin-top: 40rpx;
+}
 
-					.comment-text {
-						font-size: 26rpx;
-						color: #333;
-					}
+.action-button {
+  flex: 1;
+  padding: 24rpx;
+  border-radius: 50rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-					.view-replies {
-						display: block;
-						font-size: 24rpx;
-						color: #419FFF;
-						margin-top: 6rpx;
-					}
-				}
-			}
+.action-button.primary {
+  background: linear-gradient(135deg, #4A9EFF 0%, #2196F3 100%);
+  color: white;
+  box-shadow: 0 8rpx 24rpx rgba(74, 158, 255, 0.3);
+}
 
-			.bottom-section {
-				display: flex;
-				justify-content: space-between;
-				align-items: center;
-				margin-top: 16rpx;
+.action-button.secondary {
+  background: white;
+  color: #4A9EFF;
+  border: 2rpx solid #4A9EFF;
+}
 
-				.tags {
-					flex: 1;
-					display: flex;
-					flex-wrap: wrap;
+.action-button:active {
+  transform: scale(0.98);
+}
 
-					.tag-item {
-						font-family: Microsoft YaHei UI;
-						font-weight: 400;
-						font-size: 20rpx;
-						color: #999999;
+/* Posts标题 */
+.section-header {
+  padding: 0 40rpx;
+  margin-bottom: 30rpx;
+}
 
-						padding-left: 10rpx;
-						padding-right: 10rpx;
-						margin-right: 12rpx;
-						margin-bottom: 8rpx;
-						background-color: #F7F7F7;
-						border-radius: 24rpx;
-					}
-				}
+.section-title {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #333;
+}
 
-				.like-section {
-					display: flex;
-					align-items: center;
-					color: #666;
+/* 内容列表 */
+.content-list {
+  padding: 0 40rpx;
+}
 
-					.like-count {
-						font-size: 24rpx;
-						margin-left: 6rpx;
-					}
-				}
-			}
-		}
-	}
+.post-card {
+  background: white;
+  border-radius: 30rpx;
+  padding: 30rpx;
+  margin-bottom: 24rpx;
+  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.06);
+}
 
-	/* 关键修改：固定在屏幕底部的Follow按钮样式 */
-	.follow-btn {
-		position: fixed;
-		/* 固定定位，确保在屏幕底部 */
-		left: 0;
-		right: 0;
-		bottom: 0;
-		/* 紧贴屏幕底部 */
-		height: 80rpx;
-		/* 增加高度，提高点击区域 */
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		background: #FFFFFF;
-		border-top: 1px solid #D7D7D7;
-		/* 确保按钮在最上层，不被其他内容遮挡 */
-		z-index: 999;
+.post-card:active {
+  transform: scale(0.98);
+}
 
-		text {
-			font-family: Microsoft YaHei UI;
-			font-weight: 400;
-			font-size: 26rpx;
-			color: #333333;
-			line-height: 13rpx;
-		}
-	}
+.post-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24rpx;
+}
+
+.post-category {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  padding: 8rpx 20rpx;
+  background: #F8F9FA;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+  color: #666;
+}
+
+.category-icon {
+  font-size: 28rpx;
+}
+
+.post-time {
+  margin-left: auto;
+  font-size: 24rpx;
+  color: #999;
+}
+
+.post-content {
+  font-size: 28rpx;
+  line-height: 1.6;
+  color: #333;
+  margin-bottom: 24rpx;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  display: block;
+}
+
+.post-media {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 24rpx;
+  overflow-x: auto;
+}
+
+.post-image {
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: 20rpx;
+  background: #F0F0F0;
+  flex-shrink: 0;
+}
+
+/* 互动栏 - 与社区页面保持一致的设计 */
+.actions-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 30rpx;
+  border-top: 2rpx solid #F5F5F5;
+}
+
+.actions-left {
+  display: flex;
+  align-items: center;
+  gap: 40rpx;
+}
+
+// .action-button {
+//   display: flex;
+//   align-items: center;
+//   gap: 12rpx;
+//   transition: all 0.3s ease;
+//   background: none;
+//   border: none;
+//   padding: 0;
+// }
+
+.action-button:active {
+  transform: scale(0.95);
+}
+
+.action-icon {
+  width: 44rpx;
+  height: 44rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-svg {
+  width: 44rpx;
+  height: 44rpx;
+}
+
+/* 点赞状态样式 */
+.action-button.liked .action-icon {
+  animation: likeAnimation 0.3s ease;
+}
+
+.action-button.liked .action-count {
+  color: #FF6B6B;
+}
+
+.action-count {
+  font-size: 30rpx;
+  color: #666;
+  font-weight: 500;
+}
+
+@keyframes likeAnimation {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+/* 空状态 */
+.empty-state {
+  padding: 120rpx 40rpx;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.empty-icon {
+  font-size: 120rpx;
+  margin-bottom: 40rpx;
+  opacity: 0.5;
+  display: block;
+}
+
+.empty-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 16rpx;
+  display: block;
+}
+
+.empty-desc {
+  font-size: 28rpx;
+  color: #999;
+  display: block;
+}
+
+/* 加载更多 */
+.load-more {
+  padding: 40rpx;
+  text-align: center;
+  font-size: 28rpx;
+  color: #999;
+}
+
+.load-more.loading {
+  color: #4A9EFF;
+}
+
+/* 响应式设计 - 小屏幕适配 */
+@media screen and (max-width: 750rpx) {
+  .profile-card {
+    margin: 0 30rpx 30rpx;
+    padding: 40rpx;
+  }
+  
+  .avatar {
+    width: 140rpx;
+    height: 140rpx;
+  }
+  
+  .profile-name {
+    font-size: 40rpx;
+  }
+  
+  .stat-value {
+    font-size: 40rpx;
+  }
+}
 </style>

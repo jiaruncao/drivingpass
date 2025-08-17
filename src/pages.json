@@ -19,6 +19,15 @@
       }
     },
     {
+      "path": "pages/index/search",
+      "style": {
+        "navigationBarTitleText": "搜索",
+        "navigationBarTextStyle": "black",
+        "navigationBarBackgroundColor": "#fff",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/modeSelect/index",
       "style": {
         "navigationBarTitleText": "模式选择",

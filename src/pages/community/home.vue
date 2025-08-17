@@ -34,7 +34,7 @@
       <!-- 帖子列表 -->
       <view v-for="post in filteredPosts" :key="post.id" class="post-card">
         <!-- 用户信息头部 -->
-        <view class="user-header">
+        <view class="user-header" @click="userProfileClick">
           <view class="user-avatar">
             {{ post.avatar ? post.avatar : getInitial(post.nickname) }}
           </view>
@@ -135,7 +135,7 @@
     </scroll-view>
 
     <!-- 浮动操作按钮 -->
-    <view class="floating-action-button" @tap="createNewPost">
+    <view class="floating-action-button" @tap="goToPublish">
       <text class="fab-icon">+</text>
     </view>
 
@@ -322,14 +322,6 @@
         uni.previewImage({
           current: imageUrl,
           urls: [imageUrl]
-        });
-      },
-
-      // 创建新帖子
-      createNewPost() {
-        console.log('Creating new post');
-        uni.navigateTo({
-          url: '/pages/forum/createPost'
         });
       },
 
@@ -528,7 +520,22 @@
           commentCount: 5,
           isLiked: true
         }];
-      }
+      },
+      // 跳转user
+      userProfileClick() {
+      	uni.navigateTo({
+      		url: '/pages/community/userProfile'
+      	});
+      	console.log('点击了UserProfile');
+      },
+      // 新增发布按钮点击事件
+      goToPublish() {
+      	// 这里可以跳转到发布页面，示例使用路由跳转
+      	uni.navigateTo({
+      		url: '/pages/community/create'
+      	});
+      	console.log('点击了发布按钮');
+      },
     },
     onLoad() {
       // 页面加载时初始化数据

@@ -1,6 +1,6 @@
 <template>
   <div class="index_main">
-    <div class="search_main">
+    <div class="search_main" @click="toSearch">
       <div class="search_icon">
         <img src="static/index/search.png" alt="" />
       </div>
@@ -60,6 +60,11 @@ export default {
     this.doGetTypeFind()
   },
   methods: {
+    toSearch () {
+      uni.navigateTo({
+        url: "/pages/index/search",
+      });
+    },
     wrongQuestionBook() {
       uni.navigateTo({
         url: "/pages/wrongQuestionBook/index",

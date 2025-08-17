@@ -31,28 +31,38 @@ export function roomIndex(params) {
      },
   });
 }
-
+/*
+ * 添加标签
+ * author：huanyun
+ * tag 标签
+ * create by date：2025/08/17
+ */
 export function addTag(params) {
-  return fly.get("forum/addTags", params, {
-     otherQuery: {
-     
-     },
-  });
+  return fly.post("/exam/forum/addTags", params);
 }
-
+/*
+ * 查询标签
+ * author：huanyun
+ * create by date：2025/08/17
+ */
 export function queryTags(params) {
-  return fly.get("forum/queryTags", params, {
-     otherQuery: {
-     
-     },
-  });
+  return fly.post("/exam/forum/queryTags", params);
 }
 
-
+/*
+ * 发布帖子
+ * author：huanyun
+ * question_id试题ID 默认0 传值则评论试题
+ * content内容
+ * room_id关联考场ID
+ * tag_ids标签ID(多个用,隔开)
+ * photo_url照片url数组
+ * video_url 视频url数组
+ * ip 发布帖子IP
+ * create by date：2025/08/17
+ */
 export function createPost(params) {
-  return fly.get("/exam/forum/createPost", params, {
-    
-  });
+  return fly.post("/exam/forum/createPost", params);
 }
 
 export function queryPostList(params) {
@@ -115,6 +125,23 @@ export function collectList(params) {
      
      },
   });
+}
+/*
+ * 查询考场列表
+ * author：huanyun
+ * create by date：2025/08/16
+ */
+export function getCenterIndex(params) {
+  return fly.post("/exam/room/index", params);
+}
+/*
+ * 上传文件
+ * author：huanyun
+ * file 文件流
+ * create by date：2025/08/16
+ */
+export function uploadFile(params) {
+  return fly.post("http://driving.asszo.com/api/common/upload", params);
 }
 
 // upload
