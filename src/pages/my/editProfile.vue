@@ -194,6 +194,7 @@
 </template>
 
 <script>
+import {getUserInfo, saveInfo} from '@/http/api/login.js'
 export default {
   data() {
     return {
@@ -266,6 +267,24 @@ export default {
   },
   
   methods: {
+    // 获取用户信息
+    getUserInfo () {
+      getUserInfo().then(res => {
+        console.log(res)
+        if (res.code == 1) {
+          this.formData = {
+            username: res.data.nickname,
+            email: res.data.nickname,
+            bio: res.data.bio,
+            avatarUrl: res.data.avatar,
+            testCentre: res.data.type_text,
+            testDate: '2025-09-30',
+            preparationLevel: 'Intermediate',
+            testDateReminder: true
+          }
+        }
+      })
+    },
     // 日期变化
     onDateChange(e) {
       this.formData.testDate = e.detail.value;
@@ -334,7 +353,9 @@ export default {
         });
         
         // 模拟API调用
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await saveInfo({
+          ...this.formData
+        });
         
         uni.hideLoading();
         
@@ -426,33 +447,12 @@ export default {
       uni.navigateBack({
         delta: 1
       });
-    },
-    
-    // 加载用户数据
-    async loadUserData() {
-      try {
-        // 实际应用中从API获取数据
-        uni.showLoading({
-          title: 'Loading...'
-        });
-        
-        // 模拟API调用
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        uni.hideLoading();
-        
-        // 保存原始数据副本
-        this.originalData = JSON.parse(JSON.stringify(this.formData));
-      } catch (error) {
-        uni.hideLoading();
-        console.error('Failed to load user data:', error);
-      }
     }
   },
   
   onLoad() {
     // 页面加载时获取用户数据
-    this.loadUserData();
+    this.getUserInfo();
   }
 }
 </script>

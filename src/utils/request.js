@@ -2,6 +2,7 @@
 import Fly from "flyio/dist/npm/wx";
 let fly = new Fly();
 
+
 // 设置超时
 fly.config.timeout = 30000;
 
@@ -94,5 +95,17 @@ fly.interceptors.response.use(
     }, 500);
   }
 );
+
+// 封装上传方法
+export const uploadFile = (url, filePath, formData = {}, onProgressUpdate) => {
+  return new Promise((resolve, reject) => {
+    fly.upload(url, {
+      filePath,          // 文件路径
+      name: 'file',      // 后端接收的字段名
+      formData,          // 额外表单数据
+      onProgressUpdate   // 进度回调
+    }).then(resolve).catch(reject)
+  })
+}
 
 export default fly;

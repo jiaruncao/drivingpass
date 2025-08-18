@@ -134,24 +134,3 @@ export function collectList(params) {
 export function getCenterIndex(params) {
   return fly.post("/exam/room/index", params);
 }
-/*
- * 上传文件
- * author：huanyun
- * file 文件流
- * create by date：2025/08/16
- */
-export function uploadFile(params) {
-  return fly.post("http://driving.asszo.com/api/common/upload", params);
-}
-
-// upload
-// {
-//     "code": 1,
-//     "msg": "上传成功",
-//     "time": "1753627432",
-//     "data": {
-//         "url": "/uploads/20250727/157a4782e5c915e141fc588d1a7ce9ea.png",
-//         "fullurl": "http://driving.asszo.com/uploads/20250727/157a4782e5c915e141fc588d1a7ce9ea.png"
-//     }
-// }
-

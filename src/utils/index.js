@@ -29,9 +29,12 @@ function toast(title, icon = "none", duration = 3000) {
 async function upload(filePath) {
   return new Promise((resolve, reject) => {
     uni.uploadFile({
-      url: "", // 上传图片的接口地址
-      filePath: "", // 要上传的图片路径
+      url: "http://driving.asszo.com/api/common/upload", // 上传图片的接口地址
+      filePath: filePath, // 要上传的图片路径
       name: "file", // 服务器接收图片的字段名
+      header: {
+        token: uni.getStorageSync("token")
+      },
       formData: {
         // 可以在这里添加额外的表单数据
       },
