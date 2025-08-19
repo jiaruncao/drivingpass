@@ -22,8 +22,8 @@
       <view class="categories-container">
         <view v-for="category in categories" :key="category.id" class="category-chip"
           :class="{active: selectedCategory === category.id}" @tap="selectCategory(category.id)">
-          <text class="category-icon">{{ category.icon }}</text>
-          <text>{{ category.name }}</text>
+          <!-- <text class="category-icon">{{ category.icon }}</text> -->
+          <text>{{ category.category }}</text>
         </view>
       </view>
     </scroll-view>
@@ -164,7 +164,7 @@
 </template>
 
 <script>
-  import {supportPost, queryPostList} from '@/http/api/community.js'
+  import {supportPost, queryPostList, queryPostCategory} from '@/http/api/community.js'
   export default {
     data() {
       return {
@@ -173,47 +173,7 @@
         isLoading: false,
         hasMorePosts: true,
         // 分类数据
-        categories: [{
-            id: 'all',
-            name: 'All Posts',
-            icon: '🌟'
-          },
-          {
-            id: 'theory_test',
-            name: 'Theory Test',
-            icon: '📝'
-          },
-          {
-            id: 'hazard_perception',
-            name: 'Hazard',
-            icon: '⚠️'
-          },
-          {
-            id: 'practical_test',
-            name: 'Practical',
-            icon: '🚗'
-          },
-          {
-            id: 'tips_tricks',
-            name: 'Tips',
-            icon: '💡'
-          },
-          {
-            id: 'questions',
-            name: 'Questions',
-            icon: '❓'
-          },
-          {
-            id: 'success_stories',
-            name: 'Passed!',
-            icon: '🎉'
-          },
-          {
-            id: 'study_groups',
-            name: 'Study Groups',
-            icon: '👥'
-          }
-        ],
+        categories: [],
         // Discover标签的帖子数据
         discoverPosts: [],
         // Followed标签的帖子数据
@@ -396,8 +356,8 @@
             if (res.code === 1) {
               // 登录成功逻辑
               console.log('操作成功', res.data.list.data);
-              this.discoverPosts = res.data.list.data;
-              if (res.data.list.data.length > 0) {
+              this.discoverPosts = res.data.list.data ? res.data.list.data : [];
+              if (res.data.list.data && res.data.list.data.length > 0) {
                 this.nodata = false;
               } else {
                 this.nodata = true;
@@ -536,11 +496,20 @@
       	});
       	console.log('点击了发布按钮');
       },
+      // 查询分类
+      queryPostCategory () {
+        queryPostCategory().then(res => {
+          console.log(res)
+          if (res.code == 1) {
+            this.categories = res.data.list
+          }
+        })
+      }
     },
     onLoad() {
       // 页面加载时初始化数据
       // this.initSampleData();
-      // 实际应用中调用API
+      this.queryPostCategory()
       this.loadTabData(this.activeTab);
     }
   }

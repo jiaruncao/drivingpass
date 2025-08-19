@@ -91,6 +91,15 @@
       }
     },
     {
+      "path": "pages/highwayCode/highwayCode",
+      "style": {
+        "navigationBarTitleText": "Highway Code",
+        "navigationBarTextStyle": "black",
+        "navigationBarBackgroundColor": "#fff",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/highwayLearn/index",
       "style": {
         "navigationBarTitleText": "Highway Learn",
@@ -336,6 +345,14 @@
     },
     {
       "path" : "pages/hazardPerception/hazardTest",
+      "style" : 
+      {
+        "navigationBarTitleText" : "",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path" : "pages/hazardPerception/list",
       "style" : 
       {
         "navigationBarTitleText" : "",

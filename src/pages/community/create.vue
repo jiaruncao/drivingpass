@@ -140,8 +140,8 @@
         <scroll-view class="category-list" scroll-y>
           <view v-for="category in categories" :key="category.id" class="category-option"
             :class="{selected: selectedCategories.includes(category.id)}" @tap="toggleCategory(category.id)">
-            <text class="category-icon">{{ category.icon }}</text>
-            <text class="category-name">{{ category.name }}</text>
+            <!-- <text class="category-icon">{{ category.icon }}</text> -->
+            <text class="category-name">{{ category.category }}</text>
             <text v-if="selectedCategories.includes(category.id)" class="check-icon">✓</text>
           </view>
         </scroll-view>
@@ -221,7 +221,8 @@
     addTag,
     queryTags,
     getCenterIndex,
-    createPost
+    createPost,
+    queryPostCategory
   } from '@/http/api/community.js'
   import {
     upload
@@ -253,42 +254,7 @@
         showTestCentrePicker: false,
 
         // 分类数据
-        categories: [{
-            id: 'theory_test',
-            name: 'Theory Test',
-            icon: '📚'
-          },
-          {
-            id: 'hazard_perception',
-            name: 'Hazard Perception',
-            icon: '⚠️'
-          },
-          {
-            id: 'practical_test',
-            name: 'Practical Test',
-            icon: '🚗'
-          },
-          {
-            id: 'tips_tricks',
-            name: 'Tips & Tricks',
-            icon: '💡'
-          },
-          {
-            id: 'questions',
-            name: 'Questions',
-            icon: '❓'
-          },
-          {
-            id: 'success_stories',
-            name: 'Success Stories',
-            icon: '🎉'
-          },
-          {
-            id: 'study_groups',
-            name: 'Study Groups',
-            icon: '👥'
-          }
-        ],
+        categories: [],
 
         // 热门标签
         popularTags: [
@@ -325,7 +291,7 @@
         }
         const names = this.selectedCategories.map(id => {
           const category = this.categories.find(c => c.id === id);
-          return category ? category.name : '';
+          return category ? category.category : '';
         }).filter(name => name);
 
         if (names.length <= 2) {
@@ -380,6 +346,9 @@
           ip: ''
         };
         
+        console.log(postData)
+        
+        return false
         createPost(postData).then(res => {
           if (res.code == 1) {
             // 模拟发布成功
@@ -574,12 +543,22 @@
             this.testCentres = res.data.list
           }
         })
+      },
+      // 查询分类
+      queryPostCategory () {
+        queryPostCategory().then(res => {
+          console.log(res)
+          if (res.code == 1) {
+            this.categories = res.data.list
+          }
+        })
       }
     },
     onLoad() {
       console.log('Create post page loaded');
       this.queryTags()
       this.getCenterIndex()
+      this.queryPostCategory()
     }
   }
 </script>

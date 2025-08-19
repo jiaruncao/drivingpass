@@ -10,28 +10,28 @@
       <u-swiper :list="bannerList" radius="8" imgMode="cover"></u-swiper>
     </div>
     <div class="practice_main_top">
-      <div class="left_item" @click="modeSelect('Mock Test')">
+      <div class="left_item" @click="modeSelect('Mock Test', 7)">
         <div class="item_title">Mock Test</div>
         <div class="item_content">Practice Like the Real Exam</div>
       </div>
       <div class="right_item">
-        <div class="right_item_top" @click="modeSelect('Theory Test')">
+        <div class="right_item_top" @click="modeSelect('Theory Test', 2)">
           <div class="item_title" style="color: #4379bb">Theory Test</div>
           <div class="item_score" style="color: #4379bb">Score：{{getScore('Theory Test')}}</div>
         </div>
-        <div class="right_item_bottom" @click="modeSelect('Hazard Test')">
+        <div class="right_item_bottom" @click="modeSelect('Hazard Test', 3)">
           <div class="item_title" style="color: #b77a2a">Hazard Test</div>
           <div class="item_score" style="color: #b77a2a">Score：{{getScore('Hazard Test')}}</div>
         </div>
       </div>
     </div>
     <div class="practice_main_bottom">
-      <div class="left_item" @click="modeSelect('Highway Code')">
+      <div class="left_item" @click="modeSelect('Highway Code', 5)">
         <div class="item_title" style="color: #4fa62a">Highway Code</div>
         <div class="item_score" style="color: #4fa62a">Score：{{getScore('Highway Code')}}</div>
       </div>
       <div class="right_item">
-        <div class="right_item_top" @click="modeSelect('Rode Sign')">
+        <div class="right_item_top" @click="modeSelect('Rode Sign', 4)">
           <div class="item_title" style="color: #336cb5">Rode Sign</div>
           <div class="item_score" style="color: #336cb5">Score：{{getScore('Rode Sign')}}</div>
         </div>
@@ -70,39 +70,22 @@ export default {
         url: "/pages/wrongQuestionBook/index",
       });
     },
-    modeSelect(title) {
+    modeSelect(title, id) {
       /*
        * author：Gengbaodada
        * create by date：2025/07/27
        * content：mock : 模拟考试  theory:理论考试  Hazard Test: 危险测试  Highway Code:公用通道法规   Rode Sign: 道路标识
        */
-      const id = this.drivingTest.find(item => item.name === title) ? this.drivingTest.find(item => item.name === title).id : null
+      // const id = this.drivingTest.find(item => item.name === title) ? this.drivingTest.find(item => item.name === title).id : null
       switch (title){
-        case 'Rode Sign':
-          uni.navigateTo({
-            url: "/pages/roadSign/roadSign"
-          });
-          break;
-        case 'Theory Test':
-          uni.navigateTo({
-            url: "/pages/theoryTest/theoryTest?id=" + id
-          });
-          break;
-        case 'Highway Code':
-          uni.navigateTo({
-            url: "/pages/highwayCode/index"
-          });
-          break;
-        case 'Hazard Test':
-          uni.navigateTo({
-            url: "/pages/hazardPerception/hazardPerception"
-          });
-          break;
         case 'Mock Test':
           uni.navigateTo({
             url: "/pages/mockTest/mockTest"
           });
         default:
+          uni.navigateTo({
+            url: "/pages/modeSelect/index?id=" + id + "&title=" + title
+          });
           break;
       }
     },

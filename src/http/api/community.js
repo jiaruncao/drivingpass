@@ -13,6 +13,17 @@ export function userFollowedList(params) {
      },
   });
 }
+
+/*
+ * 查询分类列表
+ * author：huanyun
+ * create by date：2025/08/16
+ */
+export function queryPostCategory(params) {
+  return fly.post("/exam/forum/queryPostCategory", params);
+}
+
+
 /*
  * 关注/取消关注
  * author：huanyun
