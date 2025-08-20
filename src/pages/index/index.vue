@@ -67,7 +67,7 @@ export default {
     },
     wrongQuestionBook() {
       uni.navigateTo({
-        url: "/pages/wrongQuestionBook/index",
+        url: "/pages/my/mySaved",
       });
     },
     modeSelect(title, id) {
@@ -82,6 +82,7 @@ export default {
           uni.navigateTo({
             url: "/pages/mockTest/mockTest"
           });
+          break;
         default:
           uni.navigateTo({
             url: "/pages/modeSelect/index?id=" + id + "&title=" + title

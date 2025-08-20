@@ -352,6 +352,7 @@
 </template>
 
 <script>
+import {getWrongList, getCollectList} from '@/http/api/testQuestions.js'
 export default {
   data() {
     return {
@@ -782,6 +783,17 @@ export default {
     refreshData() {
       // 刷新统计数据
       console.log('Refreshing data...');
+      getWrongList().then(res => {
+        console.log(res)
+        if (res.code == 1) {
+          this.wrongsCount = res.data.total
+        }
+      })
+      getCollectList ().then(res => {
+        if (res.code == 1) {
+          this.savedCount = res.data.total
+        }
+      })
     }
   },
   onLoad() {

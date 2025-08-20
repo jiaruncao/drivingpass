@@ -336,10 +336,13 @@
           return;
         }
         // 构建帖子数据
+        // 处理this.uploadedImages，this.uploadedVideo
+        const uploadedImages = this.uploadedImages ? null : null
+        const uploadedVideo = this.uploadedVideo.length ? [new Set(this.uploadedVideo)] : null
         const postData = {
           content: this.postContent,
-          photo_url: this.uploadedImages,
-          video_url: this.uploadedVideo,
+          photo_url: `[{"http://driving.asszo.com/uploads/20250820/ae63fbb3d0807ce24abdcd0cff01469c.png","http://driving.asszo.com/uploads/20250820/470d79b439c861b77d69c09c9f2b53aa.png"}]`,
+          video_url: uploadedVideo,
           categories: this.selectedCategories,
           tag_ids: this.selectedTags,
           room_id: this.selectedTestCentre,
@@ -348,7 +351,7 @@
         
         console.log(postData)
         
-        return false
+        // return false
         createPost(postData).then(res => {
           if (res.code == 1) {
             // 模拟发布成功

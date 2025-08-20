@@ -77,6 +77,7 @@
 </template>
 
 <script>
+import {searchApi} from '@/http/api/testQuestions.js'
 export default {
   data() {
     return {
@@ -180,14 +181,19 @@ export default {
       }
       
       // 模拟搜索延迟
-      setTimeout(() => {
-        // 过滤匹配的问题
-        this.filteredResults = this.allQuestions.filter(item => {
-          return item.question.toLowerCase().includes(query);
-        });
+      searchApi({
+        keyword: query
+      }).then(res => {
+        console.log(res)
+      })
+      // setTimeout(() => {
+      //   // 过滤匹配的问题
+      //   this.filteredResults = this.allQuestions.filter(item => {
+      //     return item.question.toLowerCase().includes(query);
+      //   });
         
-        this.isSearching = false;
-      }, 200);
+      //   this.isSearching = false;
+      // }, 200);
     },
     // 清除搜索
     clearSearch() {

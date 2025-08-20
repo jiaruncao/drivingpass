@@ -89,3 +89,29 @@ export function getExamQuestion(params) {
 export function submitExamQuestion(params) {
   return fly.post("/exam/paper/submit", params);
 }
+
+/*
+ * 获取错题列表
+ * author：huanyun
+ * create by date：2025/08/12
+ */
+export function getWrongList(params) {
+  return fly.post("/exam/question/wrongList", params);
+}
+/*
+ * 获取收藏列表
+ * author：huanyun
+ * create by date：2025/08/12
+ */
+export function getCollectList(params) {
+  return fly.post("/exam/question/collectList", params);
+}
+/*
+ * 搜索试题
+ * author：huanyun
+ * keyword 关键词
+ * create by date：2025/08/12
+ */
+export function searchApi(params) {
+  return fly.post("/exam/question/search", params);
+}
