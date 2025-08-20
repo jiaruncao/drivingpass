@@ -49,8 +49,8 @@
             class="result-item fade-in"
             @tap="openQuestion(result)"
           >
-            <view class="scq-badge">{{ result.type }}</view>
-            <view class="result-text" v-html="highlightText(result.question)"></view>
+            <view class="scq-badge">{{ result.kind }}</view>
+            <view class="result-text" v-html="highlightText(result.title)"></view>
           </view>
         </view>
       </view>
@@ -185,15 +185,11 @@ export default {
         keyword: query
       }).then(res => {
         console.log(res)
+        if (res.code == 1) {
+          this.filteredResults = res.data.list.data
+          this.isSearching = false;
+        }
       })
-      // setTimeout(() => {
-      //   // 过滤匹配的问题
-      //   this.filteredResults = this.allQuestions.filter(item => {
-      //     return item.question.toLowerCase().includes(query);
-      //   });
-        
-      //   this.isSearching = false;
-      // }, 200);
     },
     // 清除搜索
     clearSearch() {
@@ -218,6 +214,10 @@ export default {
         title: '打开问题详情',
         icon: 'none'
       });
+      
+      uni.navigateTo({
+        url: '/pages/learnQuestion/index?cate_id=' + result.cate_id
+      })
     }
   },
   onLoad() {

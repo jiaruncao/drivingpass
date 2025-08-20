@@ -95,7 +95,8 @@
     <swiper class="swipe-container" :current="currentQuestionIndex" @change="onSwiperChange" :duration="300">
       <!-- 每道题一个滑动页 -->
       <swiper-item v-for="(question, index) in questions" :key="index">
-        <scroll-view scroll-y class="slide">
+        <scroll-view scroll-y class="slide" @scroll="onScroll"
+    :scroll-with-animation="true">
           <view class="question-page">
             <!-- 题目区域 -->
             <view class="question-section">
@@ -197,9 +198,9 @@
                     <text class="comment-meta">{{ comment.test_center }}</text>
                   </view>
                   <view class="comment-actions">
-                    <button class="comment-like-button" :class="{ liked: comment.isLiked }"
+                    <button class="comment-like-button" :class="{ liked: comment.is_support }"
                       @tap="toggleCommentLike(comment)">
-                      <text class="comment-like-icon">{{ comment.isLiked ? '❤️' : '🤍' }}</text>
+                      <text class="comment-like-icon">{{ comment.is_support ? '❤️' : '🤍' }}</text>
                       <text class="comment-like-count">{{ comment.support_count }}</text>
                     </button>
                     <button class="comment-reply-button" @tap="replyToComment(comment)">
@@ -222,9 +223,9 @@
                         <text class="reply-meta">{{ reply.test_center || 'Birmingham' }}</text>
                       </view>
                       <view class="reply-actions">
-                        <button class="reply-like-button" :class="{ liked: reply.isLiked }"
+                        <button class="reply-like-button" :class="{ liked: reply.is_support }"
                           @tap="toggleReplyLike(comment, reply)">
-                          <text class="reply-like-icon">{{ reply.isLiked ? '❤️' : '🤍' }}</text>
+                          <text class="reply-like-icon">{{ reply.is_support ? '❤️' : '🤍' }}</text>
                           <text class="reply-like-count">{{ reply.support_count || 0 }}</text>
                         </button>
                         <button class="comment-reply-button" @tap="replyToReply(comment, reply)">
@@ -265,8 +266,8 @@
     <view class="bottom-bar" :class="{ 'comment-mode': showCommentInput }">
       <!-- 普通模式：显示Save和题号 -->
       <view v-if="!showCommentInput" class="save-section">
-        <view class="save-button" :class="{ saved: currentQuestion.isSaved }" @tap="toggleSave">
-          <text class="save-icon">{{ currentQuestion.isSaved ? '⭐' : '☆' }}</text>
+        <view class="save-button" :class="{ saved: currentQuestion && currentQuestion.collected }" @tap="toggleSave">
+          <text class="save-icon">{{ currentQuestion && currentQuestion.collected ? '⭐' : '☆' }}</text>
           <text>Save</text>
         </view>
         <view class="question-counter" @tap="showQuestionList">
@@ -297,7 +298,7 @@
       return {
         cate_id: null,
         currentQuestionIndex: 0, // 当前题目索引（从0开始）
-        totalQuestions: 1590,
+        totalQuestions: 0,
         playingIndex: null, // 正在播放音频的题目索引
         showSwipeHint: true, // 显示滑动提示
         showSettings: false, // 显示设置面板
@@ -329,6 +330,25 @@
       }
     },
     methods: {
+      onScroll(e) {
+        // 只在答错时才需要切换评论输入框
+        if (!this.currentQuestion.showAnswer || this.isCorrectAnswer(this.currentQuestion)) {
+          this.showCommentInput = false;
+          return;
+        }
+        
+        // 获取滚动位置
+        const scrollTop = e.detail.scrollTop;
+        const scrollHeight = e.detail.scrollHeight;
+        const clientHeight = e.detail.clientHeight;
+        
+        // 判断是否滚动到评论区（页面下半部分）
+        const scrollPercentage = scrollTop / scrollHeight;
+        
+        // 当滚动超过50%时显示评论输入框
+        this.showCommentInput = scrollPercentage > 0.3;
+        console.log(this.showCommentInput)
+      },
       // 返回
       goBack() {
         uni.navigateBack();
@@ -430,24 +450,20 @@
           }
 
           // 自动跳转下一题
-          // if (this.settings.autoAdvance) {
-          //   setTimeout(() => {
-          //     if (this.currentQuestionIndex < this.questions.length - 1) {
-          //       this.currentQuestionIndex++;
-          //     }
-          //   }, 1000);
-          // }
+          if (this.settings.autoAdvance) {
+            setTimeout(() => {
+              if (this.currentQuestionIndex < this.questions.length - 1) {
+                this.currentQuestionIndex++;
+              }
+            }, 1000);
+          }
         } else {
           // 查询评论
-          queryPostList({
-            question_id: this.questions[questionIndex].id
-          }).then(res => {
-            console.log(res)
-            this.questions[questionIndex].comments = res.data.list.data
-            this.questions[questionIndex].displayedComments = this.showAllComments ? this.questions[questionIndex].comments : this.questions[questionIndex].comments.slice(0, 3)
-          })
+          this.queryPostList()
           // 答错了，重置连续答对
           this.correctStreak = 0;
+          // 加入错题
+          this.wrongAdd()
         }
       },
       // 判断是否答对
@@ -457,8 +473,8 @@
       },
       // 切换评论点赞
       toggleCommentLike(comment) {
-        comment.isLiked = !comment.isLiked;
-        comment.likes += comment.isLiked ? 1 : -1;
+        comment.is_support = !comment.is_support;
+        comment.likes += comment.is_support ? 1 : -1;
       },
       // 回复评论
       replyToComment(comment) {
@@ -472,9 +488,9 @@
       },
       // 切换回复点赞
       toggleReplyLike(comment, reply) {
-        reply.isLiked = !reply.isLiked;
+        reply.is_support = !reply.is_support;
         if (!reply.likes) reply.likes = 0;
-        reply.likes += reply.isLiked ? 1 : -1;
+        reply.likes += reply.is_support ? 1 : -1;
       },
       // 加载更多回复
       loadMoreReplies(comment) {
@@ -494,30 +510,36 @@
       // 发送评论
       sendComment() {
         if (!this.commentText.trim()) return;
-
-        const newComment = {
-          id: Date.now(),
-          avatar: 'U',
-          username: 'You',
-          content: this.commentText,
-          testCentre: 'Birmingham',
-          likes: 0,
-          isLiked: false,
-          featured: false,
-          replies: []
-        };
-
-        this.currentQuestion.comments.unshift(newComment);
-        this.commentText = '';
-        this.showCommentInput = false;
+        createPost({
+          question_id: this.currentQuestion.id,
+          content: this.commentText.trim(),
+        }).then(res => {
+          this.$utils.toast("Comment successful!");
+          this.commentText = '';
+          this.showCommentInput = false;
+          this.queryPostList()
+        })
       },
       // 切换收藏状态
       toggleSave() {
-        this.currentQuestion.isSaved = !this.currentQuestion.isSaved;
-        uni.showToast({
-          title: this.currentQuestion.isSaved ? 'Saved' : 'Removed',
-          icon: 'none'
-        });
+        if (!this.currentQuestion.collected) {
+          collectAdd({
+            question_id: this.currentQuestion.id
+          }).then(res => {
+            console.log(res)
+            this.currentQuestion.collected = !this.currentQuestion.collected;
+            console.log("this.startLearnQuestion", this.startLearnQuestion);
+            this.$utils.toast("Collected questions successfully！");
+          })
+        } else {
+          collectCancel({
+            question_id: this.currentQuestion.id
+          }).then(res => {
+            console.log(res)
+            this.currentQuestion.collected = !this.currentQuestion.collected;
+            this.$utils.toast("Cancel collection successfully！");
+          })
+        }
       },
       // 显示题目列表
       showQuestionList() {
@@ -529,11 +551,32 @@
         startTrain({
           cate_id: this.cate_id
         }).then(res => {
-          console.log(res)
-          // 获取第一题
           this.questions = res.data.data
+          this.totalQuestions = res.data.data.length
         })
-      }
+      },
+      // 查询评论
+      queryPostList () {
+        queryPostList({
+          question_id: this.currentQuestion.id
+        }).then(res => {
+          this.currentQuestion.comments = res.data.list.data
+          this.currentQuestion.displayedComments = this.showAllComments ? this.currentQuestion.comments : this.currentQuestion.comments.slice(0, 3)
+        })
+      },
+      // 设置错题记录
+      wrongAdd () {
+        wrongAdd({
+          question_id: this.currentQuestion.id,
+          source: 'TRAINING',
+          user_answer: this.currentQuestion.selectedOption
+        })
+      },
+      recordAdd () {
+        recordAdd({
+          question_id: this.currentQuestion.id
+        })
+      },
     },
     onLoad(option) {
       this.cate_id = option.cate_id
@@ -549,9 +592,6 @@
       if (this.settings.voiceAutoRead) {
         this.readCurrentQuestion();
       }
-    },
-    onPageScroll (scorll) {
-      console.log(scorll)
     }
   }
 </script>
@@ -2088,10 +2128,10 @@
   }
 
   /* iOS安全区域适配 */
-  .bottom-bar {
-    padding-bottom: constant(safe-area-inset-bottom);
-    padding-bottom: env(safe-area-inset-bottom);
-  }
+  // .bottom-bar {
+  //   padding-bottom: constant(safe-area-inset-bottom);
+  //   padding-bottom: env(safe-area-inset-bottom);
+  // }
 
   /* Android状态栏适配 */
   .header {
@@ -2215,13 +2255,13 @@
   }
 
   /* 修复某些设备上渐变显示问题 */
-  .audio-button,
-  .question-counter,
-  .ai-avatar,
-  .accuracy-circle {
-    background-image: -webkit-linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    background-image: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  }
+  // .audio-button,
+  // .question-counter,
+  // .ai-avatar,
+  // .accuracy-circle {
+  //   background-image: -webkit-linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  //   background-image: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  // }
 
   /* 确保底部栏始终在最上层（除了模态框） */
   .bottom-bar {
@@ -2269,5 +2309,40 @@
   /* 最终样式结束 */
   uni-button:after {
     border: none;
+  }
+  
+  /* 评论输入模式动画 */
+  .bottom-bar.comment-mode {
+    background: #f8f9fa;
+    padding: 24rpx 32rpx;
+  }
+  
+  .comment-input-bottom {
+    display: flex;
+    align-items: center;
+    gap: 20rpx;
+    width: 100%;
+    animation: slideIn 0.3s ease;
+  }
+  
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateY(20rpx);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  .comment-input-field {
+    flex: 1;
+    padding: 20rpx 32rpx;
+    background: white;
+    border: 2rpx solid #e5e7eb;
+    border-radius: 40rpx;
+    font-size: 28rpx;
+    transition: all 0.3s ease;
   }
 </style>
