@@ -7,7 +7,7 @@
       <div class="search_text">Search by keywords</div>
     </div>
     <div class="banner_main">
-      <u-swiper :list="bannerList" radius="8" imgMode="cover"></u-swiper>
+      <u-swiper :list="bannerList" radius="8" imgMode="cover" height="233rpx"></u-swiper>
     </div>
     <div class="practice_main_top">
       <div class="left_item" @click="modeSelect('Mock Test', 7)">
@@ -81,6 +81,11 @@ export default {
         case 'Mock Test':
           uni.navigateTo({
             url: "/pages/mockTest/mockTest"
+          });
+          break;
+        case 'Rode Sign':
+          uni.navigateTo({
+            url: "/pages/roadSign/roadSign?id=" + id
           });
           break;
         default:

@@ -18,8 +18,8 @@
       <view class="avatar-section">
         <view class="avatar-container">
           <view class="avatar">
-            <text v-if="!formData.avatarUrl">{{ userInitial }}</text>
-            <image v-else :src="formData.avatarUrl" mode="aspectFill"></image>
+            <text v-if="!formData.avatar">{{ userInitial }}</text>
+            <image v-else :src="formData.avatar" mode="aspectFill"></image>
           </view>
           <view class="avatar-edit-button" @tap="showAvatarModal = true">
             <view class="avatar-edit-icon">👤</view>
@@ -36,10 +36,10 @@
           <text class="input-label">Username</text>
           <input type="text" 
                  class="input-field" 
-                 v-model="formData.username"
+                 v-model="formData.nickname"
                  placeholder="Enter your username"
                  maxlength="20" />
-          <text class="char-counter">{{ formData.username.length }}/20</text>
+          <text class="char-counter">{{ formData.nickname.length }}/20</text>
         </view>
 
         <view class="input-group">
@@ -69,7 +69,7 @@
           <text class="input-label">Test Centre</text>
           <view class="select-field" @tap="showTestCentreModal = true">
             <view class="select-display">
-              <text>{{ formData.testCentre || 'Select a test centre' }}</text>
+              <text>{{ formData.testCentreName || 'Select a test centre' }}</text>
               <text class="select-arrow">›</text>
             </view>
           </view>
@@ -79,11 +79,11 @@
           <text class="input-label">Test Date</text>
           <view class="date-picker">
             <picker mode="date" 
-                    :value="formData.testDate" 
+                    :value="formData.test_date" 
                     :start="minDate"
                     @change="onDateChange">
               <view class="date-input">
-                <text>{{ formData.testDate || 'Select date' }}</text>
+                <text>{{ formData.test_date || 'Select date' }}</text>
                 <text class="date-icon">📅</text>
               </view>
             </picker>
@@ -94,7 +94,7 @@
           <text class="input-label">Preparation Level</text>
           <view class="select-field" @tap="showLevelModal = true">
             <view class="select-display">
-              <text>{{ formData.preparationLevel }}</text>
+              <text>{{ formData.level }}</text>
               <text class="select-arrow">›</text>
             </view>
           </view>
@@ -135,9 +135,9 @@
             <view v-for="centre in testCentres" 
                   :key="centre"
                   class="option-item"
-                  :class="{selected: formData.testCentre === centre}"
+                  :class="{selected: formData.room_id === centre.id}"
                   @tap="selectTestCentre(centre)">
-              <text class="option-text">{{ centre }}</text>
+              <text class="option-text">{{ centre.name }}</text>
               <view class="option-check"></view>
             </view>
           </view>
@@ -153,10 +153,10 @@
           <text class="modal-close" @tap="showLevelModal = false">✕</text>
         </view>
         <view class="option-list">
-          <view v-for="level in preparationLevels" 
+          <view v-for="level in levels" 
                 :key="level"
                 class="option-item"
-                :class="{selected: formData.preparationLevel === level}"
+                :class="{selected: formData.level === level}"
                 @tap="selectLevel(level)">
             <text class="option-text">{{ level }}</text>
             <view class="option-check"></view>
@@ -179,7 +179,7 @@
           <view class="avatar-option" @tap="chooseFromGallery">
             <text>🖼️ Choose from Gallery</text>
           </view>
-          <view class="avatar-option" @tap="removePhoto" v-if="formData.avatarUrl">
+          <view class="avatar-option" @tap="removePhoto" v-if="formData.avatar">
             <text>🗑️ Remove Photo</text>
           </view>
         </view>
@@ -195,6 +195,7 @@
 
 <script>
 import {getUserInfo, saveInfo} from '@/http/api/login.js'
+import {getCenterIndex} from '@/http/api/community.js'
 export default {
   data() {
     return {
@@ -203,14 +204,15 @@ export default {
       
       // 表单数据
       formData: {
-        username: 'StormChaser',
-        email: 'user@example.com',
-        bio: 'Road to licensure~',
-        avatarUrl: '',
-        testCentre: 'Birmingham Test Centre',
-        testDate: '2025-11-25',
-        preparationLevel: 'Intermediate',
-        testDateReminder: true
+        nickname: '',
+        email: null,
+        bio: '',
+        avatar: '',
+        room_id: null,
+        test_date: null,
+        level: null,
+        testDateReminder: true,
+        testCentreName: null
       },
       
       // 模态框状态
@@ -220,22 +222,9 @@ export default {
       showSuccessToast: false,
       
       // 选项数据
-      testCentres: [
-        'Birmingham Test Centre',
-        'London Test Centre',
-        'Manchester Test Centre',
-        'Liverpool Test Centre',
-        'Leeds Test Centre',
-        'Sheffield Test Centre',
-        'Bristol Test Centre',
-        'Newcastle Test Centre',
-        'Cardiff Test Centre',
-        'Glasgow Test Centre',
-        'Edinburgh Test Centre',
-        'Belfast Test Centre'
-      ],
+      testCentres: [],
       
-      preparationLevels: [
+      levels: [
         'Beginner',
         'Elementary',
         'Intermediate',
@@ -248,7 +237,7 @@ export default {
   computed: {
     // 获取用户名首字母
     userInitial() {
-      return this.formData.username ? this.formData.username.charAt(0).toUpperCase() : 'U';
+      return this.formData.nickname ? this.formData.nickname.charAt(0).toUpperCase() : 'U';
     },
     
     // 检查是否有更改
@@ -270,17 +259,20 @@ export default {
     // 获取用户信息
     getUserInfo () {
       getUserInfo().then(res => {
-        console.log(res)
         if (res.code == 1) {
           this.formData = {
-            username: res.data.nickname,
-            email: res.data.nickname,
+            nickname: res.data.nickname,
+            email: res.data.email,
             bio: res.data.bio,
-            avatarUrl: res.data.avatar,
-            testCentre: res.data.type_text,
-            testDate: '2025-09-30',
-            preparationLevel: 'Intermediate',
+            avatar: res.data.avatar,
+            room_id: res.data.room_id,
+            test_date: res.data.test_date,
+            level: res.data.level,
             testDateReminder: true
+          }
+          // 判断当前考试中心
+          if (this.formData.room_id) {
+            this.formData.testCentreName = this.testCentres.find(centre => centre.id == this.formData.room_id).name;
           }
         }
       })
@@ -292,13 +284,14 @@ export default {
     
     // 选择测试中心
     selectTestCentre(centre) {
-      this.formData.testCentre = centre;
+      this.formData.room_id = centre.id;
+      this.formData.testCentreName = centre.name;
       this.showTestCentreModal = false;
     },
     
     // 选择准备级别
     selectLevel(level) {
-      this.formData.preparationLevel = level;
+      this.formData.level = level;
       this.showLevelModal = false;
     },
     
@@ -309,7 +302,7 @@ export default {
         count: 1,
         sourceType: ['camera'],
         success: (res) => {
-          that.formData.avatarUrl = res.tempFilePaths[0];
+          that.formData.avatar = res.tempFilePaths[0];
           that.showAvatarModal = false;
         },
         fail: (err) => {
@@ -325,7 +318,7 @@ export default {
         count: 1,
         sourceType: ['album'],
         success: (res) => {
-          that.formData.avatarUrl = res.tempFilePaths[0];
+          that.formData.avatar = res.tempFilePaths[0];
           that.showAvatarModal = false;
         },
         fail: (err) => {
@@ -336,7 +329,7 @@ export default {
     
     // 移除照片
     removePhoto() {
-      this.formData.avatarUrl = '';
+      this.formData.avatar = '';
       this.showAvatarModal = false;
     },
     
@@ -447,12 +440,20 @@ export default {
       uni.navigateBack({
         delta: 1
       });
+    },
+    // 查询考场
+    getCenterIndex() {
+      getCenterIndex().then(res => {
+        if (res.code == 1) {
+          this.testCentres = res.data.list
+        }
+        this.getUserInfo()
+      })
     }
   },
   
   onLoad() {
-    // 页面加载时获取用户数据
-    this.getUserInfo();
+    this.getCenterIndex()
   }
 }
 </script>

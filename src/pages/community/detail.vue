@@ -444,7 +444,7 @@
         }
       },
 
-      // API调用示例 - 更新点赞状态
+      // 更新点赞状态
       async updateLikeStatus() {
         try {
           const [error, response] = await uni.request({
@@ -461,59 +461,6 @@
           this.post.isLiked = !this.post.isLiked;
           this.post.likeCount += this.post.isLiked ? 1 : -1;
         }
-      },
-
-      // 初始化示例数据
-      initSampleData() {
-        this.comments = [{
-            id: 1,
-            username: 'StormChaser',
-            testCentre: 'Test Centre: Birmingham',
-            text: 'Catch the good luck!',
-            likeCount: 999,
-            isLiked: true,
-            replies: [],
-            showAllReplies: false
-          },
-          {
-            id: 2,
-            username: 'StormChaser',
-            testCentre: 'Test Centre: Birmingham',
-            text: 'Let me try too!',
-            likeCount: 999,
-            isLiked: false,
-            replies: [],
-            showAllReplies: false
-          },
-          {
-            id: 3,
-            username: 'LearnerPro',
-            testCentre: 'Test Centre: London',
-            text: 'This is really helpful! I\'ve been struggling with the theory test for weeks.',
-            likeCount: 45,
-            isLiked: false,
-            replies: [{
-                id: 301,
-                username: 'Helper',
-                testCentre: 'Test Centre: London',
-                text: 'I can help you with practice questions if you need!'
-              },
-              {
-                id: 302,
-                username: 'StudyBuddy',
-                testCentre: 'Test Centre: Leeds',
-                text: 'Join our study group, we meet online every week!'
-              },
-              {
-                id: 303,
-                username: 'Instructor',
-                testCentre: 'Test Centre: Manchester',
-                text: 'The key is to practice mock tests regularly.'
-              }
-            ],
-            showAllReplies: false
-          }
-        ];
       },
 
       // 加载帖子详情
@@ -538,10 +485,6 @@
     onLoad(options) {
       // 获取帖子ID
       this.postId = options.id;
-
-      // 初始化示例数据
-      this.initSampleData();
-
       this.loadPostDetail();
     }
   }

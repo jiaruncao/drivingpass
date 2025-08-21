@@ -1,0 +1,522 @@
+<template>
+  <view class="app">
+    <!-- 头部导航 -->
+    <view class="header">
+      <view class="back-button" @tap="goBack">←</view>
+      <view class="header-content">
+        <text class="page-title">{{ currentSign.title }}</text>
+        <view class="header-right">
+          <view class="share-button" @tap="shareSign">
+            <text class="share-icon">⋯</text>
+          </view>
+          <view class="progress-circle">
+            <text class="progress-text">{{ currentSign.accuracy }}%</text>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <!-- 主要内容 -->
+    <view class="container">
+      <!-- 滑动容器 -->
+      <view class="swipe-container" 
+            @touchstart="onTouchStart" 
+            @touchmove="onTouchMove" 
+            @touchend="onTouchEnd">
+        <view class="swipe-wrapper" :style="{ transform: `translateX(${translateX}rpx)` }">
+          <view v-for="(sign, index) in signsList" :key="sign.id" class="slide">
+            <view class="sign-card">
+              <view class="sign-icon-container" v-if="sign.title_video_url">
+                <view class="sign-icon">
+                  <!-- <view v-if="sign.iconClass === 'no-pedestrians'" class="slash"></view>
+                  <text class="pedestrian-icon">🚶</text> -->
+                  <image :src="sign.title_video_url" mode=""></image>
+                </view>
+              </view>
+              <text class="sign-title">{{ sign.title }}</text>
+              <text class="sign-description">{{ sign.explain }}</text>
+              <view class="status-button" :class="{unread: !sign.isRead}" @tap="toggleReadStatus(index)">
+                <text class="status-text">{{ sign.isRead ? 'Read' : 'Mark as Read' }}</text>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+
+      <!-- 滑动指示器 -->
+      <view class="swipe-indicators">
+        <view v-for="(sign, index) in signsList" 
+              :key="index" 
+              class="indicator" 
+              :class="{active: currentIndex === index}"
+              @tap="goToSlide(index)">
+        </view>
+      </view>
+    </view>
+  </view>
+</template>
+
+<script>
+import {getThree, startTrain} from '@/http/api/testQuestions.js'
+export default {
+  data() {
+    return {
+      cate_id: null,
+      currentIndex: 0, // 当前标志索引
+      categoryProgress: 60, // 分类进度
+      translateX: 0, // 滑动偏移量
+      startX: 0, // 触摸起始位置
+      isDragging: false, // 是否正在拖拽
+      slideWidth: 0, // 滑块宽度
+      // 标志数据列表
+      signsList: []
+    }
+  },
+  computed: {
+    // 当前显示的标志
+    currentSign() {
+      return this.signsList[this.currentIndex] || this.signsList[0];
+    },
+    // 标志总数
+    totalSigns() {
+      return this.signsList.length;
+    }
+  },
+  methods: {
+    // 返回上一页
+    goBack() {
+      console.log('Going back to category list');
+      // 实际应用中导航回分类列表页面
+      uni.navigateBack({
+        fail: () => {
+          console.log('No previous page, exit app');
+        }
+      });
+    },
+    // 分享标志
+    shareSign() {
+      console.log('Sharing sign:', this.currentSign.name);
+      // 实际应用中调用系统分享功能
+      uni.share({
+        provider: "weixin",
+        type: 0,
+        title: this.currentSign.name,
+        summary: this.currentSign.description,
+        success: function (res) {
+          console.log("success:" + JSON.stringify(res));
+        },
+        fail: function (err) {
+          console.log("fail:" + JSON.stringify(err));
+        }
+      });
+    },
+    // 切换已读状态
+    toggleReadStatus(index) {
+      this.signsList[index].isRead = !this.signsList[index].isRead;
+      // this.updateProgress();
+      this.saveProgress();
+    },
+    // 触摸开始
+    onTouchStart(e) {
+      this.startX = e.touches[0].clientX;
+      this.isDragging = true;
+      // 获取容器宽度（rpx转px）
+      const query = uni.createSelectorQuery().in(this);
+      query.select('.swipe-container').boundingClientRect(data => {
+        this.slideWidth = data.width;
+      }).exec();
+    },
+    // 触摸移动
+    onTouchMove(e) {
+      if (!this.isDragging) return;
+      
+      const currentX = e.touches[0].clientX;
+      const diffX = currentX - this.startX;
+      const currentTranslate = -this.currentIndex * this.slideWidth;
+      
+      // 转换为rpx单位
+      this.translateX = (currentTranslate + diffX) * 2;
+    },
+    // 触摸结束
+    onTouchEnd(e) {
+      if (!this.isDragging) return;
+      
+      const endX = e.changedTouches[0].clientX;
+      const diffX = endX - this.startX;
+      const threshold = this.slideWidth * 0.3; // 30% 的滑动距离触发切换
+      
+      if (diffX > threshold && this.currentIndex > 0) {
+        // 向右滑动，前往上一个
+        this.currentIndex--;
+      } else if (diffX < -threshold && this.currentIndex < this.totalSigns - 1) {
+        // 向左滑动，前往下一个
+        this.currentIndex++;
+      }
+      
+      this.updateTranslate();
+      this.isDragging = false;
+    },
+    // 直接跳转到指定滑块
+    goToSlide(index) {
+      this.currentIndex = index;
+      this.updateTranslate();
+    },
+    // 更新滑动位置
+    updateTranslate() {
+      if (!this.slideWidth) {
+        const query = uni.createSelectorQuery().in(this);
+        query.select('.swipe-container').boundingClientRect(data => {
+          this.slideWidth = data.width;
+          this.translateX = -this.currentIndex * this.slideWidth * 2; // 转换为rpx
+        }).exec();
+      } else {
+        this.translateX = -this.currentIndex * this.slideWidth * 2; // 转换为rpx
+      }
+    },
+    // 更新进度
+    updateProgress() {
+      const readCount = this.signsList.filter(sign => sign.isRead).length;
+      this.categoryProgress = Math.round((readCount / this.totalSigns) * 100);
+    },
+    // 保存学习进度 - API调用示例
+    async saveProgress() {
+      try {
+        const progressData = {
+          signId: this.currentSign.id,
+          isRead: this.currentSign.isRead,
+          categoryProgress: this.categoryProgress
+        };
+        
+        const response = await uni.request({
+          url: '/api/learning-progress',
+          method: 'POST',
+          header: {
+            'Content-Type': 'application/json'
+          },
+          data: progressData
+        });
+        
+        if (response[1].statusCode === 200) {
+          console.log('Progress saved successfully');
+        }
+      } catch (error) {
+        console.error('Failed to save progress:', error);
+      }
+    },
+    // 开始练习
+    startTrain () {
+      startTrain({
+        cate_id: this.cate_id
+      }).then(res => {
+        if (res.code == 1) {
+          this.signsList = res.data.data
+        }
+      })
+    }
+  },
+  watch: {
+    // 监听当前索引变化，自动保存进度
+    currentIndex() {
+      this.saveProgress();
+    }
+  },
+  onLoad(option) {
+    this.cate_id = option.cate_id
+    this.startTrain()
+    // 页面加载后初始化数据
+    // this.updateProgress();
+    this.updateTranslate();
+  }
+}
+</script>
+
+<style lang="scss">
+/* 全局重置样式 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background: #F8F9FA;
+}
+
+/* Header 样式 */
+.header {
+  padding: 30rpx 40rpx;
+  display: flex;
+  align-items: center;
+  background: white;
+  position: relative;
+  z-index: 10;
+  min-height: 120rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.05);
+}
+
+.back-button {
+  color: #666;
+  font-size: 40rpx;
+  padding: 16rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80rpx;
+  height: 80rpx;
+}
+
+.header-content {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-left: 40rpx;
+}
+
+.page-title {
+  font-size: 36rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.share-button {
+  color: #666;
+  padding: 12rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 72rpx;
+  height: 72rpx;
+}
+
+.share-icon {
+  font-size: 36rpx;
+}
+
+.progress-circle {
+  width: 90rpx;
+  height: 90rpx;
+  border-radius: 50%;
+  background: conic-gradient(#FFA500 0deg, #FFA500 216deg, #E0E0E0 216deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.progress-circle::before {
+  content: '';
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: 50%;
+  background: white;
+  position: absolute;
+}
+
+.progress-text {
+  position: relative;
+  font-size: 24rpx;
+  font-weight: 600;
+  color: #FFA500;
+  z-index: 1;
+}
+
+/* 容器 */
+.container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 10;
+  padding: 80rpx 40rpx 80rpx;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 滑动容器 */
+.swipe-container {
+  width: 100%;
+  max-width: 700rpx;
+  position: relative;
+  overflow: hidden;
+}
+
+.swipe-wrapper {
+  display: flex;
+  transition: transform 0.3s ease;
+  width: 300%;
+}
+
+.slide {
+  width: 33.333%;
+  flex-shrink: 0;
+}
+
+/* 标志卡片 */
+.sign-card {
+  background: white;
+  border-radius: 60rpx;
+  padding: 120rpx 80rpx;
+  box-shadow: 0 16rpx 50rpx rgba(0,0,0,0.08);
+  text-align: center;
+  width: 100%;
+}
+
+.sign-icon-container {
+  width: 400rpx;
+  height: 400rpx;
+  margin: 0 auto 80rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.sign-icon {
+  width: 320rpx;
+  height: 320rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  border: 12rpx solid;
+  > image {
+    width: 90%;
+    height: 90%;
+    border-radius: 50%;
+  }
+}
+
+/* 禁止类标志 - 红色圆形，添加斜杠 */
+.sign-icon.no-pedestrians {
+  background: #ff4444;
+  border-color: #cc0000;
+}
+
+.slash {
+  position: absolute;
+  width: 280rpx;
+  height: 12rpx;
+  background: #cc0000;
+  transform: rotate(45deg);
+  z-index: 2;
+}
+
+.pedestrian-icon {
+  font-size: 120rpx;
+  color: #000;
+  z-index: 1;
+}
+
+.sign-title {
+  font-size: 48rpx;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 40rpx;
+  display: block;
+}
+
+.sign-description {
+  font-size: 32rpx;
+  color: #666;
+  line-height: 1.5;
+  margin-bottom: 60rpx;
+  display: block;
+}
+
+/* 状态按钮 */
+.status-button {
+  padding: 24rpx 60rpx;
+  border: 4rpx solid #4A9EFF;
+  border-radius: 50rpx;
+  background: #4A9EFF;
+  display: inline-block;
+}
+
+.status-button.unread {
+  background: transparent;
+}
+
+.status-text {
+  color: white;
+  font-size: 32rpx;
+  font-weight: 500;
+}
+
+.status-button.unread .status-text {
+  color: #4A9EFF;
+}
+
+/* 滑动指示器 */
+.swipe-indicators {
+  display: flex;
+  justify-content: center;
+  gap: 16rpx;
+  margin-top: 60rpx;
+}
+
+.indicator {
+  width: 16rpx;
+  height: 16rpx;
+  border-radius: 50%;
+  background: #E0E0E0;
+  transition: all 0.3s ease;
+}
+
+.indicator.active {
+  background: #4A9EFF;
+  width: 40rpx;
+  border-radius: 8rpx;
+}
+
+/* 响应式优化 */
+@media screen and (max-width: 375px) {
+  .container {
+    padding: 60rpx 30rpx 60rpx;
+  }
+  
+  .swipe-container {
+    max-width: 640rpx;
+  }
+  
+  .sign-card {
+    padding: 80rpx 50rpx;
+  }
+  
+  .sign-icon-container {
+    width: 300rpx;
+    height: 300rpx;
+    margin-bottom: 60rpx;
+  }
+  
+  .sign-icon {
+    width: 240rpx;
+    height: 240rpx;
+    border-width: 8rpx;
+  }
+
+  .slash {
+    width: 220rpx;
+    height: 8rpx;
+  }
+
+  .pedestrian-icon {
+    font-size: 90rpx;
+  }
+  
+  .sign-title {
+    font-size: 40rpx;
+  }
+}
+</style>

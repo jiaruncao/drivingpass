@@ -337,11 +337,11 @@
         }
         // 构建帖子数据
         // 处理this.uploadedImages，this.uploadedVideo
-        const uploadedImages = this.uploadedImages ? null : null
+        const uploadedImages = this.uploadedImages ? `[{"${this.uploadedImages.join('","')}"}]` : null
         const uploadedVideo = this.uploadedVideo.length ? [new Set(this.uploadedVideo)] : null
         const postData = {
           content: this.postContent,
-          photo_url: `[{"http://driving.asszo.com/uploads/20250820/ae63fbb3d0807ce24abdcd0cff01469c.png","http://driving.asszo.com/uploads/20250820/470d79b439c861b77d69c09c9f2b53aa.png"}]`,
+          "photo_url": uploadedImages,
           video_url: uploadedVideo,
           categories: this.selectedCategories,
           tag_ids: this.selectedTags,

@@ -32,22 +32,22 @@
       <!-- 测试类型卡片 -->
       <view class="test-types-container fade-in-delay-1">
         <!-- 多选题卡片 -->
-        <view class="test-type-card">
-          <text class="test-type-title">Multiple-choice</text>
+        <view class="test-type-card" v-for="(item, index) in pages" :key="index" @click="doChoosePage(item)">
+          <text class="test-type-title">{{item.title}}</text>
           <view class="test-type-details">
-            <text class="test-type-main">50 questions</text>
+            <text class="test-type-main">{{item.quantity}} questions</text>
             <text class="pass-mark">Pass 43/50</text>
           </view>
         </view>
 
         <!-- 危险感知卡片 -->
-        <view class="test-type-card">
+        <!-- <view class="test-type-card">
           <text class="test-type-title">Hazard Perception</text>
           <view class="test-type-details">
             <text class="test-type-main">14 clips · 15 hazards</text>
             <text class="pass-mark">Pass 44/75</text>
           </view>
-        </view>
+        </view> -->
       </view>
 
       <!-- 按钮区域 -->
@@ -70,6 +70,8 @@
       return {
         // 是否显示横屏提示
         showOrientationMessage: false,
+        pages: [],
+        choosePage: {},
         // 测试配置
         testConfig: {
           multipleChoice: {
@@ -105,7 +107,13 @@
       getPaperList () {
         getPaperList().then(res => {
           console.log(res)
+          if (res.code == 1) {
+            this.pages = res.data.list.data
+          }
         })
+      },
+      doChoosePage(item) {
+        this.choosePage = item
       },
       // 设置横屏模式
       setLandscapeMode() {
@@ -178,7 +186,7 @@
       // 导航到测试页面
       navigateToTest() {
         uni.navigateTo({
-          url: '/pages/mockTest/test?paper_id=2',
+          url: '/pages/mockTest/test?paper_id=' + this.choosePage.id,
           success: () => {
             console.log('导航到多选题测试页面');
           }

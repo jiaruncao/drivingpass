@@ -47,7 +47,7 @@
         <!-- 帖子内容 -->
         <view class="post-content">
           <text v-if="post.highlight" class="highlight-badge">{{ post.highlight }}</text>
-          <text class="post-text">{{ post.content }}</text>
+          <text class="post-text" @click="toDetail(post.id)">{{ post.content }}</text>
 
           <!-- 图片网格 -->
           <view v-if="post.file_url && post.file_url.length > 0" class="images-grid">
@@ -76,7 +76,7 @@
         <!-- 互动栏 -->
         <view class="actions-bar">
           <view class="actions-left">
-            <view class="action-button" :class="{liked: post.isLiked}" @tap="toggleLike(post)">
+            <view class="action-button" :class="{liked: post.is_support}" @tap="toggleLike(post)">
               <view class="action-icon">
                 <svg viewBox="0 0 24 24">
                   <path
@@ -225,14 +225,19 @@
         // post.isLiked = !post.isLiked;
         // post.support_count += post.isLiked ? 1 : -1;
         console.log(`${post.isLiked ? 'Liked' : 'Unliked'} post ${post.id}`);
-        this.updateLikeStatus(post.id, post.isLiked);
+        this.updateLikeStatus(post.id, post);
       },
-
+      // 前往详情
+      toDetail (postId) {
+        uni.navigateTo({
+          url: `/pages/community/detail?id=${postId}`
+        });
+      },
       // 打开评论
       openComments(postId) {
         console.log(`Opening comments for post ${postId}`);
         uni.navigateTo({
-          url: `/pages/forum/postDetail?id=${postId}`
+          url: `/pages/community/detail?id=${postId}`
         });
       },
 
@@ -345,11 +350,13 @@
         }
       },
 
-      // 加载标签数据 - API调用示例
+      // 加载帖子数据
       async loadTabData(tab) {
 
         const params = {
           type: tab == 'followed' ? 1 : 2, // 关注1 发现2
+          page: 1,
+          size: 20
         };
         queryPostList(params)
           .then((res) => {
@@ -371,36 +378,16 @@
       },
 
       // 更新点赞状态
-      async updateLikeStatus(postId, isLiked) {
+      async updateLikeStatus(postId, post) {
         supportPost({
           post_id: postId
         }).then(res => {
           console.log(res)
           if (res.code == 1) {
-            
+            post.is_support = !post.is_support;
+            post.support_count += post.is_support ? 1 : -1;
           }
         })
-        // try {
-        //   const [error, response] = await uni.request({
-        //     url: `/api/posts/${postId}/like`,
-        //     method: isLiked ? 'POST' : 'DELETE',
-        //     header: {
-        //       'Content-Type': 'application/json'
-        //     }
-        //   });
-
-        //   if (error || response.statusCode !== 200) {
-        //     throw new Error('Failed to update like status');
-        //   }
-        // } catch (error) {
-        //   console.error('Failed to update like status:', error);
-        //   // 恢复原状态
-        //   const post = this.displayedPosts.find(p => p.id === postId);
-        //   if (post) {
-        //     post.isLiked = !post.isLiked;
-        //     post.likeCount += post.isLiked ? 1 : -1;
-        //   }
-        // }
       },
 
       // 提交举报 - API调用示例

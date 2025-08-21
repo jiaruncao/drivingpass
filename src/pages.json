@@ -320,6 +320,14 @@
       }
     },
     {
+      "path" : "pages/roadSign/learn",
+      "style" : 
+      {
+        "navigationBarTitleText" : "",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path" : "pages/theoryTest/theoryTest",
       "style" : 
       {

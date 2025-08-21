@@ -292,7 +292,7 @@
 
 <script>
   import {startTrain, collectAdd, collectCancel, wrongAdd, recordAdd} from '@/http/api/testQuestions.js'
-  import {queryPostList, createPost} from '@/http/api/community.js'
+  import {queryPostList, createPost, replyPost} from '@/http/api/community.js'
   export default {
     data() {
       return {
@@ -315,7 +315,8 @@
           theme: 'system' // 主题模式
         },
         // 题目数据数组
-        questions: []
+        questions: [],
+        pid: null
       }
     },
     computed: {
@@ -479,6 +480,7 @@
       // 回复评论
       replyToComment(comment) {
         this.showCommentInput = true;
+        this.pid = comment.id;
         this.commentText = `@${comment.nickname} `;
       },
       // 回复回复
@@ -510,15 +512,29 @@
       // 发送评论
       sendComment() {
         if (!this.commentText.trim()) return;
-        createPost({
-          question_id: this.currentQuestion.id,
-          content: this.commentText.trim(),
-        }).then(res => {
-          this.$utils.toast("Comment successful!");
-          this.commentText = '';
-          this.showCommentInput = false;
-          this.queryPostList()
-        })
+        // 发送题目评论
+        if (this.pid) {
+          replyPost({
+            post_id: this.pid,
+            content: this.commentText.trim()
+          }).then(res => {
+            this.$utils.toast("Comment successful!");
+            this.commentText = '';
+            this.pid = null;
+            this.showCommentInput = false;
+            this.queryPostList()
+          })
+        } else {
+          createPost({
+            question_id: this.currentQuestion.id,
+            content: this.commentText.trim(),
+          }).then(res => {
+            this.$utils.toast("Comment successful!");
+            this.commentText = '';
+            this.showCommentInput = false;
+            this.queryPostList()
+          })
+        }
       },
       // 切换收藏状态
       toggleSave() {

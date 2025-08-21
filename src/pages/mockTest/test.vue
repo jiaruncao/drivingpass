@@ -123,6 +123,7 @@ import {getExamQuestion, submitExamQuestion} from '@/http/api/testQuestions.js'
 export default {
   data() {
     return {
+      paper_id: null,
       // 题目数据
       paperInfo: {
         limit_time: 0,
@@ -211,7 +212,7 @@ export default {
     // 取题
     getExamQuestion () {
       getExamQuestion({
-        paper_id: 2
+        paper_id: this.paper_id
       }).then(res => {
         console.log(res)
         if (res.code == 1) {
@@ -362,7 +363,7 @@ export default {
             this.closeReview()
             // 这里可以添加跳转到结果页面的逻辑
             submitExamQuestion({
-              paper_id: 2,
+              paper_id: this.paper_id,
               questions: this.questionStates.map(q => ({
                 id: q.id,
                 answer: q.selectedOption
@@ -374,6 +375,9 @@ export default {
         }
       })
     }
+  },
+  onLoad (option) {
+    this.paper_id = option.paper_id
   }
 }
 </script>

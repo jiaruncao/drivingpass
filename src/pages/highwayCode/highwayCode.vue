@@ -4,13 +4,13 @@
     <view class="header">
       <view class="back-button" @tap="goBack">←</view>
       <view class="header-content">
-        <text class="page-title">{{ currentCode.category }}</text>
+        <text class="page-title">{{ currentCode.title }}</text>
         <view class="header-right">
           <view class="share-button" @tap="shareCode">
             <text class="share-icon">⋯</text>
           </view>
           <view class="progress-circle">
-            <text class="progress-text">{{ categoryProgress }}%</text>
+            <text class="progress-text">{{ currentCode.accuracy }}%</text>
           </view>
         </view>
       </view>
@@ -323,6 +323,10 @@ export default {
   font-size: 36rpx;
   font-weight: 600;
   color: #333;
+  width: 300rpx;
+  white-space: nowrap;      /* 不换行 */
+  overflow: hidden;         /* 溢出隐藏 */
+  text-overflow: ellipsis;  /* 显示省略号 */
 }
 
 .header-right {

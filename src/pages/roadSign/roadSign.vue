@@ -74,7 +74,7 @@
           <view class="category-header" @tap="enterCategoryDetail(category)">
             <text class="category-title">{{ category.name }}</text>
             <view class="category-meta">
-              <text class="category-count">{{ category.signs.length }} signs</text>
+              <text class="category-count">{{ category.total }} signs</text>
               <text class="next-arrow">›</text>
             </view>
           </view>
@@ -106,8 +106,10 @@
         <!-- 道路标志详情网格 - 2列布局 -->
         <view class="detail-signs-grid">
           <view v-for="sign in selectedCategory.signs" :key="sign.id" class="detail-sign-item" @tap="selectDetailSign(sign)">
-            <view class="detail-sign-icon" :class="sign.iconClass">{{ sign.symbol }}</view>
-            <text class="detail-sign-name">{{ sign.name }}</text>
+            <view class="detail-sign-icon" :class="sign.iconClass">
+              <image :src="sign.title_video_url" mode=""></image>
+            </view>
+            <text class="detail-sign-name">{{ sign.title }}</text>
           </view>
         </view>
       </view>
@@ -146,9 +148,11 @@
 </template>
 
 <script>
+import {getThree, startTrain} from '@/http/api/testQuestions.js'
 export default {
   data() {
     return {
+      subject_id: null,
       currentView: 'home', // 当前视图状态：home, test, road-signs, category-detail
       overallProgress: 21, // 整体学习进度
       testsPracticed: 12, // 测试练习次数
@@ -156,62 +160,18 @@ export default {
       tempQuestionCount: 50, // 临时题目数量
       searchKeyword: '', // 搜索关键词
       selectedCategoryId: null, // 选中的分类ID
+      selectedCategoryName: '',
+      selectedCategory: {
+        signs: [],
+        progress: 0
+      },
       testOptions: {
         questionCount: 50, // 测试题目数量
         testAll: true, // 是否测试所有题目
         skipCorrect: false // 是否跳过已答对的题目
       },
       // 道路标志分类数据
-      roadSignCategories: [
-        {
-          id: 1,
-          name: 'Prohibitory Signs',
-          progress: 95,
-          signs: [
-            { id: 1, symbol: '🚫', iconClass: 'no-entry', name: 'No Entry' },
-            { id: 2, symbol: '↻', iconClass: 'no-right-turn', name: 'No Right Turn' },
-            { id: 3, symbol: '🚗', iconClass: 'no-overtaking', name: 'No Overtaking' },
-            { id: 4, symbol: '⛔', iconClass: 'no-stopping', name: 'No Stopping' },
-            { id: 17, symbol: '🚶', iconClass: 'no-pedestrians', name: 'No Pedestrians' },
-            { id: 18, symbol: '📯', iconClass: 'no-horn', name: 'No Sounding Horn' },
-            { id: 19, symbol: '🚲', iconClass: 'no-pedestrians', name: 'No Bicycles' },
-            { id: 20, symbol: '🚛', iconClass: 'no-horn', name: 'No Heavy Vehicles' }
-          ]
-        },
-        {
-          id: 2,
-          name: 'Warning Signs',
-          progress: 80,
-          signs: [
-            { id: 5, symbol: '⚠️', iconClass: 'warning-general', name: 'General Warning' },
-            { id: 6, symbol: '🛣️', iconClass: 'road-narrows', name: 'Road Narrows' },
-            { id: 7, symbol: '🚸', iconClass: 'children-crossing', name: 'Children Crossing' },
-            { id: 8, symbol: '🦌', iconClass: 'animals-crossing', name: 'Animals Crossing' }
-          ]
-        },
-        {
-          id: 3,
-          name: 'Mandatory Signs',
-          progress: 80,
-          signs: [
-            { id: 9, symbol: '➡️', iconClass: 'turn-right', name: 'Turn Right Only' },
-            { id: 10, symbol: '⬅️', iconClass: 'turn-left', name: 'Turn Left Only' },
-            { id: 11, symbol: '⬆️', iconClass: 'ahead-only', name: 'Ahead Only' },
-            { id: 12, symbol: '🔄', iconClass: 'roundabout', name: 'Mini Roundabout' }
-          ]
-        },
-        {
-          id: 4,
-          name: 'Information Signs',
-          progress: 80,
-          signs: [
-            { id: 13, symbol: 'ℹ️', iconClass: 'information', name: 'General Information' },
-            { id: 14, symbol: '🅿️', iconClass: 'parking', name: 'Parking' },
-            { id: 15, symbol: '🏥', iconClass: 'hospital', name: 'Hospital' },
-            { id: 16, symbol: '⛽', iconClass: 'petrol-station', name: 'Petrol Station' }
-          ]
-        }
-      ]
+      roadSignCategories: []
     }
   },
   computed: {
@@ -248,9 +208,9 @@ export default {
       }).filter(category => category.signs.length > 0);
     },
     // 当前选中的分类
-    selectedCategory() {
-      return this.roadSignCategories.find(cat => cat.id === this.selectedCategoryId);
-    }
+    // selectedCategory() {
+    //   return this.roadSignCategories.find(cat => cat.id === this.selectedCategoryId);
+    // }
   },
   methods: {
     // 选择学习或测试模式
@@ -286,7 +246,9 @@ export default {
     enterCategoryDetail(category) {
       console.log('Entering category detail for:', category.name);
       this.selectedCategoryId = category.id;
+      this.selectedCategoryName = category.name;
       this.currentView = 'category-detail';
+      this.startTrain()
     },
     // 搜索道路标志
     searchSigns() {
@@ -302,6 +264,9 @@ export default {
     selectDetailSign(sign) {
       console.log('Selected detail sign:', sign);
       // 这里可以导航到标志学习页面或显示标志详细信息
+      uni.navigateTo({
+        url: `/pages/roadSign/learn?cate_id=${sign.cate_id}` 
+      })
     },
     // 滑块变化事件
     onSliderChange(e) {
@@ -340,25 +305,38 @@ export default {
         console.error('Failed to fetch user progress:', error);
       }
     },
-    // 获取道路标志分类数据 - API调用示例
+    // 获取道路标志分类数据 
     async fetchRoadSignCategories() {
       try {
-        const response = await uni.request({
-          url: '/api/road-signs/categories',
-          method: 'GET'
-        });
-        if (response[1].statusCode === 200) {
-          this.roadSignCategories = response[1].data;
+        const response = await getThree({
+          kind: 'QUESTION',
+          subject_id: this.subject_id
+        })
+        if (response.code === 1) {
+          this.roadSignCategories = response.data;
+          // this.selectedCategory = this.categories[0].id;
         }
       } catch (error) {
-        console.error('Failed to fetch road sign categories:', error);
+        console.error('Failed to fetch categories:', error);
       }
+    },
+    // 开始练习
+    startTrain () {
+      startTrain({
+        cate_id: this.selectedCategoryId
+      }).then(res => {
+        if (res.code == 1) {
+          console.log(res)
+          this.selectedCategory.signs = res.data.data
+        }
+      })
     }
   },
-  onLoad() {
+  onLoad(options) {
+    this.subject_id = options.id
     // 页面加载时获取数据
     // this.fetchUserProgress();
-    // this.fetchRoadSignCategories();
+    this.fetchRoadSignCategories();
   }
 }
 </script>
@@ -855,6 +833,11 @@ export default {
   font-size: 32px;
   color: white;
   font-weight: bold;
+  > image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
 }
 
 /* 详情页面图标样式 */
