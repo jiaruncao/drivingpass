@@ -10,28 +10,28 @@
       <u-swiper :list="bannerList" radius="8" imgMode="cover" height="233rpx"></u-swiper>
     </div>
     <div class="practice_main_top">
-      <div class="left_item" @click="modeSelect('Mock Test', 7)">
+      <div class="left_item" @click="modeSelect('MockTest', 7)">
         <div class="item_title">Mock Test</div>
         <div class="item_content">Practice Like the Real Exam</div>
       </div>
       <div class="right_item">
-        <div class="right_item_top" @click="modeSelect('Theory Test', 2)">
+        <div class="right_item_top" @click="modeSelect('TheoryTest', 2)">
           <div class="item_title" style="color: #4379bb">Theory Test</div>
           <div class="item_score" style="color: #4379bb">Score：{{getScore('Theory Test')}}</div>
         </div>
-        <div class="right_item_bottom" @click="modeSelect('Hazard Test', 3)">
+        <div class="right_item_bottom" @click="modeSelect('HazardTest', 3)">
           <div class="item_title" style="color: #b77a2a">Hazard Test</div>
           <div class="item_score" style="color: #b77a2a">Score：{{getScore('Hazard Test')}}</div>
         </div>
       </div>
     </div>
     <div class="practice_main_bottom">
-      <div class="left_item" @click="modeSelect('Highway Code', 5)">
+      <div class="left_item" @click="modeSelect('HighwayCode', 5)">
         <div class="item_title" style="color: #4fa62a">Highway Code</div>
         <div class="item_score" style="color: #4fa62a">Score：{{getScore('Highway Code')}}</div>
       </div>
       <div class="right_item">
-        <div class="right_item_top" @click="modeSelect('Rode Sign', 4)">
+        <div class="right_item_top" @click="modeSelect('RodeSign', 4)">
           <div class="item_title" style="color: #336cb5">Rode Sign</div>
           <div class="item_score" style="color: #336cb5">Score：{{getScore('Rode Sign')}}</div>
         </div>
@@ -78,16 +78,16 @@ export default {
        */
       // const id = this.drivingTest.find(item => item.name === title) ? this.drivingTest.find(item => item.name === title).id : null
       switch (title){
-        case 'Mock Test':
+        case 'MockTest':
           uni.navigateTo({
             url: "/pages/mockTest/mockTest"
           });
           break;
-        case 'Rode Sign':
-          uni.navigateTo({
-            url: "/pages/roadSign/roadSign?id=" + id
-          });
-          break;
+        // case 'RodeSign':
+        //   uni.navigateTo({
+        //     url: "/pages/roadSign/roadSign?id=" + id
+        //   });
+        //   break;
         default:
           uni.navigateTo({
             url: "/pages/modeSelect/index?id=" + id + "&title=" + title

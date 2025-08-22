@@ -8,7 +8,7 @@
     <!-- 头部导航 -->
     <view class="header">
       <view class="back-button" @tap="goBack">←</view>
-      <text class="page-title">{{currentViewTitle}}</text>
+      <text class="page-title">{{camelCaseToSpacesAdvanced(currentViewTitle)}}</text>
     </view>
 
     <!-- 主要内容 -->
@@ -57,7 +57,7 @@
         </view>
 
         <view class="button-container">
-          <view class="action-button" @tap="startTest">Start Exam</view>
+          <view class="action-button" @tap="startTrain">Start Exam</view>
         </view>
       </view>
 
@@ -85,9 +85,63 @@
         </view>
 
         <view class="button-container">
-          <view class="action-button" @tap="startLearning">Start Learning</view>
+          <view class="action-button" @tap="startTrain">Start Learning</view>
         </view>
       </view>
+      
+      <view v-if="currentView === 'road-signs'" class="road-signs-container">
+        <!-- 搜索栏 -->
+        <view class="search-container">
+          <input type="text" class="search-input" placeholder="Search by keywords" v-model="searchKeyword" />
+          <view class="search-button" @tap="searchSigns">Search</view>
+        </view>
+      
+        <!-- 道路标志分类列表 -->
+        <view v-for="category in filteredCategories" :key="category.id" class="category-section">
+          <view class="category-header" @tap="enterCategoryDetail(category)">
+            <text class="category-title">{{ category.name }}</text>
+            <view class="category-meta">
+              <text class="category-count">{{ category.total }} signs</text>
+              <text class="next-arrow">›</text>
+            </view>
+          </view>
+      
+          <!-- 道路标志网格 -->
+          <view class="signs-grid" @tap="enterCategoryDetail(category)">
+            <view v-for="sign in category.signs" :key="sign.id" class="sign-item">
+              <view class="sign-icon" :class="sign.iconClass">{{ sign.symbol }}</view>
+            </view>
+          </view>
+      
+          <!-- 进度条 -->
+          <view class="category-progress" @tap="enterCategoryDetail(category)">
+            <view class="progress-bar">
+              <view class="progress-fill" :style="{width: category.progress + '%'}"></view>
+            </view>
+            <text class="progress-percentage">{{ category.progress }}%</text>
+          </view>
+        </view>
+      </view>
+      
+      <!-- 分类详情页面视图 -->
+      <view v-if="currentView === 'category-detail' && selectedSignCategory" class="category-detail-container">
+        <!-- 分类完成度 -->
+        <view class="category-detail-header">
+          <view class="category-completion">Completed: {{ selectedSignCategory.progress }}%</view>
+        </view>
+      
+        <!-- 道路标志详情网格 - 2列布局 -->
+        <view class="detail-signs-grid">
+          <view v-for="sign in selectedSignCategory.signs" :key="sign.id" class="detail-sign-item" @tap="selectDetailSign(sign)">
+            <view class="detail-sign-icon" :class="sign.iconClass">
+              <image :src="sign.title_video_url" mode=""></image>
+            </view>
+            <text class="detail-sign-name">{{ sign.title }}</text>
+          </view>
+        </view>
+      </view>
+      
+      
     </view>
 
     <!-- 数量选择器模态框 -->
@@ -123,7 +177,7 @@
 </template>
 
 <script>
-import {getThree} from '@/http/api/testQuestions.js'
+import {getThree, startTrain} from '@/http/api/testQuestions.js'
 
 export default {
   data() {
@@ -141,7 +195,16 @@ export default {
         testAll: true, // 是否测试所有题目
         skipCorrect: false // 是否跳过已答对的题目
       },
-      categories: []
+      searchKeyword: '',
+      categories: [],
+      // 道路标志分类数据
+      roadSignCategories: [],
+      // selectedCategoryId: null, // 选中的分类ID
+      selectedCategoryName: '',
+      selectedSignCategory: {
+        signs: [],
+        progress: 0
+      },
     }
   },
   computed: {
@@ -157,12 +220,38 @@ export default {
         default:
           return 'Theory Test';
       }
+    },
+    // 过滤后的分类列表（用于搜索功能）
+    filteredCategories() {
+      if (!this.searchKeyword.trim()) {
+        return this.roadSignCategories;
+      }
+      
+      return this.roadSignCategories.map(category => {
+        const filteredSigns = category.signs.filter(sign => 
+          sign.name.toLowerCase().includes(this.searchKeyword.toLowerCase())
+        );
+        return {
+          ...category,
+          signs: filteredSigns
+        };
+      }).filter(category => category.signs.length > 0);
     }
   },
   methods: {
+    camelCaseToSpacesAdvanced(str) {
+        return str
+            .replace(/([a-z])([A-Z])/g, '$1 $2')
+            .replace(/([A-Z])([A-Z][a-z])/g, '$1 $2')
+            .trim();
+    },
     // 选择学习或测试模式
     selectMode(mode) {
-      this.currentView = mode;
+      if (mode === 'learn' && this.currentViewTitle == 'RodeSign') {
+        this.currentView = 'road-signs'; // Learn模式直接进入Road Signs页面
+      } else {
+        this.currentView = mode;
+      }
     },
     // 返回上一页或退出应用
     goBack() {
@@ -176,6 +265,11 @@ export default {
             console.log('No previous page, exit app');
           }
         });
+      } else if (this.currentView === 'category-detail') {
+        this.currentView = 'road-signs'; // 从分类详情返回道路标志列表
+        this.selectedCategory = null;
+      } else if (this.currentView === 'road-signs') {
+        this.currentView = 'home'; // 从Road Signs页面返回首页
       } else {
         this.currentView = 'home';
       }
@@ -205,6 +299,14 @@ export default {
     closeModal() {
       this.showQuantityPicker = false;
     },
+    // 进入分类详情页面
+    enterCategoryDetail(category) {
+      console.log('Entering category detail for:', category.name);
+      this.selectedCategory = category.id;
+      this.selectedCategoryName = category.name;
+      this.currentView = 'category-detail';
+      this.startTrain()
+    },
     // 开始测试
     startTest() {
       console.log('Starting test with options:', this.testOptions);
@@ -213,6 +315,26 @@ export default {
         title: '开始测试',
         icon: 'success'
       });
+      switch (this.currentViewTitle) {
+        case 'TheoryTest':
+          // 跳转答题
+          uni.navigateTo({
+            url: '/pages/learnQuestion/index?subject_id=' + this.subject_id + '&mode=test'
+          })
+          break;
+        case 'HighwayCode':
+          // 跳转答题
+          uni.navigateTo({
+            url: '/pages/learnQuestion/index?subject_id=' + this.subject_id + '&mode=test'
+          })
+          break;
+        case 'RodeSign':
+          // 跳转答题
+          uni.navigateTo({
+            url: '/pages/learnQuestion/index?subject_id=' + this.subject_id + '&mode=test'
+          })
+          break;
+      }
     },
     // 开始学习
     startLearning() {
@@ -225,25 +347,25 @@ export default {
       });
       // 区别什么类型的科目
       switch (this.currentViewTitle){
-        case 'Theory Test':
+        case 'TheoryTest':
           // 跳转答题
           uni.navigateTo({
             url: '/pages/learnQuestion/index?cate_id=' + this.selectedCategory
           })
           break;
-        case 'Hazard Test':
+        case 'HazardTest':
           // 跳转答题
           uni.navigateTo({
             url: '/pages/hazardPerception/list'
           })
           break;
-        case 'Highway Code':
+        case 'HighwayCode':
           // 跳转答题
           uni.navigateTo({
             url: '/pages/highwayCode/highwayCode?cate_id=' + this.selectedCategory
           })
           break;
-        case 'Rode Sign':
+        case 'RodeSign':
           // 跳转答题
           uni.navigateTo({
             url: '/pages/roadSign/roadSign'
@@ -254,21 +376,6 @@ export default {
       }
       
     },
-    // 获取用户进度数据 - API调用示例
-    async fetchUserProgress() {
-      try {
-        const response = await uni.request({
-          url: '/api/user/progress',
-          method: 'GET'
-        });
-        if (response[1].statusCode === 200) {
-          this.overallProgress = response[1].data.overallProgress;
-          this.testsPracticed = response[1].data.testsPracticed;
-        }
-      } catch (error) {
-        console.error('Failed to fetch user progress:', error);
-      }
-    },
     // 获取分类数据
     async fetchCategories() {
       try {
@@ -277,13 +384,60 @@ export default {
           subject_id: this.subject_id
         })
         if (response.code === 1) {
-          this.categories = response.data;
-          this.selectedCategory = this.categories[0].id;
+          if (this.currentViewTitle == 'RodeSign') {
+            this.roadSignCategories = response.data;
+          } else {
+            this.categories = response.data;
+            this.selectedCategory = this.categories[0].id;
+          }
         }
       } catch (error) {
         console.error('Failed to fetch categories:', error);
       }
-    }
+    },
+    // 获取题目
+    startTrain () {
+      let params
+      if (this.currentView == 'learn' || this.currentView == 'category-detail') {
+        // 学习模式
+        params = {
+          cate_id: this.selectedCategory 
+        }
+      } else if (this.currentView == 'test') {
+        // 测试模式
+        params = {
+          subject_id: this.subject_id
+        }
+      }
+      startTrain(params).then(res => {
+        uni.setStorageSync('questions', res.data.data)
+        if (this.currentView == 'learn') {
+          this.startLearning()
+        } else if (this.currentView == 'test') {
+          this.startTest()
+        } else if (this.currentView == 'category-detail') {
+          this.selectedSignCategory.signs = res.data.data
+        }
+      })
+    },
+    // 搜索道路标志
+    searchSigns() {
+      console.log('Searching for signs with keyword:', this.searchKeyword);
+      // 搜索功能已通过computed属性filteredCategories实现
+    },
+    // 选择特定道路标志
+    selectSign(sign) {
+      console.log('Selected road sign:', sign);
+      // 这里可以导航到标志详情页面或开始学习
+    },
+    // 选择详情页面中的道路标志
+    selectDetailSign(sign) {
+      console.log('Selected detail sign:', sign);
+      // 这里可以导航到标志学习页面或显示标志详细信息
+      uni.navigateTo({
+        url: `/pages/roadSign/learn?cate_id=${sign.cate_id}` 
+      })
+    },
   },
   onLoad(options) {
     this.subject_id = options.id
@@ -620,10 +774,24 @@ export default {
   color: #333;
 }
 
+// .category-progress {
+//   font-size: 16px;
+//   font-weight: 600;
+//   color: #4A9EFF;
+// }
+
 .category-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 5px;
   font-size: 16px;
   font-weight: 600;
   color: #4A9EFF;
+}
+
+.category-progress:active {
+  opacity: 0.7;
 }
 
 .category-stats {
@@ -635,15 +803,21 @@ export default {
   padding-left: 32px;
 }
 
+// .progress-bar {
+//   width: calc(100% - 32px);
+//   height: 6px;
+//   background: #F0F0F0;
+//   border-radius: 3px;
+//   overflow: hidden;
+//   margin-left: 32px;
+// }
 .progress-bar {
-  width: calc(100% - 32px);
-  height: 6px;
-  background: #F0F0F0;
-  border-radius: 3px;
+  flex: 1;
+  height: 8px;
+  background: #f0f0f0;
+  border-radius: 4px;
   overflow: hidden;
-  margin-left: 32px;
 }
-
 .progress-fill {
   height: 100%;
   background: linear-gradient(90deg, #4A9EFF 0%, #2196F3 100%);
@@ -802,4 +976,288 @@ export default {
     font-size: 24px;
   }
 }
+/* 搜索栏 */
+.search-container {
+  margin-bottom: 30px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.search-input {
+  flex: 1;
+  background: #f5f5f5;
+  border: none;
+  border-radius: 25px;
+  padding: 15px 20px;
+  font-size: 16px;
+  color: #333;
+  outline: none;
+  height: 100%;
+}
+
+.search-input::placeholder {
+  color: #999;
+}
+
+.search-button {
+  background: linear-gradient(135deg, #4A9EFF 0%, #2196F3 100%);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 15px 25px;
+  font-size: 16px;
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(74, 158, 255, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.search-button:active {
+  transform: scale(0.98);
+}
+/* Road Sign分类列表 */
+.road-signs-container {
+  flex: 1;
+  overflow-y: auto;
+  max-width: 400px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.category-section {
+  margin-bottom: 30px;
+}
+
+.category-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding: 0 5px;
+}
+
+.category-header:active {
+  opacity: 0.7;
+}
+
+.category-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+}
+
+.category-meta {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.category-count {
+  font-size: 14px;
+  color: #999;
+}
+
+.next-arrow {
+  font-size: 16px;
+  color: #999;
+}
+
+/* 道路标志网格 */
+.signs-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+.signs-grid:active {
+  opacity: 0.7;
+}
+
+.sign-item {
+  aspect-ratio: 1;
+  background: white;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+  transition: all 0.3s ease;
+  position: relative;
+  pointer-events: none; /* 阻止单个标志的点击事件 */
+}
+
+.sign-item image {
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+}
+
+/* 用CSS创建道路标志图标 */
+.sign-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: white;
+  font-weight: bold;
+}
+
+/* 禁止类标志 - 红色圆形 */
+.sign-icon.no-entry,
+.sign-icon.no-right-turn,
+.sign-icon.no-overtaking,
+.sign-icon.no-stopping,
+.sign-icon.no-pedestrians,
+.sign-icon.no-horn {
+  background: #ff4444;
+  border: 3px solid #cc0000;
+}
+
+/* 警告类标志 - 黄色三角形 */
+.sign-icon.warning-general,
+.sign-icon.road-narrows,
+.sign-icon.children-crossing,
+.sign-icon.animals-crossing {
+  background: #ffcc00;
+  border: 3px solid #ff9900;
+  color: #000;
+  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+  border-radius: 0;
+}
+
+/* 强制类标志 - 蓝色圆形 */
+.sign-icon.turn-right,
+.sign-icon.turn-left,
+.sign-icon.ahead-only,
+.sign-icon.roundabout {
+  background: #4A9EFF;
+  border: 3px solid #2196F3;
+}
+
+/* 信息类标志 - 绿色或蓝色方形 */
+.sign-icon.information,
+.sign-icon.parking,
+.sign-icon.hospital,
+.sign-icon.petrol-station {
+  background: #00cc66;
+  border: 3px solid #009944;
+  border-radius: 8px;
+}
+
+/* 分类详情页面样式 */
+.category-detail-container {
+  flex: 1;
+  overflow-y: auto;
+  max-width: 400px;
+  width: 100%;
+  margin: 0 auto;
+  padding-bottom: 20px;
+}
+
+.category-detail-header {
+  text-align: center;
+  margin-bottom: 30px;
+  padding: 5px 5px 20px 5px;
+}
+
+.category-completion {
+  font-size: 16px;
+  color: #4A9EFF;
+  font-weight: 500;
+}
+
+/* 详情页面的道路标志网格 - 2列布局 */
+.detail-signs-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  padding: 0 10px;
+}
+
+.detail-sign-item {
+  background: white;
+  border-radius: 20px;
+  padding: 25px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+  transition: all 0.3s ease;
+}
+
+.detail-sign-item:active {
+  transform: scale(0.96);
+}
+
+.detail-sign-icon {
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  color: white;
+  font-weight: bold;
+  > image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+}
+
+/* 详情页面图标样式 */
+.detail-sign-icon.no-entry,
+.detail-sign-icon.no-right-turn,
+.detail-sign-icon.no-overtaking,
+.detail-sign-icon.no-stopping,
+.detail-sign-icon.no-pedestrians,
+.detail-sign-icon.no-horn {
+  background: #ff4444;
+  border: 4px solid #cc0000;
+}
+
+.detail-sign-icon.warning-general,
+.detail-sign-icon.road-narrows,
+.detail-sign-icon.children-crossing,
+.detail-sign-icon.animals-crossing {
+  background: #ffcc00;
+  border: 4px solid #ff9900;
+  color: #000;
+  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+  border-radius: 0;
+}
+
+.detail-sign-icon.turn-right,
+.detail-sign-icon.turn-left,
+.detail-sign-icon.ahead-only,
+.detail-sign-icon.roundabout {
+  background: #4A9EFF;
+  border: 4px solid #2196F3;
+}
+
+.detail-sign-icon.information,
+.detail-sign-icon.parking,
+.detail-sign-icon.hospital,
+.detail-sign-icon.petrol-station {
+  background: #00cc66;
+  border: 4px solid #009944;
+  border-radius: 12px;
+}
+
+.detail-sign-name {
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+  text-align: center;
+  line-height: 1.3;
+}
+
 </style>

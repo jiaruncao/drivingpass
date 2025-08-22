@@ -50,11 +50,11 @@
         <view class="subscription-header">
           <text class="subscription-title">Subscription Features</text>
           <view class="subscription-badge" :class="getBadgeClass">
-            <text class="badge-text">{{ subscriptionData.type }}</text>
+            <text class="badge-text">{{ replace(subscriptionData.type) }}</text>
           </view>
         </view>
-        <text class="expires-text" v-if="subscriptionData.type !== 'free'">
-          Expires {{ subscriptionData.expiryDate }}
+        <text class="expires-text" v-if="replace(subscriptionData.type) !== 'free'">
+          Expires {{ subscriptionData.expire_time_text }}
         </text>
         
         <view class="features-grid">
@@ -224,28 +224,6 @@
         </view>
       </view>
     </view>
-
-    <!-- 底部导航 -->
-    <!-- <view class="bottom-nav">
-      <view class="nav-item" @tap="navigateTo('home')">
-        <view class="nav-icon">
-          <text class="nav-icon-text">🏠</text>
-        </view>
-        <text class="nav-label">Home</text>
-      </view>
-      <view class="nav-item" @tap="navigateTo('forum')">
-        <view class="nav-icon">
-          <text class="nav-icon-text">💬</text>
-        </view>
-        <text class="nav-label">Forum</text>
-      </view>
-      <view class="nav-item active">
-        <view class="nav-icon">
-          <text class="nav-icon-text active">👤</text>
-        </view>
-        <text class="nav-label">Account</text>
-      </view>
-    </view> -->
   </view>
 </template>
 
@@ -265,9 +243,8 @@ export default {
         likes: 999
       },
       // 订阅数据
-      subscriptionData: {
-        type: 'silver', // 可选: 'free', 'silver', 'gold'
-        expiryDate: '08.11.2025'
+      subscriptionData: {// 可选: 'free', 'silver', 'gold'
+        
       },
       // 测试进度数据
       currentQuestionBank: 'Type 1',
@@ -281,7 +258,7 @@ export default {
     },
     // 获取订阅徽章样式
     getBadgeClass() {
-      return `badge-${this.subscriptionData.type}`;
+      return `badge-${this.replace(this.subscriptionData.type)}`;
     }
   },
   methods: {
@@ -349,7 +326,7 @@ export default {
       console.log('View details clicked');
       // 实际应用中导航到详情页面
       uni.navigateTo({
-        url: '/pages/progress/details'
+        url: '/pages/mockTest/record'
       });
     },
     // 切换题库
@@ -414,26 +391,24 @@ export default {
     },
     // 获取用户数据
     async fetchUserData() {
-      // try {
-      //   const [error, response] = await uni.request({
-      //     url: '/api/user/profile',
-      //     method: 'GET'
-      //   });
-      //   if (!error && response.statusCode === 200) {
-      //     this.userData = response.data.userData;
-      //     this.subscriptionData = response.data.subscription;
-      //     this.passRate = response.data.passRate;
-      //   }
-      // } catch (error) {
-      //   console.error('Failed to fetch user data:', error);
-      // }
       const response = await getUserInfo()
       if (response.code == 1) {
-        console.log(response)
         this.userData = response.data
+        this.subscriptionData = response.data.info
       }
     },
-    // 更新用户统计 - API调用示例
+    // 替换
+    replace (type) {
+      switch (type){
+        case 'NORMAL':
+          return 'free'
+          break;
+        default:
+          return type
+          break;
+      }
+    },
+    // 更新用户统计
     async updateStats() {
       try {
         const [error, response] = await uni.request({

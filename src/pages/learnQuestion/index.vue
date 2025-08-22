@@ -118,11 +118,7 @@
 
             <!-- 选项列表 -->
             <view class="options-list">
-              <view v-for="(option, optIndex) in question.options_json" :key="optIndex" class="option-item" :class="{
-                     selected: (question.selectedOption == option.key) && !question.showAnswer,
-                     correct: question.showAnswer && (option.key == question.answer),
-                     incorrect: question.showAnswer && (question.selectedOption == option.key) && (option.key != question.answer)
-                   }" @tap="selectOption(index, optIndex)">
+              <view v-for="(option, optIndex) in question.options_json" :key="optIndex" class="option-item" :class="optionClass(question, option)" @tap="selectOption(index, optIndex)">
                 <view class="option-label">
                   <text
                     v-if="!question.showAnswer || ((question.selectedOption != option.key) && (option.key != question.answer))">{{ option.key }}</text>
@@ -135,12 +131,12 @@
             </view>
 
             <!-- Key Point - 极简设计，直接跟在选项后面 -->
-            <view v-if="question.showAnswer && !isCorrectAnswer(question)" class="key-point-section">
+            <view v-if="question.showAnswer && !isCorrectAnswer(question) && mode == 'learn'" class="key-point-section">
               <text class="key-point-text">💡 {{ question.key_point }}</text>
             </view>
 
             <!-- AI解释 - 只在答错时显示 -->
-            <view v-if="question.showAnswer && !isCorrectAnswer(question)" class="ai-explanation">
+            <view v-if="question.showAnswer && !isCorrectAnswer(question) && mode == 'learn'" class="ai-explanation">
               <view class="ai-header">
                 <view class="ai-avatar">
                   <text class="ai-avatar-icon">🤖</text>
@@ -157,7 +153,7 @@
             </view>
 
             <!-- 统计信息 - 只在答错时显示 -->
-            <view v-if="question.showAnswer && !isCorrectAnswer(question)" class="stats-container">
+            <view v-if="question.showAnswer && !isCorrectAnswer(question) && mode == 'learn'" class="stats-container">
               <view class="stat-card">
                 <text class="stat-label">Difficulty Level</text>
                 <view class="difficulty-visual">
@@ -176,10 +172,10 @@
             </view>
 
             <!-- 社区评论区 - 只在答错时显示 -->
-            <view v-if="question.showAnswer && !isCorrectAnswer(question)" class="comments-section">
+            <view v-if="question.showAnswer && !isCorrectAnswer(question) && mode == 'learn'" class="comments-section">
               <view class="comments-header">
                 <text>Community Discussion</text>
-                <text class="comments-count">{{ question.comments.length }} comments</text>
+                <text class="comments-count">{{ question.comments ? question.comments.length : 0 }} comments</text>
               </view>
 
               <!-- 评论列表 -->
@@ -212,7 +208,7 @@
                 <text class="comment-text">{{ comment.content }}</text>
 
                 <!-- 回复列表 - 只显示前2条 -->
-                <view v-if="comment.first_reply && comment.first_reply.length > 0" class="replies-container">
+                <!-- <view v-if="comment.first_reply" class="replies-container">
                   <view v-for="(reply, replyIndex) in comment.first_reply" :key="reply.id" class="reply-item">
                     <view class="reply-header">
                       <view class="reply-avatar">
@@ -236,21 +232,21 @@
                     <text class="reply-text">{{ reply.content }}</text>
                   </view>
 
-                  <!-- Load more replies - 超过2条时显示 -->
+                  Load more replies - 超过2条时显示
                   <view v-if="comment.replies.length > 2 && !comment.showAllReplies" class="load-more-replies">
                     <text class="load-more-replies-text" @tap="loadMoreReplies(comment)">
                       View more replies ({{ comment.replies.length - 2 }} more)
                     </text>
                   </view>
-                </view>
+                </view> -->
               </view>
 
               <!-- 加载更多评论 -->
-              <view v-if="!question.showAllComments">
+              <!-- <view v-if="!question.showAllComments">
                 <button v-if="question.comments.length > 3" class="view-more-button" @tap="showMoreComments(question)">
                   View More Comments ({{ question.comments.length - 3 }} more)
                 </button>
-              </view>
+              </view> -->
 
               <!-- 加载中提示 -->
               <view v-if="question.isLoadingComments" class="load-more-container">
@@ -296,7 +292,9 @@
   export default {
     data() {
       return {
-        cate_id: null,
+        mode: 'learn', // 学习模式
+        subject_id: null, // 科目id
+        cate_id: null, // 分类id
         currentQuestionIndex: 0, // 当前题目索引（从0开始）
         totalQuestions: 0,
         playingIndex: null, // 正在播放音频的题目索引
@@ -333,7 +331,7 @@
     methods: {
       onScroll(e) {
         // 只在答错时才需要切换评论输入框
-        if (!this.currentQuestion.showAnswer || this.isCorrectAnswer(this.currentQuestion)) {
+        if (!this.currentQuestion.showAnswer || this.isCorrectAnswer(this.currentQuestion) || this.mode == 'test') {
           this.showCommentInput = false;
           return;
         }
@@ -459,18 +457,31 @@
             }, 1000);
           }
         } else {
-          // 查询评论
-          this.queryPostList()
+          if (this.mode == 'learn') {
+            // 查询评论
+            this.queryPostList()
+          }
           // 答错了，重置连续答对
           this.correctStreak = 0;
           // 加入错题
           this.wrongAdd()
+          this.$forceUpdate()
         }
+        // this.$forceUpdate()
       },
       // 判断是否答对
       isCorrectAnswer(question) {
         if (question.selectedOption === null) return false;
         return question.selectedOption == question.answer;
+      },
+      optionClass (question, option) {
+        if (!question.showAnswer && question.selectedOption == option.key) {
+          return 'selected'
+        } else if (question.showAnswer && (option.key == question.answer)) {
+          return 'correct'
+        } else if (question.showAnswer && (question.selectedOption == option.key) && (option.key != question.answer)) {
+          return 'incorrect'
+        }
       },
       // 切换评论点赞
       toggleCommentLike(comment) {
@@ -564,20 +575,37 @@
       },
       // 初始化题目数据
       initQuestions() {
-        startTrain({
-          cate_id: this.cate_id
-        }).then(res => {
-          this.questions = res.data.data
-          this.totalQuestions = res.data.data.length
-        })
+        // let params 
+        // if (this.mode == 'learn') {
+        //   // 学习模式
+        //   params = {
+        //     cate_id: this.cate_id
+        //   }
+        // } else if (this.mode == 'test') {
+        //   // 测试模式
+        //   params = {
+        //     subject_id: this.subject_id
+        //   }
+        // }
+        // startTrain(params).then(res => {
+        //   this.questions = res.data.data
+        //   this.totalQuestions = res.data.data.length
+        //   // 缓存题目
+        //   uni.setStorageSync('questions', res.data.data)
+        // })
+        const questions = uni.getStorageSync('questions')
+        if (questions && questions.length) {
+          this.questions = questions
+          this.totalQuestions = questions.length
+        }
       },
       // 查询评论
       queryPostList () {
         queryPostList({
           question_id: this.currentQuestion.id
         }).then(res => {
-          this.currentQuestion.comments = res.data.list.data
-          this.currentQuestion.displayedComments = this.showAllComments ? this.currentQuestion.comments : this.currentQuestion.comments.slice(0, 3)
+          this.questions[this.currentQuestionIndex].comments = res.data.list.data
+          this.questions[this.currentQuestionIndex].displayedComments = this.showAllComments ? this.questions[this.currentQuestionIndex].comments : this.questions[this.currentQuestionIndex].comments.slice(0, 3)
         })
       },
       // 设置错题记录
@@ -595,7 +623,12 @@
       },
     },
     onLoad(option) {
-      this.cate_id = option.cate_id
+      this.mode = option.mode
+      if (option.mode == 'test') {
+        this.subject_id = option.subject_id
+      } else {
+        this.cate_id = option.cate_id
+      }
       // 初始化题目数据
       this.initQuestions();
 

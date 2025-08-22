@@ -114,7 +114,7 @@ export default {
     toggleReadStatus(index) {
       this.signsList[index].isRead = !this.signsList[index].isRead;
       // this.updateProgress();
-      this.saveProgress();
+      // this.saveProgress();
     },
     // 触摸开始
     onTouchStart(e) {
@@ -217,7 +217,7 @@ export default {
   watch: {
     // 监听当前索引变化，自动保存进度
     currentIndex() {
-      this.saveProgress();
+      // this.saveProgress();
     }
   },
   onLoad(option) {

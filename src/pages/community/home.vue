@@ -205,8 +205,12 @@
 
       // 选择分类
       selectCategory(categoryId) {
-        this.selectedCategory = categoryId;
-        console.log(`Selected category: ${categoryId}`);
+        if (this.selectedCategory === categoryId) {
+          this.selectedCategory = null;
+        } else {
+          this.selectedCategory = categoryId;
+          console.log(`Selected category: ${categoryId}`);
+        }
       },
 
       // 获取分类名称
@@ -267,7 +271,7 @@
           content: 'Are you sure you want to report this post?',
           success: (res) => {
             if (res.confirm) {
-              this.submitReport(postId);
+              // this.submitReport(postId);
             }
           }
         });
