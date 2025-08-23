@@ -541,7 +541,7 @@ export default {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 20px;
+  // gap: 20px;
   max-width: 350px;
   width: 100%;
   margin: 0 auto;
@@ -555,6 +555,7 @@ export default {
   box-shadow: 0 8px 25px rgba(0,0,0,0.08);
   position: relative;
   overflow: hidden;
+  margin-bottom: 40rpx;
 }
 
 .mode-card:active {

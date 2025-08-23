@@ -32,7 +32,7 @@
     <scroll-view class="container" scroll-y @scrolltolower="loadMorePosts" :lower-threshold="100">
 
       <!-- 帖子列表 -->
-      <view v-for="post in filteredPosts" :key="post.id" class="post-card">
+      <view v-for="post in discoverPosts" :key="post.id" class="post-card">
         <!-- 用户信息头部 -->
         <view class="user-header" @click="userProfileClick">
           <view class="user-avatar">
@@ -50,7 +50,7 @@
           <text class="post-text" @click="toDetail(post.id)">{{ post.content }}</text>
 
           <!-- 图片网格 -->
-          <view v-if="post.file_url && post.file_url.length > 0" class="images-grid">
+          <view v-if="post.file_url && post.file_url.length" class="images-grid">
             <image v-for="(image, index) in post.file_url" :key="index" :src="image" class="post-image"
               mode="aspectFill" @tap="viewImage(image)">
             </image>
@@ -78,10 +78,11 @@
           <view class="actions-left">
             <view class="action-button" :class="{liked: post.is_support}" @tap="toggleLike(post)">
               <view class="action-icon">
-                <svg viewBox="0 0 24 24">
+                <!-- <svg viewBox="0 0 24 24">
                   <path
                     d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                </svg>
+                </svg> -->
+                <u-icon name="heart" size="40rpx"></u-icon>
               </view>
               <text class="action-count">{{ post.support_count }}</text>
             </view>
@@ -120,12 +121,12 @@
       </view>
 
       <!-- 加载更多 -->
-      <view v-if="hasMorePosts && filteredPosts.length > 0" class="load-more-container">
+      <view v-if="hasMorePosts && discoverPosts.length > 0" class="load-more-container">
         <text class="load-more-text">{{ isLoading ? 'Loading...' : 'Load more' }}</text>
       </view>
 
       <!-- 空状态 -->
-      <view v-if="filteredPosts.length === 0 && !isLoading" class="empty-state">
+      <view v-if="discoverPosts.length === 0 && !isLoading" class="empty-state">
         <view class="empty-icon">
           <image src="/static/icons/empty.svg" class="empty-icon-image"></image>
         </view>
@@ -211,6 +212,8 @@
           this.selectedCategory = categoryId;
           console.log(`Selected category: ${categoryId}`);
         }
+        
+        this.loadTabData(this.activeTab);
       },
 
       // 获取分类名称
@@ -360,7 +363,8 @@
         const params = {
           type: tab == 'followed' ? 1 : 2, // 关注1 发现2
           page: 1,
-          size: 20
+          size: 20,
+          category_id: this.selectedCategory
         };
         queryPostList(params)
           .then((res) => {
@@ -560,7 +564,7 @@
   .tabs-container {
     display: flex;
     justify-content: center;
-    gap: 100rpx;
+    // gap: 100rpx;
     position: relative;
   }
 
@@ -571,6 +575,7 @@
     color: #999;
     position: relative;
     transition: color 0.3s ease;
+    margin: 0 50rpx;
   }
 
   .tab-button.active {
@@ -601,7 +606,7 @@
 
   .categories-container {
     display: inline-flex;
-    gap: 24rpx;
+    // gap: 24rpx;
   }
 
   .category-chip {
@@ -616,6 +621,7 @@
     transition: all 0.3s ease;
     border: 4rpx solid transparent;
     box-shadow: 0 4rpx 16rpx rgba(0, 0, 0, 0.05);
+    margin-right: 24rpx;
   }
 
   .category-chip.active {
@@ -715,17 +721,32 @@
   .images-grid {
     display: flex;
     flex-wrap: wrap;
-    gap: 20rpx;
+    // gap: 20rpx;
     margin-bottom: 30rpx;
   }
-
+  
+  /* #ifdef APP */
+  .post-image {
+    width: 200rpx;
+    height: 200rpx;
+    border-radius: 20rpx;
+    background: #F0F0F0;
+    margin-right: 20rpx;
+  }
+  /* #endif */
+  
+  /* #ifndef APP */
   .post-image {
     width: calc(33.333% - 14rpx);
     height: 100%;
     aspect-ratio: 1;
+    -webkit-aspect-ratio: 1; /* 对于旧的WebKit浏览器 */
     border-radius: 20rpx;
     background: #F0F0F0;
+    margin-right: 20rpx;
   }
+  /* #endif */
+  
 
   /* 评论预览 */
   .comment-preview {
@@ -794,12 +815,12 @@
     height: 44rpx;
   }
 
-  .action-button.liked .action-icon svg {
+  .action-button.liked .action-icon {
     fill: #FF6B6B;
     stroke: #FF6B6B;
   }
 
-  .action-icon svg {
+  .action-icon {
     width: 100%;
     height: 100%;
     stroke: #999;

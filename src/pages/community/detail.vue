@@ -692,7 +692,8 @@
   .post-meta {
     display: flex;
     align-items: center;
-    gap: 30rpx;
+    justify-content: space-between;
+    // gap: 30rpx;
     font-size: 26rpx;
     color: #999;
     padding-top: 30rpx;

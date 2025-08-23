@@ -14,9 +14,9 @@
       <view class="settings-panel" @tap.stop>
         <view class="settings-header">
           <text class="settings-title">Settings</text>
-          <button class="close-settings" @tap="closeSettings">
+          <view class="close-settings" @tap="closeSettings">
             <view class="close-icon">×</view>
-          </button>
+          </view>
         </view>
 
         <!-- 设置选项 -->
@@ -623,7 +623,7 @@
       },
     },
     onLoad(option) {
-      this.mode = option.mode
+      this.mode = option.mode ? option.mode : 'learn'
       if (option.mode == 'test') {
         this.subject_id = option.subject_id
       } else {
@@ -957,7 +957,7 @@
   /* Theme Selector */
   .theme-options {
     display: flex;
-    gap: 20rpx;
+    justify-content: space-between;
     margin-top: 30rpx;
   }
 
@@ -971,6 +971,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
+    margin-right: 20rpx;
   }
 
   .theme-option.active {
@@ -1413,7 +1414,7 @@
   .difficulty-visual {
     display: flex;
     justify-content: center;
-    gap: 12rpx;
+    // gap: 12rpx;
     position: relative;
   }
 
@@ -1423,6 +1424,7 @@
     background: #d1d5db;
     border-radius: 8rpx;
     transition: all 0.3s;
+    margin-right: 12rpx;
   }
 
   .difficulty-bar.active {
@@ -1793,7 +1795,7 @@
   .comment-input-bottom {
     display: flex;
     align-items: center;
-    gap: 24rpx;
+    // gap: 24rpx;
     width: 100%;
   }
 
@@ -1806,6 +1808,7 @@
     font-size: 28rpx;
     outline: none;
     height: 100%;
+    margin-right: 24rpx;
   }
 
   .comment-input-field:focus {
@@ -1846,7 +1849,7 @@
     border: none;
     display: flex;
     align-items: center;
-    gap: 16rpx;
+    // gap: 16rpx;
     padding: 20rpx 32rpx;
     border-radius: 24rpx;
     font-weight: 600;
@@ -1863,6 +1866,7 @@
 
   .save-icon {
     font-size: 40rpx;
+    margin-right: 16rpx;
   }
 
   /* ========================================
@@ -2151,9 +2155,9 @@
       font-size: 30rpx;
     }
 
-    .question-page {
-      padding: 30rpx;
-    }
+    // .question-page {
+    //   padding: 30rpx;
+    // }
   }
 
   /* 平板适配 */

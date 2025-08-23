@@ -177,12 +177,12 @@
         </view>
 
         <!-- 热门标签 -->
-        <view class="popular-tags">
+        <view class="popular-tags" v-if="popularTags.length">
           <text class="section-title">Popular Tags</text>
           <view class="tags-grid">
-            <view v-for="tag in popularTags" :key="tag" class="popular-tag"
-              :class="{selected: selectedTags.includes(tag)}" @tap="toggleTag(tag)">
-              #{{ tag }}
+            <view v-for="(item, index) in popularTags" :key="index" class="popular-tag"
+              :class="{selected: selectedTags.includes(item.tag)}" @tap="toggleTag(item)">
+              #{{ item.tag }}
             </view>
           </view>
         </view>
@@ -244,6 +244,7 @@
         // 选项
         selectedCategories: [], // 支持多选
         selectedTags: [],
+        selectedTagsIds: [],
         selectedTestCentre: null, // 可选项
         selectedTestCentreName: '',
         customTag: '',
@@ -257,18 +258,7 @@
         categories: [],
 
         // 热门标签
-        popularTags: [
-          'TheoryTest',
-          'HazardPerception',
-          'FirstTime',
-          'Passed',
-          'Tips',
-          'MockTest',
-          'StudyGroup',
-          'Question',
-          'Help',
-          'Experience'
-        ],
+        popularTags: [],
 
         // 考试中心列表
         testCentres: []
@@ -337,14 +327,14 @@
         }
         // 构建帖子数据
         // 处理this.uploadedImages，this.uploadedVideo
-        const uploadedImages = this.uploadedImages ? `[{"${this.uploadedImages.join('","')}"}]` : null
-        const uploadedVideo = this.uploadedVideo.length ? [new Set(this.uploadedVideo)] : null
+        const uploadedImages = this.uploadedImages.length ? this.uploadedImages.join(',') : null
+        const uploadedVideo = this.uploadedVideo.length ? this.uploadedVideo.join(',') : null
         const postData = {
           content: this.postContent,
           "photo_url": uploadedImages,
-          video_url: uploadedVideo,
-          categories: this.selectedCategories,
-          tag_ids: this.selectedTags,
+          "video_url": uploadedVideo,
+          category_id: this.selectedCategories.join(','),
+          tag_ids: this.selectedTagsIds.join(','),
           room_id: this.selectedTestCentre,
           ip: ''
         };
@@ -461,28 +451,24 @@
             tag: this.customTag.trim()
           }).then(res => {
             if (res.code == 1) {
-              if (this.selectedTags.length < 5) {
-                this.selectedTags.push(this.customTag.trim());
-                this.customTag = '';
-              } else {
-                uni.showToast({
-                  title: 'Maximum 5 tags',
-                  icon: 'none'
-                });
-              }
+              this.customTag = '';
+              this.queryTags()
             }
           })
         }
       },
 
       // 切换标签选择
-      toggleTag(tag) {
-        const index = this.selectedTags.indexOf(tag);
+      toggleTag(item) {
+        const index = this.selectedTags.indexOf(item.tag);
+        const idIndex = this.selectedTagsIds.indexOf(item.id)
         if (index > -1) {
           this.selectedTags.splice(index, 1);
+          this.selectedTagsIds.splice(index, 1);
         } else {
           if (this.selectedTags.length < 5) {
-            this.selectedTags.push(tag);
+            this.selectedTags.push(item.tag);
+            this.selectedTagsIds.push(item.id);
           } else {
             uni.showToast({
               title: 'Maximum 5 tags',
@@ -495,6 +481,7 @@
       // 移除标签
       removeTag(index) {
         this.selectedTags.splice(index, 1);
+        this.selectedTagsIds.splice(index, 1);
       },
 
       // 确认标签
@@ -535,6 +522,7 @@
       queryTags() {
         queryTags().then(res => {
           console.log(res)
+          this.popularTags = res.data.list
         })
       },
 
