@@ -50,3 +50,21 @@ export function choiceLicenseType(params) {
 export function setTestDate(params) {
   return fly.post("/exam/user/setTestDate", params);
 }
+
+/*
+ * author：huanyun
+ * create by date：2024/11/11
+ * content：获取会员配置
+ */
+export function getMemberOpenConfig(params) {
+  return fly.post("/exam/user/memberOpenConfig", params);
+}
+/*
+ * author：huanyun
+ * create by date：2024/11/11
+ * content：开通会员
+ */
+export function createMemberOrder(params) {
+  return fly.post("/exam/user/createMemberOrder", params);
+}
+

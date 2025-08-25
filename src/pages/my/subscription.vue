@@ -38,13 +38,28 @@
 
       <!-- 价格卡片 -->
       <view class="pricing-cards">
-        <view class="pricing-card free" @tap="selectedPlan = 'free'">
-          <text class="pricing-plan-icon">🆓</text>
-          <text class="pricing-plan-name">Free</text>
-          <text class="pricing-plan-price">£0</text>
-          <text class="pricing-plan-period">Forever</text>
+        <view v-for="(item, index) in subscriptions" :key="index" 
+        class="pricing-card"
+        :class="{
+          'free': item.name == 'Free',
+          'silver': item.name == 'Silver',
+          'gold': item.name == 'Gold'
+        }" @tap="doSelectedPlan(item)">
+          <text class="pricing-plan-icon">
+            {{item.icon}}
+          </text>
+          <text class="pricing-plan-name">
+            {{item.name}}
+          </text>
+          <text class="pricing-plan-price" :class="{
+            'gold-price': item.name == 'Gold'
+          }">
+            £{{item.price}}
+          </text>
+          <text class="pricing-plan-period">{{item.period}}</text>
         </view>
-        <view class="pricing-card silver" @tap="selectedPlan = 'silver'">
+        
+        <!-- <view class="pricing-card silver" @tap="selectedPlan = 'silver'">
           <text class="pricing-plan-icon">🥈</text>
           <text class="pricing-plan-name">Silver</text>
           <text class="pricing-plan-price">
@@ -64,7 +79,7 @@
           <text class="pricing-plan-period">
             {{ priceType === 'monthly' ? 'per month' : 'lifetime' }}
           </text>
-        </view>
+        </view> -->
       </view>
 
       <!-- 价格类型切换 -->
@@ -295,22 +310,22 @@
     <!-- 固定底部按钮 -->
     <view class="subscribe-buttons">
       <!-- Silver用户显示升级到Gold的选项 -->
-      <button 
+      <!-- <button 
         v-if="currentPlan === 'Silver'"
         class="subscribe-button gold primary"
         @tap="subscribeToPlan('gold')">
         Upgrade to Gold - {{ priceType === 'monthly' ? '£2/month extra' : '£5 one-time' }}
-      </button>
-      <!-- 其他用户显示两个选项 -->
-      <template v-else>
+      </button> -->
+      <!-- 其他用户显示两个选项 v-else-->
+      <template>
         <button 
-          v-for="plan in ['silver', 'gold']" 
-          :key="plan"
+          v-for="(plan, index) in showPayConfig" 
+          :key="index"
           class="subscribe-button" 
-          :class="[plan, {primary: selectedPlan === plan, current: currentPlan.toLowerCase() === plan}]"
+          :class="[plan.type, {primary: selectedPlan === plan.type, current: currentPlan.toLowerCase() === plan.type}]"
           @tap="subscribeToPlan(plan)"
           :disabled="currentPlan.toLowerCase() === plan">
-          {{ getButtonText(plan) }}
+          {{ getButtonText(plan.type) }}
         </button>
       </template>
     </view>
@@ -318,9 +333,18 @@
 </template>
 
 <script>
+import {getMemberOpenConfig, createMemberOrder, getUserInfo} from '@/http/api/login.js'
 export default {
   data() {
     return {
+      subscriptions: [{
+        icon: '🆓',
+        type: 'free',
+        name: 'Free',
+        price: '0',
+        period: 'Forever'
+      }],
+      showPayConfig: [], // 需要支付配置
       // 当前用户的订阅计划
       currentPlan: 'Free',
       currentPlanExpiry: null,
@@ -394,17 +418,19 @@ export default {
     
     // 订阅计划
     subscribeToPlan(plan) {
-      if (this.currentPlan.toLowerCase() === plan) {
+      if (this.currentPlan.toLowerCase() === plan.type) {
         return;
       }
       
-      this.selectedPlan = plan;
+      this.selectedPlan = plan.type;
       
       console.log(`Subscribing to ${plan} plan`);
       console.log(`Price type: ${this.priceType}`);
       
       // 实际应用中调用支付API
-      this.initiatePayment(plan);
+      // this.initiatePayment(plan);
+      
+      this.createMemberOrder(plan.id)
     },
     
     // 初始化支付
@@ -452,32 +478,50 @@ export default {
         }
       }, 1000);
     },
-    
-    // 获取用户当前订阅状态
-    async fetchUserSubscription() {
-      try {
-        // 模拟API调用获取用户订阅信息
-        const [error, response] = await uni.request({
-          url: '/api/user/subscription',
-          method: 'GET'
-        });
-        
-        if (!error && response.statusCode === 200) {
-          this.currentPlan = response.data.plan;
-          this.currentPlanExpiry = response.data.expiry;
+    // 获取用户信息
+    getUserInfo () {
+      getUserInfo().then(res => {
+        console.log(res)
+      })
+    },
+    // 获取会员开通配置
+    getMemberOpenConfig () {
+      this.showPayConfig = []
+      getMemberOpenConfig().then(res => {
+        if (res.code == 1) {
+          res.data.forEach(item => {
+            this.showPayConfig.push({
+              name: item.name,
+              type: item.name == 'Silver' ? 'silver' : 'gold',
+              price: item.price,
+              id: item.id,
+              icon: item.name == 'Silver' ? '🥈' : '🏆',
+              period: item.days
+            })
+          })
+          this.subscriptions = [
+            ...this.subscriptions,
+            ...this.showPayConfig
+          ]
         }
-        
-        // 模拟数据
-        // this.currentPlan = 'Free';
-        // this.currentPlanExpiry = null;
-      } catch (error) {
-        console.error('Failed to fetch subscription:', error);
-      }
+      })
+    },
+    // 选择会员
+    doSelectedPlan (item) {
+      this.selectedPlan = item.type
+    },
+    // 购买会员
+    createMemberOrder (member_config_id) {
+      createMemberOrder({
+        member_config_id: member_config_id
+      }).then(res => {
+        console.log(res)
+      })
     }
   },
   onLoad() {
-    // 页面加载时获取用户订阅信息
-    this.fetchUserSubscription();
+    this.getUserInfo()
+    this.getMemberOpenConfig()
   }
 }
 </script>
