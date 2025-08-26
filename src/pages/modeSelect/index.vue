@@ -406,7 +406,9 @@ export default {
       } else if (this.currentView == 'test') {
         // 测试模式
         params = {
-          subject_id: this.subject_id
+          subject_id: this.subject_id,
+          page_count: this.tempQuestionCount,
+          mode: 'random' // normal=普通模式，random=随机查询
         }
       }
       startTrain(params).then(res => {

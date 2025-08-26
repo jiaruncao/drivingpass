@@ -58,6 +58,15 @@ export function wrongAdd(params) {
  * create by date：2025/08/06
  * question_id  题目ID
  */
+export function wrongDelete(params) {
+  return fly.post("/exam/question/wrongDelete", params);
+}
+
+/*
+ * author：huanyun
+ * create by date：2025/08/06
+ * question_id  题目ID
+ */
 export function recordAdd(params) {
   return fly.post("/exam/question/recordAdd", params);
 }

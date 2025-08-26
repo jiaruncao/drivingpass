@@ -61,7 +61,7 @@
       <!-- 互动栏卡片 -->
       <view class="actions-card">
         <view class="actions-bar">
-          <view class="action-button" :class="{liked: post.isLiked}" @tap="toggleLike">
+          <view class="action-button" :class="{liked: post.is_support}" @tap="toggleLike">
             <view class="action-icon">
               <svg viewBox="0 0 24 24">
                 <path
@@ -71,7 +71,7 @@
             <text class="action-label">{{ post.support_count }}</text>
           </view>
 
-          <view class="action-button" :class="{saved: post.isSaved}" @tap="toggleSave">
+          <view class="action-button" :class="{saved: post.is_collect}" @tap="toggleSave">
             <view class="action-icon">
               <svg viewBox="0 0 24 24">
                 <polygon
@@ -99,7 +99,7 @@
         </view>
 
         <!-- 评论列表 -->
-        <view v-for="comment in comments" :key="comment.id" class="comment-item">
+        <view v-for="comment in showComments" :key="comment.id" class="comment-item">
           <view class="comment-header">
             <view class="comment-avatar">{{ getInitial(comment.nickname) }}</view>
             <view class="comment-info">
@@ -107,7 +107,7 @@
               <text class="comment-meta">{{ comment.testCentre }}</text>
             </view>
             <view class="comment-actions">
-              <view class="comment-like-button" :class="{liked: comment.isLiked}" @tap="toggleCommentLike(comment)">
+              <view class="comment-like-button" :class="{liked: comment.is_support}" @tap="toggleCommentLike(comment)">
                 <view class="comment-like-icon">
                   <svg viewBox="0 0 24 24">
                     <path
@@ -210,6 +210,8 @@
         post: {},
         // 评论数据
         comments: [],
+        // 展示的评论
+        showComments: [],
         // 界面状态
         currentImageIndex: 0,
         isFollowing: false,
@@ -288,28 +290,29 @@
 
       // 切换点赞
       toggleLike() {
-        this.post.isLiked = !this.post.isLiked;
-        this.post.likeCount += this.post.isLiked ? 1 : -1;
-        console.log(this.post.isLiked ? 'Liked post' : 'Unliked post');
+        
+        console.log(this.post.is_support ? 'Liked post' : 'Unliked post');
         supportPost({
           post_id: this.postId
         }).then(res => {
           if (res.code == 1) {
-            this.loadPostDetail()
+            // this.loadPostDetail()
+            this.post.is_support = !this.post.is_support;
+            this.post.support_count += this.post.is_support ? 1 : -1;
           }
         })
       },
 
       // 切换收藏
       toggleSave() {
-        this.post.isSaved = !this.post.isSaved;
-        this.post.saveCount += this.post.isSaved ? 1 : -1;
-        console.log(this.post.isSaved ? 'Saved post' : 'Unsaved post');
+        console.log(this.post.is_collect ? 'Saved post' : 'Unsaved post');
         collectPost({
           post_id: this.postId
         }).then(res => {
           if (res.code == 1) {
-            this.loadPostDetail()
+            // this.loadPostDetail()
+            this.post.is_collect = !this.post.is_collect;
+            this.post.collect_count += this.post.is_collect ? 1 : -1;
           }
         })
       },
@@ -324,14 +327,16 @@
 
       // 切换评论点赞
       toggleCommentLike(comment) {
-        comment.isLiked = !comment.isLiked;
-        comment.likeCount += comment.isLiked ? 1 : -1;
-        console.log(comment.isLiked ? 'Liked comment' : 'Unliked comment');
+        // comment.is_support = !comment.is_support;
+        // comment.likeCount += comment.is_support ? 1 : -1;
+        console.log(comment.is_support ? 'Liked comment' : 'Unliked comment');
         supportReply({
           post_id: this.postId,
           reply_id: comment.id
         }).then(res => {
-          this.loadPostDetail()
+          // this.loadPostDetail()
+          comment.is_support = !comment.is_support;
+          comment.support_count += comment.is_support ? 1 : -1;
         })
       },
 
@@ -389,35 +394,14 @@
 
         // 模拟API调用
         setTimeout(() => {
-          const moreComments = [{
-              id: Date.now(),
-              username: 'NewUser',
-              testCentre: 'Test Centre: Bristol',
-              text: 'Thanks for sharing this valuable information!',
-              likeCount: 12,
-              isLiked: false,
-              replies: [],
-              showAllReplies: false
-            },
-            {
-              id: Date.now() + 1,
-              username: 'TestTaker',
-              testCentre: 'Test Centre: Leeds',
-              text: 'I have my test next week, this gives me confidence!',
-              likeCount: 8,
-              isLiked: false,
-              replies: [],
-              showAllReplies: false
-            }
-          ];
-
-          this.comments.push(...moreComments);
+          this.showComments = this.comments.slice(0, this.showComments.length + 5);
           this.isLoadingComments = false;
 
           // 模拟没有更多评论
-          if (this.comments.length > 10) {
+          if (this.showComments.length >= this.comments.length) {
             this.hasMoreComments = false;
           }
+
         }, 1000);
       },
 
@@ -444,25 +428,6 @@
         }
       },
 
-      // 更新点赞状态
-      async updateLikeStatus() {
-        try {
-          const [error, response] = await uni.request({
-            url: `/api/posts/${this.post.id}/like`,
-            method: this.post.isLiked ? 'POST' : 'DELETE',
-            header: {
-              'Content-Type': 'application/json'
-            }
-          });
-
-          if (error) throw new Error('Failed to update like status');
-        } catch (error) {
-          console.error('Failed to update like status:', error);
-          this.post.isLiked = !this.post.isLiked;
-          this.post.likeCount += this.post.isLiked ? 1 : -1;
-        }
-      },
-
       // 加载帖子详情
       async loadPostDetail() {
         const postId = this.postId;
@@ -476,6 +441,14 @@
           if (response.code === 1) {
             this.post = response.data.detail;
             this.comments = response.data.reply;
+            // 默认展示5条
+            this.showComments = this.comments.slice(0, 5);
+            this.hasMoreComments = this.comments.length > 5;
+            this.isLoadingComments = false;
+            
+            // if (this.comments.length < 5) {
+            //   this.hasMoreComments = false;
+            // }
           }
         } catch (error) {
           console.error('Failed to load post detail:', error);

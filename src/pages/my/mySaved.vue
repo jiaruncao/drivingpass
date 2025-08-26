@@ -282,9 +282,9 @@
         </view>
 
         <!-- 题目列表 -->
-        <view v-for="question in filteredQuestions" :key="question.id" class="question-card" :class="{collapsed: question.collapsed}">
+        <view v-for="(question, index) in filteredQuestions" :key="question.id" class="question-card" :class="{collapsed: question.collapsed}">
           <view class="question-header" @tap="toggleQuestion(question.id)">
-            <view class="question-number">Q{{ question.number }}</view>
+            <view class="question-number">Q{{ index + 1 }}</view>
             <view class="question-meta">
               <text class="question-category">{{ question.category }}</text>
               <view class="question-badges">
@@ -296,46 +296,46 @@
                 </text>
               </view>
             </view>
-            <view class="remove-button" @tap.stop="removeQuestion(question.id)">✕</view>
+            <view class="remove-button" @tap.stop="removeQuestion(question.question_id)">✕</view>
             <view class="expand-icon">{{ question.collapsed ? '▼' : '▲' }}</view>
           </view>
           
           <view class="question-body">
-            <text class="question-text">{{ question.text }}</text>
+            <text class="question-text">{{ question.title }}</text>
             
-            <image v-if="question.image" :src="question.image" class="question-image" mode="aspectFill"></image>
+            <image v-if="question.title_video_url" :src="question.title_video_url" class="question-image" mode="aspectFill"></image>
             
             <!-- 只在错题本视图显示选项和答案 -->
             <view v-if="questionView === 'wrongs'" class="options-list">
               <view 
-                v-for="(option, index) in question.options" 
+                v-for="(option, index) in question.options_json" 
                 :key="index"
                 class="option-item"
                 :class="{
-                  correct: question.showAnswer && index === question.correctAnswer,
-                  incorrect: question.showAnswer && question.userAnswer === index && index !== question.correctAnswer,
-                  'user-selected': question.showAnswer && question.userAnswer === index
+                  correct: option.key === question.answer,
+                  incorrect: question.user_answer === option.key && option.key !== question.answer,
+                  'user-selected': question.user_answer === option.key
                 }">
-                <text class="option-marker">{{ String.fromCharCode(65 + index) }}</text>
-                <text>{{ option }}</text>
+                <text class="option-marker">{{ option.key }}</text>
+                <text>{{ option.value }}</text>
               </view>
             </view>
             
             <!-- 收藏题目只显示选项，不显示对错 -->
             <view v-else class="options-list">
               <view 
-                v-for="(option, index) in question.options" 
+                v-for="(option, index) in question.options_json" 
                 :key="index"
                 class="option-item">
-                <text class="option-marker">{{ String.fromCharCode(65 + index) }}</text>
-                <text>{{ option }}</text>
+                <text class="option-marker">{{ option.key }}</text>
+                <text>{{ option.value }}</text>
               </view>
             </view>
 
             <view class="question-footer">
               <view class="question-stats">
                 <view class="stat">
-                  <text class="stat-value">{{ question.lastAttempt }}</text>
+                  <text class="stat-value">{{ $u.timeFormat(question.updatetime) }}</text>
                   <text class="stat-label">Last Attempt</text>
                 </view>
               </view>
@@ -352,7 +352,7 @@
 </template>
 
 <script>
-import {getWrongList, getCollectList} from '@/http/api/testQuestions.js'
+import {getWrongList, getCollectList, wrongDelete} from '@/http/api/testQuestions.js'
 export default {
   data() {
     return {
@@ -401,114 +401,8 @@ export default {
       ],
       
       // 模拟题目数据
-      questionsDatabase: {
-        1: [ // Road Rule Violations
-          {
-            id: 101,
-            number: 1,
-            category: 'Road Rule Violations',
-            difficulty: 'medium',
-            accuracy: 72,
-            text: 'What is the minimum safe following distance on a motorway in good conditions?',
-            image: '/static/images/motorway-distance.jpg',
-            options: [
-              'One second',
-              'Two seconds',
-              'Three seconds',
-              'Four seconds'
-            ],
-            correctAnswer: 1,
-            userAnswer: 2,
-            showAnswer: true,
-            lastAttempt: '2 days ago',
-            collapsed: false
-          },
-          {
-            id: 102,
-            number: 2,
-            category: 'Road Rule Violations',
-            difficulty: 'hard',
-            accuracy: 45,
-            text: 'When can you overtake on the left on a motorway?',
-            options: [
-              'Never',
-              'When traffic in the right lane is moving slowly',
-              'When the vehicle ahead is turning right',
-              'In heavy traffic when your lane is moving faster'
-            ],
-            correctAnswer: 3,
-            userAnswer: 0,
-            showAnswer: true,
-            lastAttempt: '1 week ago',
-            collapsed: true
-          }
-        ],
-        2: [ // Prohibitory Signs
-          {
-            id: 201,
-            number: 3,
-            category: 'Prohibitory Signs',
-            difficulty: 'easy',
-            accuracy: 89,
-            text: 'What does a circular sign with a red border and white background mean?',
-            image: '/static/images/prohibitory-sign.jpg',
-            options: [
-              'Warning sign',
-              'Prohibitory sign',
-              'Mandatory sign',
-              'Information sign'
-            ],
-            correctAnswer: 1,
-            userAnswer: 1,
-            showAnswer: true,
-            lastAttempt: 'Today',
-            collapsed: true
-          }
-        ],
-        3: [ // Freeway Entry/Exit
-          {
-            id: 301,
-            number: 4,
-            category: 'Freeway Entry/Exit Errors',
-            difficulty: 'medium',
-            accuracy: 68,
-            text: 'When joining a motorway from a slip road, you should:',
-            options: [
-              'Stop at the end of the slip road',
-              'Give way to traffic already on the motorway',
-              'Force your way into the traffic',
-              'Use the hard shoulder if necessary'
-            ],
-            correctAnswer: 1,
-            userAnswer: 0,
-            showAnswer: true,
-            lastAttempt: '3 days ago',
-            collapsed: true
-          }
-        ],
-        4: [ // Warning Signs
-          {
-            id: 401,
-            number: 5,
-            category: 'Warning Signs',
-            difficulty: 'easy',
-            accuracy: 92,
-            text: 'What shape are most warning signs?',
-            options: [
-              'Circular',
-              'Triangular',
-              'Rectangular',
-              'Octagonal'
-            ],
-            correctAnswer: 1,
-            userAnswer: 1,
-            showAnswer: true,
-            lastAttempt: 'Yesterday',
-            collapsed: true
-          }
-        ]
-      },
-      
+      questionsDatabase: [],
+      questionsCollectDatabase: [],
       // 保存的帖子
       savedPosts: [
         {
@@ -548,9 +442,9 @@ export default {
     // 筛选后的题目
     filteredQuestions() {
       if (this.questionFilter === 'all') {
-        return this.currentQuestions;
+        return this.currentQuestions
       }
-      return this.currentQuestions.filter(q => q.difficulty === this.questionFilter);
+      return this.currentQuestions.filter(q => q.difficulty === this.questionFilter)
     }
   },
   methods: {
@@ -601,19 +495,25 @@ export default {
     // 查看分类
     viewCategory(category) {
       console.log('Viewing category:', category);
+      console.log('this.filteredQuestions', this.filteredQuestions)
       this.currentCategoryName = category.name;
       // 从数据库获取该分类的题目
-      this.currentQuestions = this.questionsDatabase[category.id] || [];
+      const questions = this.questionView === 'wrongs' ? this.questionsDatabase : this.questionsCollectDatabase
+      this.currentQuestions = questions.filter(item => {
+        return item.cate_id == category.id
+      }) || [];
       // 根据当前视图决定是否显示答案
       this.currentQuestions.forEach(q => {
         q.isFromWrongs = this.questionView === 'wrongs';
       });
+      console.log(this.currentQuestions)
       this.showQuestionsModal = true;
     },
     
     // 切换题目展开/收起
-    toggleQuestion(questionId) {
-      const question = this.currentQuestions.find(q => q.id === questionId);
+    toggleQuestion(id) {
+      console.log('this.currentQuestions',this.currentQuestions)
+      const question = this.currentQuestions.find(q => q.id === id);
       if (question) {
         this.$set(question, 'collapsed', !question.collapsed);
       }
@@ -633,17 +533,27 @@ export default {
         content: 'Remove this question from saved items?',
         success: (res) => {
           if (res.confirm) {
-            this.currentQuestions = this.currentQuestions.filter(q => q.id !== questionId);
+            
+            wrongDelete({
+              question_id: questionId
+            }).then(res => {
+              if (res.code == 1) {
+                uni.showToast({
+                  title: 'Removed',
+                  icon: 'success',
+                  duration: 2000
+                });
+                this.currentQuestions = this.currentQuestions.filter(q => q.id !== questionId);
+              }
+            })
+
             // 更新统计
-            if (this.questionView === 'wrongs') {
-              this.totalErrors = Math.max(0, this.totalErrors - 1);
-            } else {
-              this.totalSaved = Math.max(0, this.totalSaved - 1);
-            }
-            uni.showToast({
-              title: 'Removed',
-              icon: 'success'
-            });
+            // if (this.questionView === 'wrongs') {
+            //   this.totalErrors = Math.max(0, this.totalErrors - 1);
+            // } else {
+            //   this.totalSaved = Math.max(0, this.totalSaved - 1);
+            // }
+            
           }
         }
       });
@@ -654,7 +564,7 @@ export default {
       console.log('Practice question:', questionId);
       // 实际应用中导航到练习页面
       uni.navigateTo({
-        url: `/pages/practice/practice?questionId=${questionId}`
+        url: `/pages/learnQuestion/index?questionId=${questionId}`
       });
     },
     
@@ -663,7 +573,7 @@ export default {
       console.log('View explanation for question:', questionId);
       // 实际应用中显示题目解释
       uni.navigateTo({
-        url: `/pages/explanation/explanation?questionId=${questionId}`
+        url: `/pages/learnQuestion/index?questionId=${questionId}`
       });
     },
     
@@ -785,20 +695,52 @@ export default {
       console.log('Refreshing data...');
       getWrongList().then(res => {
         console.log(res)
+        this.questionsDatabase = []
         if (res.code == 1) {
           this.wrongsCount = res.data.total
+          res.data.list.data.forEach(item => {
+            this.questionsDatabase.push({
+              ...item,
+              question_id: item.id,
+              id: item.wrong_id
+            })
+          })
         }
       })
       getCollectList ().then(res => {
+        this.questionsCollectDatabase = []
         if (res.code == 1) {
           this.savedCount = res.data.total
+          res.data.list.data.forEach(item => {
+            delete item.question.id
+            this.questionsCollectDatabase.push({
+              ...item.question,
+              id: item.id,
+              question_id: item.question_id
+            })
+          })
         }
+      })
+      getCollectList ().then(res => {
+        this.questionsCollectDatabase = []
+        if (res.code == 1) {
+          this.savedCount = res.data.total
+          res.data.list.data.forEach(item => {
+            delete item.question.id
+            this.questionsCollectDatabase.push({
+              ...item.question,
+              id: item.id,
+              question_id: item.question_id
+            })
+          })
+        }
+        console.log(this.questionsCollectDatabase)
       })
     }
   },
   onLoad() {
     // 页面加载时初始化数据
-    this.loadSavedData();
+    // this.loadSavedData();
   },
   onShow() {
     // 页面显示时刷新数据
@@ -1552,7 +1494,7 @@ export default {
 
 .expand-icon {
   width: 48rpx;
-  height: 48rpx;
+  height: 70rpx;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1594,9 +1536,11 @@ export default {
 }
 
 .question-meta {
+  height: 70rpx;
   flex: 1;
   display: flex;
   flex-direction: column;
+  justify-content: center;
 }
 
 .question-category {
@@ -1640,7 +1584,7 @@ export default {
 
 .remove-button {
   width: 60rpx;
-  height: 60rpx;
+  height: 70rpx;
   display: flex;
   align-items: center;
   justify-content: center;

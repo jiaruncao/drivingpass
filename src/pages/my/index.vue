@@ -233,18 +233,10 @@ export default {
   data() {
     return {
       // 用户数据
-      userData: {
-        username: 'StormChaser',
-        testCentre: 'Birmingham Test Centre', // 可以为空
-        examDate: '25 November 2025', // 考试日期，可以为空
-        bio: 'Road to licensure~',
-        following: 18,
-        followers: 99,
-        likes: 999
-      },
+      userData: {},
       // 订阅数据
-      subscriptionData: {// 可选: 'free', 'silver', 'gold'
-        
+      subscriptionData: {
+        // 可选: 'free', 'silver', 'gold'
       },
       // 测试进度数据
       currentQuestionBank: 'Type 1',
@@ -254,7 +246,7 @@ export default {
   computed: {
     // 获取用户名首字母
     userInitial() {
-      return this.userData.nickname.charAt(0).toUpperCase();
+      return this.userData.nickname ? this.userData.nickname.charAt(0).toUpperCase() : null;
     },
     // 获取订阅徽章样式
     getBadgeClass() {
