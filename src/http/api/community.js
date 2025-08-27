@@ -145,3 +145,11 @@ export function collectList(params) {
 export function getCenterIndex(params) {
   return fly.post("/exam/room/index", params);
 }
+/*
+ * 查询用户社区信息
+ * author：huanyun
+ * create by date：2025/08/16
+ */
+export function queryUserInfo(params) {
+  return fly.post("/exam/forum/queryUserInfo", params);
+}

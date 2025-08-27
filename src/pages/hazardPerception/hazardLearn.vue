@@ -23,14 +23,14 @@
       <view class="score-bar-container">
         <!-- 得分区间 - 分段显示，模拟两个危险区间 -->
         <!-- 第一个危险区间：15%-45% -->
-        <view class="gray-zone" style="left: 0; width: 15%;"></view>
+        <!-- <view class="gray-zone" style="left: 0; width: 15%;"></view> -->
         <view class="score-zone zone-5" style="left: 15%; width: 5%;">5</view>
         <view class="score-zone zone-4" style="left: 20%; width: 5%;">4</view>
         <view class="score-zone zone-3" style="left: 25%; width: 10%;">3</view>
         <view class="score-zone zone-2" style="left: 35%; width: 10%;">2</view>
         
         <!-- 中间无分区域 -->
-        <view class="gray-zone" style="left: 45%; width: 15%;"></view>
+        <!-- <view class="gray-zone" style="left: 45%; width: 15%;"></view> -->
         
         <!-- 第二个危险区间：60%-80% -->
         <view class="score-zone zone-5" style="left: 60%; width: 5%;">5</view>
@@ -39,7 +39,7 @@
         <view class="score-zone zone-2" style="left: 75%; width: 5%;">2</view>
         
         <!-- 结尾无分区域 -->
-        <view class="gray-zone" style="left: 80%; width: 20%;"></view>
+        <!-- <view class="gray-zone" style="left: 80%; width: 20%;"></view> -->
 
         <!-- 用户标记的旗子 -->
         <view class="user-marks">

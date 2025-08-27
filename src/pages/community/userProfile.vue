@@ -30,11 +30,11 @@
             </view>
           </view>
           <view class="profile-info">
-            <text class="profile-name">{{ userData.name }}</text>
+            <text class="profile-name">{{ userData.nickname }}</text>
             <text class="profile-bio">{{ userData.bio }}</text>
             <view class="test-centre-info">
               <text class="centre-icon">🏢</text>
-              <text>{{ userData.testCentre }}</text>
+              <text>{{ userData.room }}</text>
             </view>
           </view>
         </view>
@@ -45,7 +45,7 @@
             <text class="stat-label">Posts</text>
           </view>
           <view class="stat-item">
-            <text class="stat-value">{{ userData.followers }}</text>
+            <text class="stat-value">{{ userData.follows }}</text>
             <text class="stat-label">Followers</text>
           </view>
           <view class="stat-item">
@@ -80,11 +80,11 @@
                 <text class="category-icon">{{ post.categoryIcon }}</text>
                 <text>{{ post.category }}</text>
               </view>
-              <text class="post-time">{{ post.time }}</text>
+              <text class="post-time">{{ $u.timeFormat(post.createtime) }}</text>
             </view>
             <text class="post-content">{{ post.content }}</text>
-            <view v-if="post.images && post.images.length > 0" class="post-media">
-              <image v-for="(img, index) in post.images" 
+            <view v-if="post.file_url && post.file_url.length > 0" class="post-media">
+              <image v-for="(img, index) in post.file_url" 
                      :key="index" 
                      :src="img" 
                      class="post-image"
@@ -94,17 +94,17 @@
             <!-- 互动栏 -->
             <view class="actions-bar">
               <view class="actions-left">
-                <view class="action-button" :class="{liked: post.isLiked}" @tap="toggleLike(post)">
+                <view class="action-button" :class="{liked: post.is_support}" @tap.stop="toggleLike(post)">
                   <view class="action-icon">
                     <image src="/static/icons/heart.svg" class="icon-svg" mode="aspectFit"></image>
                   </view>
-                  <text class="action-count">{{ post.likes }}</text>
+                  <text class="action-count">{{ post.support_count }}</text>
                 </view>
-                <view class="action-button" @tap="openComments(post.id)">
+                <view class="action-button" @tap.stop="openComments(post.id)">
                   <view class="action-icon">
                     <image src="/static/icons/comment.svg" class="icon-svg" mode="aspectFit"></image>
                   </view>
-                  <text class="action-count">{{ post.comments }}</text>
+                  <text class="action-count">{{ post.reply_count }}</text>
                 </view>
               </view>
             </view>
@@ -117,7 +117,7 @@
         </view>
 
         <!-- 加载更多 -->
-        <view v-if="hasMore && !loading" class="load-more" @tap="loadMore">
+        <view v-if="hasMore && !loading" class="load-more">
           <text>Load more</text>
         </view>
         <view v-if="loading" class="load-more loading">
@@ -129,6 +129,7 @@
 </template>
 
 <script>
+import {queryUserInfo, userFollowed, supportPost} from '@/http/api/community.js'
 export default {
   data() {
     return {
@@ -152,45 +153,13 @@ export default {
       hasMore: true,
       
       // 帖子数据
-      posts: [
-        {
-          id: 1,
-          category: 'Theory Test',
-          categoryIcon: '📚',
-          content: 'Just passed my theory test with 49/50! Here are my top tips for the hazard perception section that really helped me...',
-          images: ['https://via.placeholder.com/300x300', 'https://via.placeholder.com/300x300'],
-          time: '2 hours ago',
-          likes: 234,
-          comments: 45,
-          isLiked: false
-        },
-        {
-          id: 2,
-          category: 'Tips & Tricks',
-          categoryIcon: '💡',
-          content: 'Found this amazing app feature that lets you practice hazard perception clips offline. Game changer for commute studying!',
-          time: '1 day ago',
-          likes: 156,
-          comments: 23,
-          isLiked: false
-        },
-        {
-          id: 3,
-          category: 'Success Story',
-          categoryIcon: '🎉',
-          content: 'Finally passed after 3 attempts! Don\'t give up if you fail - each attempt teaches you something new. My journey and what I learned...',
-          time: '3 days ago',
-          likes: 512,
-          comments: 87,
-          isLiked: true
-        }
-      ]
+      posts: []
     }
   },
   computed: {
     // 获取用户名首字母
     userInitial() {
-      return this.userData.name.charAt(0).toUpperCase();
+      return this.userData.nickname ? this.userData.nickname.charAt(0).toUpperCase() : null;
     }
   },
   methods: {
@@ -238,25 +207,25 @@ export default {
     
     // 切换点赞状态
     toggleLike(post) {
-      post.isLiked = !post.isLiked;
-      post.likes += post.isLiked ? 1 : -1;
+      // post.isLiked = !post.isLiked;
+      // post.likes += post.isLiked ? 1 : -1;
       
       // 触发振动反馈（如果支持）
-      uni.vibrateShort({
-        success: () => console.log('Vibrate success')
-      });
+      // uni.vibrateShort({
+      //   success: () => console.log('Vibrate success')
+      // });
       
       // 显示提示
-      if (post.isLiked) {
-        uni.showToast({
-          title: 'Liked',
-          icon: 'none',
-          duration: 1000
-        });
-      }
+      // if (post.isLiked) {
+      //   uni.showToast({
+      //     title: 'Liked',
+      //     icon: 'none',
+      //     duration: 1000
+      //   });
+      // }
       
       // 调用API更新点赞状态
-      this.updateLikeStatus(post.id, post.isLiked);
+      this.updateLikeStatus(post.id, post);
     },
     
     // 打开评论
@@ -264,52 +233,30 @@ export default {
       console.log('Opening comments for post:', postId);
       // 导航到评论页面
       uni.navigateTo({
-        url: `/pages/post/comments?postId=${postId}`
+        url: `/pages/community/detail?id=${postId}`
       });
     },
     
-    // 更新点赞状态 - API调用
-    async updateLikeStatus(postId, isLiked) {
+    // 更新点赞状态 
+    async updateLikeStatus(postId, post) {
       try {
-        const response = await uni.request({
-          url: `/api/post/${postId}/like`,
-          method: isLiked ? 'POST' : 'DELETE',
-          header: {
-            'Content-Type': 'application/json'
-          }
-        });
-        if (response[1].statusCode === 200) {
+        const response = await supportPost({
+          post_id: postId
+        })
+        if (response.code === 1) {
           console.log('Like status updated');
+          post.is_support = !post.is_support;
+          post.support_count += post.is_support ? 1 : -1;
         }
       } catch (error) {
         console.error('Failed to update like status:', error);
         // 失败时恢复原状态
-        const post = this.posts.find(p => p.id === postId);
-        if (post) {
-          post.isLiked = !post.isLiked;
-          post.likes += post.isLiked ? 1 : -1;
-        }
+        
       }
     },
     
     // 切换关注状态
     toggleFollow() {
-      this.isFollowing = !this.isFollowing;
-      if (this.isFollowing) {
-        this.userData.followers++;
-        uni.showToast({
-          title: 'Followed',
-          icon: 'success',
-          duration: 1500
-        });
-      } else {
-        this.userData.followers--;
-        uni.showToast({
-          title: 'Unfollowed',
-          icon: 'none',
-          duration: 1500
-        });
-      }
       // 调用API更新关注状态
       this.updateFollowStatus();
     },
@@ -318,8 +265,13 @@ export default {
     sendMessage() {
       console.log('Opening message dialog');
       // 导航到消息页面
-      uni.navigateTo({
-        url: `/pages/message/chat?userId=${this.userData.id}&userName=${this.userData.name}`
+      // uni.navigateTo({
+      //   url: `/pages/message/chat?userId=${this.userData.id}&userName=${this.userData.name}`
+      // });
+      uni.showToast({
+        title: 'Developmenting...',
+        icon: 'none',
+        duration: 1500
       });
     },
     
@@ -329,58 +281,68 @@ export default {
       
       this.loading = true;
       // 模拟API调用
-      setTimeout(() => {
-        // 模拟加载更多数据
-        const newPosts = [
-          {
-            id: Date.now(),
-            category: 'Question',
-            categoryIcon: '❓',
-            content: 'Anyone have tips for remembering stopping distances? I keep getting these wrong in mock tests.',
-            time: '5 days ago',
-            likes: 89,
-            comments: 12,
-            views: 456
-          }
-        ];
-        this.posts = [...this.posts, ...newPosts];
-        this.loading = false;
+      // setTimeout(() => {
+      //   // 模拟加载更多数据
+      //   const newPosts = [
+      //     {
+      //       id: Date.now(),
+      //       category: 'Question',
+      //       categoryIcon: '❓',
+      //       content: 'Anyone have tips for remembering stopping distances? I keep getting these wrong in mock tests.',
+      //       time: '5 days ago',
+      //       likes: 89,
+      //       comments: 12,
+      //       views: 456
+      //     }
+      //   ];
+      //   this.posts = [...this.posts, ...newPosts];
+      //   this.loading = false;
         
-        // 如果没有更多数据
-        if (this.posts.length > 10) {
-          this.hasMore = false;
-        }
-      }, 1500);
+      //   // 如果没有更多数据
+      //   if (this.posts.length > 10) {
+      //     this.hasMore = false;
+      //   }
+      // }, 1500);
     },
     
-    // 更新关注状态 - API调用
-    async updateFollowStatus() {
+    // 更新关注状态
+    async updateFollowStatus(follow_user_id) {
       try {
-        const response = await uni.request({
-          url: '/api/user/follow',
-          method: 'POST',
-          data: {
-            userId: this.userData.id,
-            isFollowing: this.isFollowing
-          }
+        const response = await userFollowed({
+          follow_user_id: this.userId
         });
-        if (response[1].statusCode === 200) {
-          console.log('Follow status updated');
+        if (response.code === 1) {
+          this.isFollowing = !this.isFollowing;
+          if (this.isFollowing) {
+            this.userData.followers++;
+            uni.showToast({
+              title: 'Followed',
+              icon: 'success',
+              duration: 1500
+            });
+          } else {
+            this.userData.followers--;
+            uni.showToast({
+              title: 'Unfollowed',
+              icon: 'none',
+              duration: 1500
+            });
+          }
         }
       } catch (error) {
         console.error('Failed to update follow status:', error);
       }
     },
     
-    // 获取用户数据 - API调用
+    // 获取用户数据
     async fetchUserData() {
       try {
-        const response = await uni.request({
-          url: `/api/user/profile/${this.userId}`,
-          method: 'GET'
-        });
-        if (response[1].statusCode === 200) {
-          this.userData = response[1].data;
+        const response = await queryUserInfo({
+          user_id: this.userId
+        })
+        if (response.code === 1) {
+          this.userData = response.data.info;
+          this.posts = response.data.posts;
         }
       } catch (error) {
         console.error('Failed to fetch user data:', error);
@@ -390,33 +352,19 @@ export default {
         });
       }
     },
-    
-    // 获取帖子数据 - API调用
-    async fetchPosts() {
-      try {
-        const response = await uni.request({
-          url: `/api/user/posts/${this.userId}`,
-          method: 'GET',
-          data: {
-            page: 1,
-            limit: 10
-          }
-        });
-        if (response[1].statusCode === 200) {
-          this.posts = response[1].data.posts;
-          this.hasMore = response[1].data.hasMore;
-        }
-      } catch (error) {
-        console.error('Failed to fetch posts:', error);
-      }
+    // 跳转详情
+    viewPost (postId) {
+      uni.navigateTo({
+        url: `/pages/community/detail?id=${postId}`
+      });
     }
   },
   onLoad(options) {
     // 获取用户ID参数
-    this.userId = options.userId || 'user123';
+    this.userId = options.userId || 9;
     
     // 页面加载时获取数据
-    // this.fetchUserData();
+    this.fetchUserData();
     // this.fetchPosts();
     
     console.log('Profile page loaded for user:', this.userId);
@@ -434,9 +382,9 @@ export default {
   },
   onReachBottom() {
     // 触底加载更多
-    if (this.hasMore && !this.loading) {
-      this.loadMore();
-    }
+    // if (this.hasMore && !this.loading) {
+    //   this.loadMore();
+    // }
   }
 }
 </script>
