@@ -21,7 +21,7 @@
       <!-- 视频网格 -->
       <view class="videos-grid">
         <view 
-          v-for="video in displayVideos" 
+          v-for="(video, index) in displayVideos" 
           :key="video.id" 
           class="video-card"
           @tap="handleVideoClick(video)"
@@ -35,8 +35,8 @@
             <view class="play-button"></view>
             
             <!-- 状态图标 - 右上角 -->
-            <view v-if="video.status === 'completed'" class="status-icon completed"></view>
-            <view v-else-if="video.status === 'viewed'" class="status-icon viewed"></view>
+            <view v-if="video.accuracy === 100" class="status-icon completed"></view>
+            <view v-else-if="video.accuracy !== 100" class="status-icon viewed"></view>
             
             <!-- 订阅绶带 - 左上角 -->
             <view 
@@ -53,7 +53,7 @@
             </text>
             
             <!-- 视频编号 -->
-            <text class="video-number">{{ video.number }}</text>
+            <text class="video-number">{{ index + 1 }}</text>
             
             <!-- 下载图标 -->
             <view class="download-icon">
@@ -98,6 +98,7 @@
 export default {
   data() {
     return {
+      cate_id: null,
       categoryName: 'Category 1', // 分类名称
       userSubscription: 'free', // 用户订阅类型: free, silver, gold
       showUpgradeModal: false, // 是否显示升级模态框
@@ -159,7 +160,7 @@ export default {
       
       // 导航到视频播放页面
       uni.navigateTo({
-        url: `/pages/hazardPerception/hazardLearn?id=${video.id}&number=${video.number}`
+        url: `/pages/hazardPerception/hazardLearn?id=${video.id}`
       });
     },
     // 关闭模态框
@@ -189,93 +190,9 @@ export default {
     },
     // 初始化视频数据
     initVideos() {
-      this.videos = [
-        {
-          id: 1,
-          number: '1',
-          status: 'viewed', // completed, viewed, unwatched
-          requiredSubscription: 'free',
-          isLocked: false
-        },
-        {
-          id: 2,
-          number: '2',
-          status: 'completed',
-          requiredSubscription: 'free',
-          isLocked: false
-        },
-        {
-          id: 3,
-          number: '3',
-          status: 'viewed',
-          requiredSubscription: 'free',
-          isLocked: false
-        },
-        {
-          id: 4,
-          number: '4',
-          status: 'completed',
-          requiredSubscription: 'free',
-          isLocked: false
-        },
-        {
-          id: 5,
-          number: '5',
-          status: 'viewed',
-          requiredSubscription: 'silver',
-          isLocked: this.userSubscription === 'free'
-        },
-        {
-          id: 6,
-          number: '6',
-          status: 'completed',
-          requiredSubscription: 'silver',
-          isLocked: this.userSubscription === 'free'
-        },
-        {
-          id: 7,
-          number: '7',
-          status: 'unwatched',
-          requiredSubscription: 'gold',
-          isLocked: this.userSubscription !== 'gold'
-        },
-        {
-          id: 8,
-          number: '8',
-          status: 'unwatched',
-          requiredSubscription: 'gold',
-          isLocked: this.userSubscription !== 'gold'
-        },
-        {
-          id: 9,
-          number: '9',
-          status: 'unwatched',
-          requiredSubscription: 'gold',
-          isLocked: this.userSubscription !== 'gold'
-        },
-        {
-          id: 10,
-          number: '10',
-          status: 'unwatched',
-          requiredSubscription: 'gold',
-          isLocked: this.userSubscription !== 'gold'
-        },
-        {
-          id: 11,
-          number: '11',
-          status: 'unwatched',
-          requiredSubscription: 'free',
-          isLocked: false
-        },
-        {
-          id: 12,
-          number: '12',
-          status: 'unwatched',
-          requiredSubscription: 'silver',
-          isLocked: this.userSubscription === 'free'
-        }
-      ];
-      this.updateVideoLockStatus();
+      const questions = uni.getStorageSync('questions')
+      this.videos = questions ? questions : []
+      // this.updateVideoLockStatus();
     },
     // 获取视频数据 - API调用示例
     async fetchVideos() {
@@ -319,8 +236,8 @@ export default {
   },
   onLoad(options) {
     // 从参数获取分类信息
-    if (options.category) {
-      this.categoryName = decodeURIComponent(options.category);
+    if (options.title) {
+      this.categoryName = decodeURIComponent(options.title);
     }
     
     // 初始化数据

@@ -38,7 +38,7 @@
 
       <!-- 测试模式视图 -->
       <view v-if="currentView === 'test'" class="options-container">
-        <view class="options-card">
+        <view class="options-card" v-if="currentViewTitle != 'HazardTest'">
           <view class="option-item">
             <text class="option-label">Number of Questions</text>
             <view class="option-value" @tap="showQuantityPicker = true">
@@ -55,7 +55,35 @@
             <view class="toggle-switch" :class="{active: testOptions.skipCorrect}" @tap="toggleSkipCorrect"></view>
           </view>
         </view>
-
+        
+        <view class="options-card" v-if="currentViewTitle == 'HazardTest'">
+          <view class="option-item">
+            <text class="option-label">Number of Videos</text>
+            <view class="option-value" @tap="showQuantityPicker = true">
+              <text>{{ testOptions.videoCount }}</text>
+              <text style="color: #999;">›</text>
+            </view>
+          </view>
+          <view class="option-item option-item-no-border">
+            <text class="option-label option-label-mb">Video Selection</text>
+            <view class="radio-group">
+              <view class="radio-option" @tap="selectVideoType('all')">
+                <view class="radio-circle" :class="{selected: testOptions.videoSelection === 'all'}"></view>
+                <text class="radio-text">All Videos</text>
+              </view>
+              <view class="radio-option" @tap="selectVideoType('not_full_score')">
+                <view class="radio-circle" :class="{selected: testOptions.videoSelection === 'not_full_score'}"></view>
+                <text class="radio-text">Videos without Full Score</text>
+              </view>
+              <view class="radio-option" @tap="selectVideoType('unpracticed')">
+                <view class="radio-circle" :class="{selected: testOptions.videoSelection === 'unpracticed'}"></view>
+                <text class="radio-text">Unpracticed Videos</text>
+              </view>
+            </view>
+          </view>
+        </view>
+        
+        
         <view class="button-container">
           <view class="action-button" @tap="startTrain">Start Exam</view>
         </view>
@@ -188,12 +216,15 @@ export default {
       overallProgress: 81, // 整体学习进度
       testsPracticed: 12, // 测试练习次数
       showQuantityPicker: false, // 是否显示数量选择器
+      tempVideoCount: 10,
       tempQuestionCount: 50, // 临时题目数量
       selectedCategory: null, // 选中的学习分类
       testOptions: {
         questionCount: 50, // 测试题目数量
         testAll: true, // 是否测试所有题目
-        skipCorrect: false // 是否跳过已答对的题目
+        skipCorrect: false ,// 是否跳过已答对的题目
+        videoCount: 10, // 测试视频数量
+        videoSelection: 'all' // 视频选择类型：all, not_full_score, unpracticed
       },
       searchKeyword: '',
       categories: [],
@@ -288,12 +319,25 @@ export default {
     },
     // 滑块变化事件
     onSliderChange(e) {
-      this.tempQuestionCount = e.detail.value;
+      if (this.currentViewTitle == 'HazardTest') {
+        this.tempVideoCount = e.detail.value;
+      } else {
+        this.tempQuestionCount = e.detail.value;
+      }
     },
     // 确认题目数量选择
     confirmQuantity() {
-      this.testOptions.questionCount = this.tempQuestionCount;
+      if (this.currentViewTitle == 'HazardTest') {
+        this.testOptions.videoCount = this.tempVideoCount;
+      } else {
+        this.testOptions.questionCount = this.tempQuestionCount;
+      }
+      
       this.showQuantityPicker = false;
+    },
+    // 选择视频类型
+    selectVideoType(type) {
+      this.testOptions.videoSelection = type;
     },
     // 关闭模态框
     closeModal() {
@@ -356,7 +400,7 @@ export default {
         case 'HazardTest':
           // 跳转答题
           uni.navigateTo({
-            url: '/pages/hazardPerception/list'
+            url: '/pages/hazardPerception/list?cate_id=' + this.selectedCategory + '&title=' + category.name
           })
           break;
         case 'HighwayCode':
@@ -1263,4 +1307,59 @@ export default {
   line-height: 1.3;
 }
 
+
+.option-item-no-border {
+  border-bottom: none !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  padding-bottom: 10px !important;
+}
+
+.option-label {
+  font-size: 16px;
+  color: #333;
+  font-weight: 500;
+}
+
+.option-label-mb {
+  margin-bottom: 15px !important;
+}
+/* 单选按钮组 */
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.radio-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+}
+
+.radio-circle {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #4A9EFF;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  flex-shrink: 0;
+}
+
+.radio-circle.selected::after {
+  content: '';
+  width: 10px;
+  height: 10px;
+  background: #4A9EFF;
+  border-radius: 50%;
+}
+
+.radio-text {
+  font-size: 15px;
+  color: #333;
+}
 </style>

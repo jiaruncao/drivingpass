@@ -124,3 +124,13 @@ export function getCollectList(params) {
 export function searchApi(params) {
   return fly.post("/exam/question/search", params);
 }
+
+/*
+ * 搜索试题
+ * author：huanyun
+ * id 题目ID
+ * create by date：2025/08/12
+ */
+export function getQuestionDetail(params) {
+  return fly.post("/exam/question/detail", params);
+}

@@ -3,9 +3,10 @@
     <!-- 视频区域 - 点击任何地方都能添加标记 -->
     <view class="video-container" @tap="addMarkAtCurrentTime">
       <view class="video-content">
-        <view class="road-scene">
+        <!-- <view class="road-scene">
           <view class="road-lines"></view>
-        </view>
+        </view> -->
+        <video id="videoId" class="video" :autoplay="true" :controls="false" :show-center-play-btn="false" :src="title_video_url" muted playsinline></video>
       </view>
 
       <!-- 退出按钮 -->
@@ -24,19 +25,28 @@
         <!-- 得分区间 - 分段显示，模拟两个危险区间 -->
         <!-- 第一个危险区间：15%-45% -->
         <!-- <view class="gray-zone" style="left: 0; width: 15%;"></view> -->
-        <view class="score-zone zone-5" style="left: 15%; width: 5%;">5</view>
-        <view class="score-zone zone-4" style="left: 20%; width: 5%;">4</view>
+        <view v-for="(item, index) in score_list" :key="index">
+          <view v-for="(jtem, idx) in item" :key="idx" class="score-zone" :class="'zone-' + jtem.score" 
+          :style="{
+            'left': jtem.startTime / duration * 100 + '%',
+            'width': (jtem.endTime - jtem.startTime) / duration * 100 + '%'
+          }">
+            {{jtem.score}}
+          </view>
+        </view>
+        
+        <!-- <view class="score-zone zone-4" style="left: 20%; width: 5%;">4</view>
         <view class="score-zone zone-3" style="left: 25%; width: 10%;">3</view>
-        <view class="score-zone zone-2" style="left: 35%; width: 10%;">2</view>
+        <view class="score-zone zone-2" style="left: 35%; width: 10%;">2</view> -->
         
         <!-- 中间无分区域 -->
         <!-- <view class="gray-zone" style="left: 45%; width: 15%;"></view> -->
         
         <!-- 第二个危险区间：60%-80% -->
-        <view class="score-zone zone-5" style="left: 60%; width: 5%;">5</view>
-        <view class="score-zone zone-4" style="left: 65%; width: 5%;">4</view>
+        <!-- <view class="score-zone zone-5" style="left: 60%; width: 5%;">5</view> -->
+        <!-- <view class="score-zone zone-4" style="left: 65%; width: 5%;">4</view>
         <view class="score-zone zone-3" style="left: 70%; width: 5%;">3</view>
-        <view class="score-zone zone-2" style="left: 75%; width: 5%;">2</view>
+        <view class="score-zone zone-2" style="left: 75%; width: 5%;">2</view> -->
         
         <!-- 结尾无分区域 -->
         <!-- <view class="gray-zone" style="left: 80%; width: 20%;"></view> -->
@@ -63,11 +73,15 @@
 </template>
 
 <script>
+import {getQuestionDetail, recordAdd} from '@/http/api/testQuestions.js'
 export default {
   data() {
     return {
+      questionId: null,
+      title_video_url: null,
+      score_list: [],
       currentTime: 0, // 当前时间（秒）
-      duration: 70, // 视频总时长（秒）
+      duration: 0, // 视频总时长（秒）
       progress: 0, // 进度百分比
       userMarks: [], // 用户标记的危险点
       playInterval: null, // 播放定时器
@@ -81,12 +95,15 @@ export default {
     startAutoPlay() {
       this.playInterval = setInterval(() => {
         if (this.currentTime < this.duration) {
-          this.currentTime += 0.1;
+          this.currentTime += 1;
           this.progress = (this.currentTime / this.duration) * 100;
         } else {
           clearInterval(this.playInterval);
           this.currentTime = this.duration;
           this.progress = 100;
+          // 记录题目
+          this.recordAdd()
+          // 计算分数
         }
       }, 100);
     },
@@ -106,6 +123,9 @@ export default {
       // 计算当前进度对应的得分
       // 得分区间设置（只在危险区间内有分数）
       let score = 0;
+      
+      // 判断得分
+      
       
       // 第一个危险区间：15%-45% (早期反应得高分)
       if (this.progress >= 15 && this.progress < 20) {
@@ -131,7 +151,7 @@ export default {
       else {
         score = 0;
       }
-      
+      console.log(this.progress)
       // 添加标记
       this.addMark(this.progress, score);
     },
@@ -232,10 +252,35 @@ export default {
           }
         }
       });
+    },
+    // 查询详情
+    getQuestionDetail () {
+      getQuestionDetail({
+        id: this.questionId
+      }).then(res => {
+        if (res.code == 1) {
+          console.log(res.data)
+          this.duration = res.data.total_time
+          this.title_video_url = res.data.title_video_url
+          this.score_list = res.data.score_list
+        }
+      })
+    },
+    // 记录
+    recordAdd () {
+      recordAdd({
+        question_id: this.questionId
+      }).then(res => {
+
+      })
     }
   },
   
-  onLoad() {
+  onLoad(options) {
+    if (options.id) {
+      this.questionId = options.id
+      this.getQuestionDetail()
+    }
     console.log('Hazard Perception Learn Mode loaded');
     // 自动开始播放
     this.startAutoPlay();
@@ -295,6 +340,12 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
+  
+  .video {
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
+  }
 }
 
 /* 道路模拟 */
