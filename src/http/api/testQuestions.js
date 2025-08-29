@@ -126,11 +126,45 @@ export function searchApi(params) {
 }
 
 /*
- * 搜索试题
+ * 试题详情
  * author：huanyun
  * id 题目ID
  * create by date：2025/08/12
  */
 export function getQuestionDetail(params) {
   return fly.post("/exam/question/detail", params);
+}
+
+/*
+ * 错题分布
+ * author：huanyun
+ * create by date：2025/08/12
+ */
+export function mistakeDistribution(params) {
+  return fly.post("/exam/question/mistakeDistribution", params);
+}
+/*
+ * 错题分布
+ * author：huanyun
+ * cate_id 分类ID
+ * create by date：2025/08/12
+ */
+export function mistakeDistributionDetail(params) {
+  return fly.post("/exam/question/mistakeDistributionDetail", params);
+}
+/*
+ * 收藏分布
+ * author：huanyun
+ * create by date：2025/08/16
+ */
+export function savedDistribution(params) {
+  return fly.post("/exam/question/savedDistribution", params);
+}
+/*
+ * 收藏分布详情
+ * author：huanyun
+ * create by date：2025/08/16
+ */
+export function savedDistributionDetail(params) {
+  return fly.post("/exam/question/savedDistributionDetail", params);
 }

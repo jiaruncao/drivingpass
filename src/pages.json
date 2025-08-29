@@ -64,6 +64,15 @@
       }
     },
     {
+      "path": "pages/learnQuestion/detail",
+      "style": {
+        "navigationBarTitleText": "Question Detail",
+        "navigationBarTextStyle": "black",
+        "navigationBarBackgroundColor": "#fff",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/testMode/index",
       "style": {
         "navigationBarTitleText": "Test Mode",
@@ -392,6 +401,14 @@
         "navigationBarTitleText" : "",
         "navigationStyle": "custom",
         "pageOrientation": "primary"
+      }
+    },
+    {
+      "path" : "pages/overview/overview",
+      "style" : 
+      {
+        "navigationBarTitleText" : "",
+        "navigationStyle": "custom"
       }
     }
   ],

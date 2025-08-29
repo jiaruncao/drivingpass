@@ -76,15 +76,15 @@
             <!-- 统计数据 -->
             <view class="stats-grid">
               <view class="stat-item">
-                <text class="stat-value">{{ totalErrors }}</text>
+                <text class="stat-value">{{ mistakeData.total_errors }}</text>
                 <text class="stat-label">Total Errors</text>
               </view>
               <view class="stat-item">
-                <text class="stat-value">{{ todayMistakes }}</text>
+                <text class="stat-value">{{ mistakeData.today_mistake }}</text>
                 <text class="stat-label">Today's Mistakes</text>
               </view>
               <view class="stat-item error-rate">
-                <text class="stat-value">{{ errorRate }}%</text>
+                <text class="stat-value">{{ mistakeData.error_rate }}%</text>
                 <text class="stat-label">Error Rate</text>
               </view>
             </view>
@@ -97,14 +97,14 @@
             </view>
 
             <view 
-              v-for="(category, index) in mistakeCategories" 
+              v-for="(category, index) in mistakeData.distribution" 
               :key="category.id"
               class="category-item"
               @tap="viewCategory(category)">
               <view class="category-number">{{ index + 1 }}</view>
               <view class="category-info">
-                <text class="category-name">{{ category.name }}</text>
-                <text class="category-type">{{ category.type }}</text>
+                <text class="category-name">{{ category.subject_name }}</text>
+                <text class="category-type">{{ category.subject_name }}</text>
               </view>
               <text class="category-count">{{ category.count }}</text>
               <text class="category-arrow">›</text>
@@ -117,13 +117,13 @@
           <!-- 题目类型选择 -->
           <view class="question-type-selector">
             <view 
-              v-for="(type, index) in questionTypes" 
+              v-for="(type, index) in savedData.distribution" 
               :key="type.id"
               class="type-card"
               :class="{active: selectedType === type.id}"
               @tap="selectedType = type.id">
               <text class="type-icon">{{ type.icon }}</text>
-              <text class="type-name">{{ type.name }}</text>
+              <text class="type-name">{{ type.subject_name }}</text>
               <text class="type-count">{{ type.count }} questions</text>
             </view>
           </view>
@@ -138,11 +138,11 @@
             <!-- 统计数据 -->
             <view class="stats-grid">
               <view class="stat-item">
-                <text class="stat-value">{{ totalSaved }}</text>
+                <text class="stat-value">{{ savedData.total_saved }}</text>
                 <text class="stat-label">Total Saved</text>
               </view>
               <view class="stat-item">
-                <text class="stat-value">{{ todaySaved }}</text>
+                <text class="stat-value">{{ savedData.today_saved }}</text>
                 <text class="stat-label">Today's Saved</text>
               </view>
             </view>
@@ -155,14 +155,14 @@
             </view>
 
             <view 
-              v-for="(category, index) in savedCategories" 
+              v-for="(category, index) in savedData.distribution" 
               :key="category.id"
               class="category-item"
               @tap="viewCategory(category)">
               <view class="category-number">{{ index + 1 }}</view>
               <view class="category-info">
-                <text class="category-name">{{ category.name }}</text>
-                <text class="category-type">{{ category.type }}</text>
+                <text class="category-name">{{ category.subject_name }}</text>
+                <text class="category-type">{{ category.subject_name }}</text>
               </view>
               <text class="category-count">{{ category.count }}</text>
               <text class="category-arrow">›</text>
@@ -267,6 +267,12 @@
             @tap="questionFilter = 'easy'">
             Easy
           </view>
+          <view
+            class="filter-chip"
+            :class="{active: questionFilter === 'normal'}"
+            @tap="questionFilter = 'normal'">
+            Normal
+          </view>
           <view 
             class="filter-chip"
             :class="{active: questionFilter === 'medium'}"
@@ -279,6 +285,12 @@
             @tap="questionFilter = 'hard'">
             Hard
           </view>
+          <view
+            class="filter-chip"
+            :class="{active: questionFilter === 'difficult'}"
+            @tap="questionFilter = 'difficult'">
+            Difficult
+          </view>
         </view>
 
         <!-- 题目列表 -->
@@ -289,9 +301,9 @@
               <text class="question-category">{{ question.category }}</text>
               <view class="question-badges">
                 <text class="badge" :class="'difficulty-' + question.difficulty">
-                  {{ question.difficulty }}
+                  {{ question.difficulty | setDifficulty}}
                 </text>
-                <text class="badge accuracy">
+                <text class="badge accuracy" v-if="question.accuracy">
                   {{ question.accuracy }}% accuracy
                 </text>
               </view>
@@ -352,7 +364,7 @@
 </template>
 
 <script>
-import {getWrongList, getCollectList, wrongDelete} from '@/http/api/testQuestions.js'
+import {getWrongList, getCollectList, wrongDelete, mistakeDistribution, mistakeDistributionDetail, savedDistribution, savedDistributionDetail} from '@/http/api/testQuestions.js'
 export default {
   data() {
     return {
@@ -368,13 +380,8 @@ export default {
       questionFilter: 'all', // 题目筛选
       
       // 统计数据
-      wrongsCount: 12,
-      savedCount: 15,
-      totalErrors: 12,
-      todayMistakes: 0,
-      errorRate: 11,
-      totalSaved: 12,
-      todaySaved: 3,
+      wrongsCount: 0,
+      savedCount: 0,
       
       // 题目类型
       questionTypes: [
@@ -435,7 +442,36 @@ export default {
           liked: false,
           saved: true
         }
-      ]
+      ],
+      mistakeData: {
+        distribution: [],
+        error_rate: 0,
+        today_mistake: 0,
+        total_errors: 0
+      },
+      savedData: {
+        distribution: [],
+        total_saved: 0,
+        total_saved: 0
+      }
+    }
+  },
+  filters: {
+    setDifficulty (value) {
+      switch (value) {
+        case '1':
+          return 'Easy'
+        case '2':
+          return 'Normal'
+        case '3':
+          return 'Medium'
+        case '4':
+          return 'Hard'
+        case '5':
+          return 'Difficult'
+        default:
+          return 'Unknown'
+      }
     }
   },
   computed: {
@@ -496,20 +532,40 @@ export default {
     viewCategory(category) {
       console.log('Viewing category:', category);
       console.log('this.filteredQuestions', this.filteredQuestions)
-      this.currentCategoryName = category.name;
+      this.currentCategoryName = category.subject_name;
       // 从数据库获取该分类的题目
-      const questions = this.questionView === 'wrongs' ? this.questionsDatabase : this.questionsCollectDatabase
-      this.currentQuestions = questions.filter(item => {
-        return item.cate_id == category.id
-      }) || [];
-      // 根据当前视图决定是否显示答案
-      this.currentQuestions.forEach(q => {
-        q.isFromWrongs = this.questionView === 'wrongs';
-      });
+      // const questions = this.questionView === 'wrongs' ? this.questionsDatabase : this.questionsCollectDatabase
+      // this.currentQuestions = questions.filter(item => {
+      //   return item.cate_id == category.subject_id
+      // }) || [];
+      // // 根据当前视图决定是否显示答案
+      // this.currentQuestions.forEach(q => {
+      //   q.isFromWrongs = this.questionView === 'wrongs';
+      // });
       console.log(this.currentQuestions)
+      if (this.questionView === 'wrongs') {
+        this.mistakeDistributionDetail(category.subject_id)
+      } else {
+        this.savedDistributionDetail(category.subject_id)
+      }
+      
       this.showQuestionsModal = true;
     },
-    
+    // 查询详情
+    mistakeDistributionDetail (subject_id) {
+      mistakeDistributionDetail({
+        subject_id
+      }).then(res => {
+        if (res.code == 1) {
+          console.log(res.data)
+          this.currentQuestions = res.data.list
+          // 根据当前视图决定是否显示答案
+          this.currentQuestions.forEach(q => {
+            q.isFromWrongs = this.questionView === 'wrongs';
+          });
+        }
+      })
+    },
     // 切换题目展开/收起
     toggleQuestion(id) {
       console.log('this.currentQuestions',this.currentQuestions)
@@ -721,26 +777,68 @@ export default {
           })
         }
       })
-      getCollectList ().then(res => {
-        this.questionsCollectDatabase = []
+      // getCollectList ().then(res => {
+      //   this.questionsCollectDatabase = []
+      //   if (res.code == 1) {
+      //     this.savedCount = res.data.total
+      //     res.data.list.data.forEach(item => {
+      //       delete item.question.id
+      //       this.questionsCollectDatabase.push({
+      //         ...item.question,
+      //         id: item.id,
+      //         question_id: item.question_id
+      //       })
+      //     })
+      //   }
+      //   console.log(this.questionsCollectDatabase)
+      // })
+    },
+    mistakeDistribution () {
+      mistakeDistribution().then(res => {
         if (res.code == 1) {
-          this.savedCount = res.data.total
-          res.data.list.data.forEach(item => {
-            delete item.question.id
-            this.questionsCollectDatabase.push({
-              ...item.question,
-              id: item.id,
-              question_id: item.question_id
-            })
-          })
+          console.log(res.data)
+          this.mistakeData = res.data.list
         }
-        console.log(this.questionsCollectDatabase)
+      })
+    },
+    savedDistribution () {
+      savedDistribution().then(res => {
+        if (res.code == 1) {
+          console.log(res.data)
+          res.data.list.distribution.forEach(item => {
+            if (item.subject_name == 'Theory Test') {
+              item.icon = '📚'
+            } else if (item.subject_name == 'Hazard Test') {
+              item.icon = '⚠️'
+            } else if (item.subject_name == 'Highway Code') {
+              item.icon = '🛣️'
+            } else if (item.subject_name == 'Rode Sign') {
+              item.icon = '🚦'
+            }
+          })
+          this.savedData = res.data.list
+        }
+      })
+    },
+    savedDistributionDetail (subject_id) {
+      savedDistributionDetail({
+        subject_id
+      }).then(res => {
+        if (res.code == 1) {
+          this.currentQuestions = res.data.list
+          // 根据当前视图决定是否显示答案
+          this.currentQuestions.forEach(q => {
+            q.isFromWrongs = this.questionView === 'wrongs';
+          });
+        }
       })
     }
   },
   onLoad() {
     // 页面加载时初始化数据
     // this.loadSavedData();
+    this.mistakeDistribution()
+    this.savedDistribution()
   },
   onShow() {
     // 页面显示时刷新数据

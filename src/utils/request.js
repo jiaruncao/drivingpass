@@ -8,7 +8,7 @@ fly.config.timeout = 30000;
 
 // 设置请求基地址 (同一地址时)
 // #ifdef H5
-fly.config.baseURL = "/addons";
+fly.config.baseURL = "http://driving.asszo.com/addons";
 // #endif
 // #ifdef APP-PLUS
 fly.config.baseURL = "http://driving.asszo.com/addons";
