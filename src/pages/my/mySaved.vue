@@ -42,14 +42,14 @@
               :class="{active: questionView === 'wrongs'}"
               @tap="questionView = 'wrongs'">
               <text class="toggle-title">Wrongs Bookmarks</text>
-              <text class="toggle-subtitle">{{ wrongsCount }} mistakes</text>
+              <text class="toggle-subtitle">{{ mistakeData.total_errors }} mistakes</text>
             </view>
             <view 
               class="toggle-btn"
               :class="{active: questionView === 'saved'}"
               @tap="questionView = 'saved'">
               <text class="toggle-title">Saved Questions</text>
-              <text class="toggle-subtitle">{{ savedCount }} saved</text>
+              <text class="toggle-subtitle">{{ savedData.total_saved }} saved</text>
             </view>
           </view>
         </view>
@@ -68,8 +68,8 @@
               <text class="toggle-label">Auto-remove when corrected</text>
               <view 
                 class="toggle-switch" 
-                :class="{active: autoRemove}"
-                @tap="autoRemove = !autoRemove">
+                :class="{active: mistakeData.auto_remove_wrong == 1}"
+                @tap="setAutoRemoveWrong()">
               </view>
             </view>
 
@@ -98,7 +98,7 @@
 
             <view 
               v-for="(category, index) in mistakeData.distribution" 
-              :key="category.id"
+              :key="index"
               class="category-item"
               @tap="viewCategory(category)">
               <view class="category-number">{{ index + 1 }}</view>
@@ -156,7 +156,7 @@
 
             <view 
               v-for="(category, index) in savedData.distribution" 
-              :key="category.id"
+              :key="index"
               class="category-item"
               @tap="viewCategory(category)">
               <view class="category-number">{{ index + 1 }}</view>
@@ -174,15 +174,17 @@
       <!-- Community Posts 标签内容 -->
       <view v-if="activeTab === 'posts'">
         <view v-if="savedPosts.length > 0">
-          <view v-for="post in savedPosts" :key="post.id" class="post-card">
+          <view v-for="post in savedPosts" :key="post.id" class="post-card" @click.stop="toDetail(post.id)">
             <!-- 用户信息 -->
             <view class="user-info">
-              <view class="user-avatar">{{ post.username[0] }}</view>
-              <view class="user-details">
-                <text class="username">{{ post.username }}</text>
-                <text class="test-centre">Test Centre: {{ post.testCentre }}</text>
+              <view class="user-avatar">
+                {{ post.avatar ? post.avatar : getInitial(post.nickname) }}
               </view>
-              <view class="post-menu" @tap="showPostMenu(post.id)">⋯</view>
+              <view class="user-details">
+                <text class="username">{{ post.nickname }}</text>
+                <text class="test-centre">Test Centre: {{ post.test_center }}</text>
+              </view>
+              <view class="post-menu" @tap.stop="showPostMenu(post.id, post)">⋯</view>
             </view>
 
             <!-- 帖子内容 -->
@@ -190,8 +192,8 @@
               <text class="post-text">{{ post.content }}</text>
               
               <!-- 图片网格 -->
-              <view v-if="post.images && post.images.length > 0" class="image-grid">
-                <view v-for="(image, index) in post.images.slice(0, 3)" :key="index" class="image-item">
+              <view v-if="post.file_url && post.file_url.length > 0" class="image-grid">
+                <view v-for="(image, index) in post.file_url.slice(0, 3)" :key="index" class="image-item">
                   <image :src="image" mode="aspectFill"></image>
                 </view>
               </view>
@@ -199,13 +201,13 @@
 
             <!-- 交互栏 -->
             <view class="post-actions">
-              <view class="action-button" :class="{liked: post.liked}" @tap="toggleLike(post.id)">
-                ❤️ {{ post.likes }}
+              <view class="action-button" :class="{liked: post.is_support}" @tap.stop="toggleLike(post)">
+                ❤️ {{ post.support_count }}
               </view>
               <view class="action-button">
-                💬 {{ post.comments }}
+                💬 {{ post.reply_count }}
               </view>
-              <view class="action-button saved" @tap="unsavePost(post.id)">
+              <view class="action-button saved" @tap.stop="unsavePost(post.id)">
                 🔖 Saved
               </view>
             </view>
@@ -259,7 +261,7 @@
             class="filter-chip"
             :class="{active: questionFilter === 'all'}"
             @tap="questionFilter = 'all'">
-            All ({{ filteredQuestions.length }})
+            All ({{ currentQuestions.length }})
           </view>
           <view 
             class="filter-chip"
@@ -294,7 +296,7 @@
         </view>
 
         <!-- 题目列表 -->
-        <view v-for="(question, index) in filteredQuestions" :key="question.id" class="question-card" :class="{collapsed: question.collapsed}">
+        <view v-for="(question, index) in filteredQuestions" :key="index" class="question-card" :class="{collapsed: question.collapsed}">
           <view class="question-header" @tap="toggleQuestion(question.id)">
             <view class="question-number">Q{{ index + 1 }}</view>
             <view class="question-meta">
@@ -364,7 +366,8 @@
 </template>
 
 <script>
-import {getWrongList, getCollectList, wrongDelete, mistakeDistribution, mistakeDistributionDetail, savedDistribution, savedDistributionDetail} from '@/http/api/testQuestions.js'
+import {getWrongList, getCollectList, wrongDelete, mistakeDistribution, mistakeDistributionDetail, savedDistribution, savedDistributionDetail, setAutoRemoveWrong, collectClear} from '@/http/api/testQuestions.js'
+import {querySavedPostList, supportPost, collectPost, userFollowed} from '@/http/api/community.js'
 export default {
   data() {
     return {
@@ -374,75 +377,17 @@ export default {
       autoRemove: false, // 自动移除开关
       showMenu: false, // 显示菜单
       selectedPostId: null, // 选中的帖子ID
+      selectedPost: {},
       showQuestionsModal: false, // 显示题目列表模态框
       currentCategoryName: '', // 当前分类名称
       currentQuestions: [], // 当前分类的题目
       questionFilter: 'all', // 题目筛选
-      
-      // 统计数据
-      wrongsCount: 0,
-      savedCount: 0,
-      
-      // 题目类型
-      questionTypes: [
-        { id: 'theory', name: 'Theory Test', icon: '📚', count: 6 },
-        { id: 'hazard', name: 'Hazard Perception', icon: '⚠️', count: 3 },
-        { id: 'highway', name: 'Highway Code', icon: '🛣️', count: 2 },
-        { id: 'roadsign', name: 'Road Signs', icon: '🚦', count: 4 }
-      ],
-      
-      // 错题分类
-      mistakeCategories: [
-        { id: 1, name: 'Road Rule Violations', type: 'Theory Test', count: 6 },
-        { id: 2, name: 'Prohibitory Signs', type: 'Road Signs', count: 4 },
-        { id: 3, name: 'Freeway Entry/Exit Errors', type: 'Highway Code', count: 1 },
-        { id: 4, name: 'Warning Signs', type: 'Road Signs', count: 1 }
-      ],
-      
-      // 收藏分类
-      savedCategories: [
-        { id: 1, name: 'Road Rule Violations', type: 'Theory Test', count: 6 },
-        { id: 2, name: 'Prohibitory Signs', type: 'Road Signs', count: 4 },
-        { id: 3, name: 'Freeway Entry/Exit Errors', type: 'Highway Code', count: 1 },
-        { id: 4, name: 'Warning Signs', type: 'Road Signs', count: 1 }
-      ],
-      
+
       // 模拟题目数据
       questionsDatabase: [],
       questionsCollectDatabase: [],
       // 保存的帖子
-      savedPosts: [
-        {
-          id: 1,
-          username: 'StormChaser',
-          testCentre: 'Birmingham',
-          content: 'Just passed my theory test with 49/50! The key is to practice every day and focus on the topics you find most challenging. Good luck everyone!',
-          images: [
-            '/static/images/post-image-1.jpg',
-            '/static/images/post-image-2.jpg',
-            '/static/images/post-image-3.jpg'
-          ],
-          likes: 156,
-          comments: 23,
-          liked: true,
-          saved: true
-        },
-        {
-          id: 2,
-          username: 'LearnerLisa',
-          testCentre: 'Manchester',
-          content: 'Anyone else finding the hazard perception clips really tricky? I keep clicking too early or too late. Any tips would be appreciated!',
-          images: [
-            '/static/images/tip-1.jpg',
-            '/static/images/tip-2.jpg',
-            '/static/images/tip-3.jpg'
-          ],
-          likes: 89,
-          comments: 45,
-          liked: false,
-          saved: true
-        }
-      ],
+      savedPosts: [],
       mistakeData: {
         distribution: [],
         error_rate: 0,
@@ -480,7 +425,7 @@ export default {
       if (this.questionFilter === 'all') {
         return this.currentQuestions
       }
-      return this.currentQuestions.filter(q => q.difficulty === this.questionFilter)
+      return this.currentQuestions.filter(q => this.setDifficulty(q.difficulty) === this.questionFilter)
     }
   },
   methods: {
@@ -488,7 +433,25 @@ export default {
     goBack() {
       uni.navigateBack();
     },
-    
+    setDifficulty (value) {
+      switch (value) {
+        case '1':
+          return 'easy'
+        case '2':
+          return 'normal'
+        case '3':
+          return 'medium'
+        case '4':
+          return 'hard'
+        case '5':
+          return 'difficult'
+        default:
+          return 'unknown'
+      }
+    },
+    getInitial(username) {
+      return username.charAt(0).toUpperCase();
+    },
     // 清除错题
     clearMistakes() {
       uni.showModal({
@@ -496,14 +459,19 @@ export default {
         content: 'Are you sure you want to clear all mistakes?',
         success: (res) => {
           if (res.confirm) {
-            this.mistakeCategories = [];
-            this.totalErrors = 0;
-            this.todayMistakes = 0;
-            this.errorRate = 0;
-            uni.showToast({
-              title: 'Cleared',
-              icon: 'success'
-            });
+            // this.mistakeCategories = [];
+            // this.totalErrors = 0;
+            // this.todayMistakes = 0;
+            // this.errorRate = 0;
+            collectClear().then(res => {
+              if (res.code == 1) {
+                this.savedDistribution()
+                uni.showToast({
+                  title: 'Cleared',
+                  icon: 'success'
+                });
+              }
+            })
           }
         }
       });
@@ -516,13 +484,15 @@ export default {
         content: 'Are you sure you want to clear all saved questions?',
         success: (res) => {
           if (res.confirm) {
-            this.savedCategories = [];
-            this.totalSaved = 0;
-            this.todaySaved = 0;
-            uni.showToast({
-              title: 'Cleared',
-              icon: 'success'
-            });
+            collectClear().then(res => {
+              if (res.code == 1) {
+                this.savedDistribution()
+                uni.showToast({
+                  title: 'Cleared',
+                  icon: 'success'
+                });
+              }
+            })
           }
         }
       });
@@ -620,7 +590,7 @@ export default {
       console.log('Practice question:', questionId);
       // 实际应用中导航到练习页面
       uni.navigateTo({
-        url: `/pages/learnQuestion/index?questionId=${questionId}`
+        url: `/pages/learnQuestion/detail?question_id=${questionId}&mode=practice`
       });
     },
     
@@ -629,13 +599,14 @@ export default {
       console.log('View explanation for question:', questionId);
       // 实际应用中显示题目解释
       uni.navigateTo({
-        url: `/pages/learnQuestion/index?questionId=${questionId}`
+        url: `/pages/learnQuestion/detail?question_id=${questionId}&mode=wrong`
       });
     },
     
     // 显示帖子菜单
-    showPostMenu(postId) {
+    showPostMenu(postId, post) {
       this.selectedPostId = postId;
+      this.selectedPost = post;
       this.showMenu = true;
     },
     
@@ -691,38 +662,61 @@ export default {
     
     // 关注用户
     followUser() {
-      const post = this.savedPosts.find(p => p.id === this.selectedPostId);
-      if (post) {
-        console.log('Following user:', post.username);
-        uni.showToast({
-          title: `Following ${post.username}`,
-          icon: 'success'
-        });
-      }
+      this.updateFollowStatus()
       this.closeMenu();
     },
-    
-    // 切换点赞
-    toggleLike(postId) {
-      const post = this.savedPosts.find(p => p.id === postId);
-      if (post) {
-        post.liked = !post.liked;
-        post.likes += post.liked ? 1 : -1;
+    // 更新关注状态
+    async updateFollowStatus() {
+      try {
+        const res = await userFollowed({
+          follow_user_id: this.selectedPost.user_id
+        })
+      } catch (error) {
+        console.error('Failed to update follow status:', error);
       }
     },
-    
+    // 切换点赞
+    toggleLike(post) {
+      // const post = this.savedPosts.find(p => p.id === postId);
+      // if (post) {
+      //   post.liked = !post.liked;
+      //   post.likes += post.liked ? 1 : -1;
+      // }
+      this.updateLikeStatus(post.id, post);
+    },
+    // 更新点赞状态
+    async updateLikeStatus(postId, post) {
+      supportPost({
+        post_id: postId
+      }).then(res => {
+        console.log(res)
+        if (res.code == 1) {
+          post.is_support = !post.is_support;
+          post.support_count += post.is_support ? 1 : -1;
+        }
+      })
+    },
     // 取消保存帖子
-    unsavePost(postId) {
+    unsavePost(id) {
       uni.showModal({
         title: 'Unsave Post',
         content: 'Remove this post from saved items?',
         success: (res) => {
           if (res.confirm) {
-            this.savedPosts = this.savedPosts.filter(p => p.id !== postId);
-            uni.showToast({
-              title: 'Removed',
-              icon: 'success'
-            });
+            // this.savedPosts = this.savedPosts.filter(p => p.id !== postId);
+            
+            collectPost({
+              post_id: id
+            }).then(res => {
+              if (res.code == 1) {
+                uni.showToast({
+                  title: 'Removed',
+                  icon: 'success'
+                });
+                // this.loadPostDetail()
+                this.querySavedPostList()
+              }
+            })
           }
         }
       });
@@ -731,8 +725,8 @@ export default {
     // 前往论坛
     goToForum() {
       console.log('Navigate to forum');
-      uni.navigateTo({
-        url: '/pages/forum/forum'
+      uni.switchTab({
+        url: '/pages/community/home'
       });
     },
     // 加载保存的数据
@@ -753,7 +747,7 @@ export default {
         console.log(res)
         this.questionsDatabase = []
         if (res.code == 1) {
-          this.wrongsCount = res.data.total
+          // this.wrongsCount = res.data.total
           res.data.list.data.forEach(item => {
             this.questionsDatabase.push({
               ...item,
@@ -766,7 +760,7 @@ export default {
       getCollectList ().then(res => {
         this.questionsCollectDatabase = []
         if (res.code == 1) {
-          this.savedCount = res.data.total
+          // this.savedCount = res.data.total
           res.data.list.data.forEach(item => {
             delete item.question.id
             this.questionsCollectDatabase.push({
@@ -777,6 +771,7 @@ export default {
           })
         }
       })
+      this.querySavedPostList()
       // getCollectList ().then(res => {
       //   this.questionsCollectDatabase = []
       //   if (res.code == 1) {
@@ -832,6 +827,35 @@ export default {
           });
         }
       })
+    },
+    setAutoRemoveWrong () {
+      this.mistakeData.auto_remove_wrong = this.mistakeData.auto_remove_wrong == 1 ? 2 : 1
+      setAutoRemoveWrong({
+        auto_remove_wrong: this.mistakeData.auto_remove_wrong ? 1 : 2
+      }).then(res=> {
+        if (res.code == 1) {
+          uni.showToast({
+            title: res.msg,
+            icon: 'success'
+          });
+        }
+      })
+    },
+    querySavedPostList () {
+      querySavedPostList({
+        page: 1,
+        size: 20
+      }).then(res => {
+        console.log(res)
+        if (res.code == 1) {
+          this.savedPosts = res.data.list.data
+        }
+      })
+    },
+    toDetail (id) {
+      uni.navigateTo({
+        url: `/pages/community/detail?id=${id}`
+      });
     }
   },
   onLoad() {

@@ -168,3 +168,21 @@ export function savedDistribution(params) {
 export function savedDistributionDetail(params) {
   return fly.post("/exam/question/savedDistributionDetail", params);
 }
+/*
+ * 自动移除错题
+ * author：huanyun
+ * auto_remove_wrong 自动移除错题 1:是 2:否
+ * create by date：2025/08/16
+ */
+export function setAutoRemoveWrong(params) {
+  return fly.post("/exam/question/autoRemoveWrong", params);
+}
+
+/*
+ * 清空所有收藏
+ * author：huanyun
+ * create by date：2025/08/16
+ */
+export function collectClear(params) {
+  return fly.post("/exam/question/collectClear", params);
+}

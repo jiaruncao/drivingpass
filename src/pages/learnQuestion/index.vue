@@ -618,7 +618,8 @@
       },
       recordAdd () {
         recordAdd({
-          question_id: this.currentQuestion.id
+          question_id: this.currentQuestion.id,
+          result: this.currentQuestion.isCorrect
         })
       },
     },

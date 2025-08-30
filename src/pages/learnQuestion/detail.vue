@@ -427,8 +427,10 @@
         console.log(this.question)
         
         if (!isCorrect) {
+          this.wrongAdd()
           this.queryPostList()
         }
+        this.recordAdd()
         this.$forceUpdate()
       },
       // 判断是否答对
@@ -557,12 +559,13 @@
         wrongAdd({
           question_id: this.question_id,
           source: 'TRAINING',
-          user_answer: this.currentQuestion.selectedOption
+          user_answer: this.question.selectedOption
         })
       },
       recordAdd () {
         recordAdd({
-          question_id: this.question_id
+          question_id: this.question_id,
+          result: this.question.isCorrect
         })
       },
       getQuestionDetail () {

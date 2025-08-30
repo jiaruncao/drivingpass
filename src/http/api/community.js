@@ -153,3 +153,13 @@ export function getCenterIndex(params) {
 export function queryUserInfo(params) {
   return fly.post("/exam/forum/queryUserInfo", params);
 }
+/*
+ * 查询收藏帖子列表
+ * size
+ * page
+ * author：huanyun
+ * create by date：2025/08/16
+ */
+export function querySavedPostList(params) {
+  return fly.post("/exam/forum/querySavedPostList", params);
+}
