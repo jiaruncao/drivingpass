@@ -19,16 +19,16 @@
         <view class="trainee-info">
           <view class="trainee-details">
             <text class="trainee-label">Trainee: </text>
-            <text class="trainee-name">{{ traineeInfo.name }}</text>
+            <text class="trainee-name">{{ info.nickname }}</text>
           </view>
-          <text class="registration-date">{{ formatUKDate(traineeInfo.registrationDate) }}</text>
+          <text class="registration-date">{{ formatUKDate(info.register_time) }}</text>
         </view>
         
         <view class="test-date-card">
           <view class="countdown-badge">
-            <text class="countdown-text">{{ daysLeft }} days left</text>
+            <text class="countdown-text">{{ info.days_left.days }} days left</text>
           </view>
-          <text class="test-date-number">{{ testDate.day }}/{{ testDate.month }}</text>
+          <text class="test-date-number">{{ $u.timeFormat(info.test_date, 'dd/mm') }}</text>
           <text class="test-date-label">Test Date</text>
         </view>
       </view>
@@ -42,15 +42,15 @@
         </view>
         
         <view class="pass-rate-container">
-          <text class="pass-rate" :class="passRateClass">{{ passRate }}</text>
+          <text class="pass-rate" :class="passRateClass">{{ info.pass_rate }}</text>
           <text class="percent-symbol" :class="passRateClass">%</text>
         </view>
         
         <view class="ai-message">
            Ahead of
-          <span class="highlight-text">{{ comparisonPercent }}%</span>
+          <span class="highlight-text">{{ info.ahead_of }}%</span>
            of learners—pass
-          <span class="highlight-text">{{ morePercent }}%</span>
+          <span class="highlight-text">{{ info.pass_more }}%</span>
            more mocks in a row to reach 90%!
         </view>
       </view>
@@ -58,23 +58,23 @@
       <!-- 统计数据卡片 -->
       <view class="stats-grid fade-in">
         <view class="stat-card">
-          <text class="stat-number">{{ stats.completed }}</text>
+          <text class="stat-number">{{ info.completed }}</text>
           <text class="stat-label">Completed</text>
         </view>
         
         <view class="stat-card">
-          <text class="stat-number">{{ stats.passed }}</text>
+          <text class="stat-number">{{ info.passed }}</text>
           <text class="stat-label">Passed</text>
         </view>
         
         <view class="stat-card">
-          <text class="stat-number">{{ stats.avgMultipleChoice }}</text>
+          <text class="stat-number">{{ info.multiple_choice_score }}</text>
           <text class="stat-label">Avg Score</text>
           <text class="stat-sublabel">Multiple Choice</text>
         </view>
         
         <view class="stat-card">
-          <text class="stat-number">{{ stats.avgHazardPerception }}</text>
+          <text class="stat-number">{{ info.hazard_perception_score }}</text>
           <text class="stat-label">Avg Score</text>
           <text class="stat-sublabel">Hazard Perception</text>
         </view>
@@ -128,10 +128,11 @@
 <script>
 // 引入图表库（如使用u-charts）
 // import uCharts from '@/components/u-charts/u-charts.js';
-
+import {getTestStatistics} from '@/http/api/testQuestions.js'
 export default {
   data() {
     return {
+      info: {},
       // 学员信息
       traineeInfo: {
         name: 'StormChaser',
@@ -175,6 +176,7 @@ export default {
     }
   },
   onLoad() {
+    this.getTestStatistics()
     // 页面加载时初始化
     this.getSystemInfo();
     // #ifdef APP-PLUS
@@ -184,7 +186,7 @@ export default {
   onReady() {
     // 页面渲染完成后初始化图表
     this.$nextTick(() => {
-      this.initCharts();
+      // this.initCharts();
     });
   },
   methods: {
@@ -229,11 +231,7 @@ export default {
     
     // 初始化图表
     initCharts() {
-      // 初始化多选题图表
-      this.drawLineChart('multipleChoiceChart', {
-        labels: ['09/05', '10/05', '11/05', '12/05', '13/05', '14/05', '15/05', '16/05', '17/05', '18/05'],
-        data: [15, 85, 30, 15, 20, 8, 15, 50, 8, 45]
-      });
+      
       
       // 初始化危险感知图表
       this.drawLineChart('hazardPerceptionChart', {
@@ -372,6 +370,21 @@ export default {
           icon: 'none'
         });
       }
+    },
+    getTestStatistics () {
+      getTestStatistics().then(res => {
+        console.log(res)
+        if (res.code == 1) {
+          this.info = res.data.list
+          // 初始化多选题图表
+          this.$nextTick(() => {
+            this.drawLineChart('multipleChoiceChart', {
+              labels: this.info.labels,
+              data: this.info.data
+            });
+          });
+        }
+      })
     }
   }
 }

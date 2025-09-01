@@ -186,3 +186,12 @@ export function setAutoRemoveWrong(params) {
 export function collectClear(params) {
   return fly.post("/exam/question/collectClear", params);
 }
+
+/*
+ * 模拟考统计
+ * author：huanyun
+ * create by date：2025/08/16
+ */
+export function getTestStatistics(params) {
+  return fly.post("/exam/grade/testStatistics", params);
+}
