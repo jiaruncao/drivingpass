@@ -253,16 +253,21 @@ export default {
       this.timer = setInterval(() => {
         if (this.timeRemaining > 0) {
           this.timeRemaining--
+          
+          if (this.timeRemaining == 3500) {
+            uni.showModal({
+              title: 'Finished Multiple-Choice',
+              content: 'You have finished answering multiple-choice questions and have 3 minutes to rest. You can also choose to skip and continue answering dangerous driving questions. Do you want to skip?',
+              showCancel: false,
+              success: () => {
+                // this.endTest()
+                // 开始危险驾驶的答题
+              }
+            })
+          }
         } else {
           clearInterval(this.timer)
-          uni.showModal({
-            title: 'Time is up!',
-            content: 'The test will now end.',
-            showCancel: false,
-            success: () => {
-              this.endTest()
-            }
-          })
+          
         }
       }, 1000)
     },
