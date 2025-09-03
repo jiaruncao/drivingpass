@@ -378,6 +378,12 @@ export default {
             url: '/pages/learnQuestion/index?subject_id=' + this.subject_id + '&mode=test'
           })
           break;
+        case 'HazardTest':
+          // 跳转答题
+          uni.navigateTo({
+            url: '/pages/hazardPerception/hazardTest?subject_id=' + this.subject_id + '&mode=test'
+          })
+          break;
       }
     },
     // 开始学习
