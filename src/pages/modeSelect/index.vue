@@ -458,7 +458,8 @@ export default {
         params = {
           subject_id: this.subject_id,
           page_count: this.tempQuestionCount,
-          mode: 'random' // normal=普通模式，random=随机查询
+          mode: 'test',// normal=普通模式，random=随机查询，test=练习模式
+          jump: this.testOptions.skipCorrect ? 1 : 0
         }
       }
       startTrain(params).then(res => {

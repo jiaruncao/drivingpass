@@ -36,7 +36,10 @@
         <!-- 用户信息头部 -->
         <view class="user-header" @click="userProfileClick">
           <view class="user-avatar">
-            {{ post.avatar ? post.avatar : getInitial(post.nickname) }}
+            <image v-if="post.avatar" :src="post.avatar" mode=""></image>
+            <view v-if="!post.avatar">
+              {{getInitial(post.nickname)}}
+            </view>
           </view>
           <view class="user-info">
             <text class="username">{{ post.nickname }}</text>
@@ -51,9 +54,12 @@
 
           <!-- 图片网格 -->
           <view v-if="post.file_url && post.file_url.length" class="images-grid">
-            <image v-for="(image, index) in post.file_url" :key="index" :src="image" class="post-image"
-              mode="aspectFill" @tap="viewImage(image)">
-            </image>
+            <view v-for="(image, index) in post.file_url" :key="index" style="width: 100%;">
+              <image v-if="['webp', 'png', 'jpg', 'jpeg'].includes(getExtension(image))" :src="image" class="post-image"
+                mode="aspectFill" @tap="viewImage(image)">
+              </image>
+              <video v-if="['mp4', 'avi'].includes(getExtension(image))" :src="image" :controls="false" :show-play-btn="false"  class="post-video"></video>
+            </view>
           </view>
         </view>
 
@@ -200,6 +206,16 @@
       }
     },
     methods: {
+      getExtension(url) {
+        // 匹配最后一个 '.' 后的内容（包括可能的查询参数）
+        const extensionMatch = url.match(/\.([a-zA-Z0-9]+)(?:$|\?|#)/);
+
+        // 提取纯净的后缀（不包含查询参数）
+        const extension = extensionMatch ? extensionMatch[1] : null;
+
+        return extension
+
+      },
       // 切换标签
       switchTab(tab) {
         this.activeTab = tab;
@@ -676,6 +692,11 @@
     font-weight: 600;
     font-size: 36rpx;
     margin-right: 24rpx;
+    > image {
+      width: 90rpx;
+      height: 90rpx;
+      border-radius: 50%;
+    }
   }
 
   .user-info {
@@ -722,12 +743,16 @@
 
   /* 图片网格 */
   .images-grid {
+    width: 100%;
     display: flex;
     flex-wrap: wrap;
     // gap: 20rpx;
     margin-bottom: 30rpx;
   }
-  
+  .post-video {
+    width: 100%;
+    height: 300rpx;
+  }
   /* #ifdef APP */
   .post-image {
     width: 200rpx;

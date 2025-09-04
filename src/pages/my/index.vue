@@ -54,7 +54,7 @@
           </view>
         </view>
         <text class="expires-text" v-if="replace(subscriptionData.type) !== 'free'">
-          Expires {{ subscriptionData.expire_time_text }}
+          Expires {{ subscriptionData.expire_time }}
         </text>
         
         <view class="features-grid">
@@ -228,7 +228,7 @@
 </template>
 
 <script>
-import {getUserInfo} from '@/http/api/login.js'
+import {getUserInfo, queryMemberInfo} from '@/http/api/login.js'
 export default {
   data() {
     return {
@@ -386,8 +386,17 @@ export default {
       const response = await getUserInfo()
       if (response.code == 1) {
         this.userData = response.data
-        this.subscriptionData = response.data.info
+        // this.subscriptionData = response.data.info
       }
+    },
+    // 查询会员信息
+    queryMemberInfo () {
+      queryMemberInfo().then(res => {
+        console.log(res)
+        if (res.code == 1) {
+          this.subscriptionData = res.data
+        }
+      })
     },
     // 替换
     replace (type) {
@@ -420,6 +429,7 @@ export default {
   onLoad() {
     // 页面加载时获取数据
     this.fetchUserData();
+    this.queryMemberInfo()
     // this.updateStats();
     
     // 测试不同订阅等级的效果

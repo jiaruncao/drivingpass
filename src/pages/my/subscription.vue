@@ -145,7 +145,7 @@
   import {
     getMemberOpenConfig,
     createMemberOrder,
-    getUserInfo
+    queryMemberInfo
   } from '@/http/api/login.js'
   export default {
     data() {
@@ -301,7 +301,7 @@
       },
       // 获取用户信息
       getUserInfo() {
-        getUserInfo().then(res => {
+        queryMemberInfo().then(res => {
           console.log(res)
         })
       },

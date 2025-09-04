@@ -301,9 +301,14 @@ export default {
       uni.chooseImage({
         count: 1,
         sourceType: ['camera'],
-        success: (res) => {
-          that.formData.avatar = res.tempFilePaths[0];
+        success: async (res) => {
           that.showAvatarModal = false;
+          const filePath = res.tempFilePaths[0]
+          const urlRes = await this.$utils.upload(filePath)
+          if (urlRes.code == 1) {
+            // this.uploadedImages.push(urlRes.data.fullurl)
+            that.formData.avatar = urlRes.data.fullurl;
+          }
         },
         fail: (err) => {
           console.error('Failed to take photo:', err);
@@ -317,9 +322,14 @@ export default {
       uni.chooseImage({
         count: 1,
         sourceType: ['album'],
-        success: (res) => {
-          that.formData.avatar = res.tempFilePaths[0];
+        success: async (res) => {
           that.showAvatarModal = false;
+          const filePath = res.tempFilePaths[0]
+          const urlRes = await this.$utils.upload(filePath)
+          if (urlRes.code == 1) {
+            // this.uploadedImages.push(urlRes.data.fullurl)
+            that.formData.avatar = urlRes.data.fullurl;
+          }
         },
         fail: (err) => {
           console.error('Failed to choose from gallery:', err);

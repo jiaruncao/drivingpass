@@ -328,11 +328,10 @@
         // 构建帖子数据
         // 处理this.uploadedImages，this.uploadedVideo
         const uploadedImages = this.uploadedImages.length ? this.uploadedImages.join(',') : null
-        const uploadedVideo = this.uploadedVideo.length ? this.uploadedVideo.join(',') : null
         const postData = {
           content: this.postContent,
           "photo_url": uploadedImages,
-          "video_url": uploadedVideo,
+          "video_url": this.uploadedVideo,
           category_id: this.selectedCategories.join(','),
           tag_ids: this.selectedTagsIds.join(','),
           room_id: this.selectedTestCentre,
@@ -391,8 +390,13 @@
           sourceType: ['album', 'camera'],
           maxDuration: 60,
           camera: 'back',
-          success: (res) => {
-            this.uploadedVideo = res.tempFilePath;
+          success: async (res) => {
+            // this.uploadedVideo = res.tempFilePath;
+            const filePath = res.tempFilePath
+            const urlRes = await this.$utils.upload(filePath)
+            if (urlRes.code == 1) {
+              this.uploadedVideo = urlRes.data.fullurl
+            }
           }
         });
       },

@@ -67,4 +67,11 @@ export function getMemberOpenConfig(params) {
 export function createMemberOrder(params) {
   return fly.post("/exam/user/createMemberOrder", params);
 }
-
+/*
+ * author：huanyun
+ * create by date：2024/11/11
+ * content：查询会员信息
+ */
+export function queryMemberInfo(params) {
+  return fly.post("/exam/user/queryMemberInfo", params);
+}
