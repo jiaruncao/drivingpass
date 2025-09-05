@@ -75,3 +75,11 @@ export function createMemberOrder(params) {
 export function queryMemberInfo(params) {
   return fly.post("/exam/user/queryMemberInfo", params);
 }
+/*
+ * author：huanyun
+ * create by date：2024/11/11
+ * content：查询会员参数
+ */
+export function queryMemberConfig(params) {
+  return fly.post("/exam/user/queryMemberConfig", params);
+}

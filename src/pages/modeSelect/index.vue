@@ -136,8 +136,9 @@
       
           <!-- 道路标志网格 -->
           <view class="signs-grid" @tap="enterCategoryDetail(category)">
-            <view v-for="sign in category.signs" :key="sign.id" class="sign-item">
-              <view class="sign-icon" :class="sign.iconClass">{{ sign.symbol }}</view>
+            <view v-for="(sign, idx) in category.img_list" :key="idx" class="sign-item">
+              <!-- <view class="sign-icon" :class="sign.iconClass">{{ sign.symbol }}</view> -->
+              <image :src="'http://driving.asszo.com' + sign" class="sign-icon"></image>
             </view>
           </view>
       
@@ -258,15 +259,18 @@ export default {
         return this.roadSignCategories;
       }
       
-      return this.roadSignCategories.map(category => {
-        const filteredSigns = category.signs.filter(sign => 
-          sign.name.toLowerCase().includes(this.searchKeyword.toLowerCase())
-        );
-        return {
-          ...category,
-          signs: filteredSigns
-        };
-      }).filter(category => category.signs.length > 0);
+      return this.roadSignCategories.filter(category => category.name.toLowerCase().includes(this.searchKeyword.toLowerCase()))
+      
+      // return this.roadSignCategories.map(category => {
+      //   console.log('263',category)
+      //   const filteredSigns = category.signs.filter(sign =>
+      //     sign.name.toLowerCase().includes(this.searchKeyword.toLowerCase())
+      //   );
+      //   return {
+      //     ...category,
+      //     signs: filteredSigns
+      //   };
+      // }).filter(category => category.signs.length > 0);
     }
   },
   methods: {

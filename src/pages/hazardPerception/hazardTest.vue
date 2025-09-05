@@ -3,9 +3,10 @@
     <!-- 视频区域 - 点击任何地方都能添加标记 -->
     <view class="video-container" @tap="addMarkAtCurrentTime">
       <view class="video-content">
-        <view class="road-scene">
+        <!-- <view class="road-scene">
           <view class="road-lines"></view>
-        </view>
+        </view> -->
+        <video id="videoId" class="video" :autoplay="true" :controls="false" :show-center-play-btn="false" :src="title_video_url" muted playsinline></video>
       </view>
 
       <!-- 退出按钮 -->
@@ -89,25 +90,15 @@
     <!-- Review模式遮罩 -->
     <view v-if="reviewMode" class="review-overlay">
       <view class="review-bar">
-        <!-- 显示得分区间 -->
-        <!-- 第一个危险区间：15%-45% -->
-        <view class="gray-zone" style="left: 0; width: 15%;"></view>
-        <view class="score-zone zone-5" style="left: 15%; width: 5%;">5</view>
-        <view class="score-zone zone-4" style="left: 20%; width: 5%;">4</view>
-        <view class="score-zone zone-3" style="left: 25%; width: 10%;">3</view>
-        <view class="score-zone zone-2" style="left: 35%; width: 10%;">2</view>
-        
-        <!-- 中间无分区域 -->
-        <view class="gray-zone" style="left: 45%; width: 15%;"></view>
-        
-        <!-- 第二个危险区间：60%-80% -->
-        <view class="score-zone zone-5" style="left: 60%; width: 5%;">5</view>
-        <view class="score-zone zone-4" style="left: 65%; width: 5%;">4</view>
-        <view class="score-zone zone-3" style="left: 70%; width: 5%;">3</view>
-        <view class="score-zone zone-2" style="left: 75%; width: 5%;">2</view>
-        
-        <!-- 结尾无分区域 -->
-        <view class="gray-zone" style="left: 80%; width: 20%;"></view>
+        <view v-for="(item, index) in score_list" :key="index">
+          <view v-for="(jtem, idx) in item" :key="idx" class="score-zone" :class="'zone-' + jtem.score" 
+          :style="{
+            'left': jtem.startTime / duration * 100 + '%',
+            'width': (jtem.endTime - jtem.startTime) / duration * 100 + '%'
+          }">
+            {{jtem.score}}
+          </view>
+        </view>
       </view>
       
       <button class="close-review-btn" @tap="closeReview">
@@ -121,6 +112,9 @@
 export default {
   data() {
     return {
+      questionId: null,
+      title_video_url: null,
+      score_list: [],
       currentTime: 0, // 当前时间（秒）
       duration: 70, // 视频总时长（秒）
       progress: 0, // 进度百分比
@@ -223,30 +217,39 @@ export default {
       // 计算当前进度对应的得分（内部计算，不显示给用户）
       let score = 0;
       
+      this.score_list.forEach((item) => {
+        item.forEach(jtem => {
+          if (this.progress >= jtem.startTime && this.progress <= jtem.endTime) {
+            score = jtem.score;
+          }
+        })
+      })
+      
+      
       // 第一个危险区间：15%-45%
-      if (this.progress >= 15 && this.progress < 20) {
-        score = 5;
-      } else if (this.progress >= 20 && this.progress < 25) {
-        score = 4;
-      } else if (this.progress >= 25 && this.progress < 35) {
-        score = 3;
-      } else if (this.progress >= 35 && this.progress < 45) {
-        score = 2;
-      }
-      // 第二个危险区间：60%-80%
-      else if (this.progress >= 60 && this.progress < 65) {
-        score = 5;
-      } else if (this.progress >= 65 && this.progress < 70) {
-        score = 4;
-      } else if (this.progress >= 70 && this.progress < 75) {
-        score = 3;
-      } else if (this.progress >= 75 && this.progress < 80) {
-        score = 2;
-      }
-      // 其他区域不得分
-      else {
-        score = 0;
-      }
+      // if (this.progress >= 15 && this.progress < 20) {
+      //   score = 5;
+      // } else if (this.progress >= 20 && this.progress < 25) {
+      //   score = 4;
+      // } else if (this.progress >= 25 && this.progress < 35) {
+      //   score = 3;
+      // } else if (this.progress >= 35 && this.progress < 45) {
+      //   score = 2;
+      // }
+      // // 第二个危险区间：60%-80%
+      // else if (this.progress >= 60 && this.progress < 65) {
+      //   score = 5;
+      // } else if (this.progress >= 65 && this.progress < 70) {
+      //   score = 4;
+      // } else if (this.progress >= 70 && this.progress < 75) {
+      //   score = 3;
+      // } else if (this.progress >= 75 && this.progress < 80) {
+      //   score = 2;
+      // }
+      // // 其他区域不得分
+      // else {
+      //   score = 0;
+      // }
       
       // 添加标记
       this.addMark(this.progress, score);
@@ -301,6 +304,7 @@ export default {
     
     // 添加标记
     addMark(position, score) {
+      console.log('position, score', position, score)
       this.clickCount++;
       
       // 如果已被取消资格，分数为0
@@ -362,11 +366,28 @@ export default {
     closeReview() {
       this.reviewMode = false;
       this.showResult = true;
+    },
+    // 记录
+    recordAdd () {
+      recordAdd({
+        question_id: this.questionId
+      }).then(res => {
+    
+      })
     }
   },
   
-  onLoad() {
-    console.log('Hazard Perception Test Mode loaded');
+  onLoad(options) {
+    // if (options.id) {
+    //   this.questionId = options.id
+    //   this.getQuestionDetail()
+    // }
+    const questions = uni.getStorageSync('questions')
+    console.log('Hazard Perception Test Mode loaded', questions);
+    
+    this.title_video_url = questions[0].title_video_url
+    this.score_list = questions[0].score_list
+    
     // 自动开始播放
     this.startAutoPlay();
     // #ifdef APP-PLUS
@@ -425,6 +446,11 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
+  .video {
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
+  }
 }
 
 /* 道路模拟 */
