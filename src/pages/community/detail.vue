@@ -10,7 +10,12 @@
       <view class="header-left">
         <view class="back-button" @tap="goBack">←</view>
         <view class="user-info-header">
-          <view class="header-avatar">{{ getInitial(post.nickname) }}</view>
+          <view class="header-avatar">
+            <image v-if="post.avatar" :src="post.avatar" mode="" style="width:100%;height: 100%;border-radius: 50%;"></image>
+            <view v-if="!post.avatar">
+              {{getInitial(post.nickname)}}
+            </view>
+          </view>
           <text class="header-username">{{ post.nickname }}</text>
         </view>
       </view>
@@ -19,7 +24,7 @@
           {{ isFollowing ? 'Following' : 'Follow' }}
         </view>
         <view class="more-button" @tap="showMoreOptions">
-          <image src="/static/icons/more.svg" class="more-icon"></image>
+          <u-icon name="more-dot-fill"></u-icon>
         </view>
       </view>
     </view>
@@ -33,11 +38,12 @@
         <swiper v-if="post.file_url && post.file_url.length > 0" class="image-carousel" :current="currentImageIndex"
           @change="onImageChange">
           <swiper-item v-for="(image, index) in post.file_url" :key="index">
-            <image :src="image" class="carousel-image" mode="aspectFill" @tap="viewFullImage(image)">
+            <image v-if="['webp', 'png', 'jpg', 'jpeg'].includes(getExtension(image))" :src="image" class="carousel-image" mode="aspectFill" @tap="viewFullImage(image)">
             </image>
+            <video v-if="['mp4', 'avi'].includes(getExtension(image))" :src="image" style="width:100%;height: 100%;"></video>
           </swiper-item>
         </swiper>
-
+        
         <!-- Featured徽章 -->
         <text v-if="post.elite" class="highlight-badge">
           🌟 {{ post.elite }}
@@ -54,7 +60,7 @@
         <!-- 帖子元信息 -->
         <view class="post-meta">
           <text>{{ post.days_ago }} days ago</text>
-          <text>Test Centre: {{ post.test_center }}</text>
+          <text style="margin-left: 30rpx;">Test Centre: {{ post.test_center }}</text>
         </view>
       </view>
 
@@ -63,29 +69,34 @@
         <view class="actions-bar">
           <view class="action-button" :class="{liked: post.is_support}" @tap="toggleLike">
             <view class="action-icon">
-              <svg viewBox="0 0 24 24">
+              <!-- <svg viewBox="0 0 24 24">
                 <path
                   d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-              </svg>
+              </svg> -->
+              <u-icon v-if="!post.is_support" name="heart" size="48rpx" color="#999"></u-icon>
+              <u-icon v-if="post.is_support" name="heart-fill" size="48rpx" color="#FF6B6B"></u-icon>
             </view>
             <text class="action-label">{{ post.support_count }}</text>
           </view>
 
           <view class="action-button" :class="{saved: post.is_collect}" @tap="toggleSave">
             <view class="action-icon">
-              <svg viewBox="0 0 24 24">
+              <!-- <svg viewBox="0 0 24 24">
                 <polygon
                   points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-              </svg>
+              </svg> -->
+              <u-icon v-if="!post.is_collect" name="star" size="48rpx" color="#999"></u-icon>
+              <u-icon v-if="post.is_collect" name="star-fill" size="48rpx" color="#FFD700"></u-icon>
             </view>
             <text class="action-label">{{ post.collect_count }}</text>
           </view>
 
           <view class="action-button" @tap="openCommentInput">
             <view class="action-icon">
-              <svg viewBox="0 0 24 24">
+              <!-- <svg viewBox="0 0 24 24">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-              </svg>
+              </svg> -->
+              <u-icon name="chat" size="48rpx" color="#999"></u-icon>
             </view>
             <text class="action-label">{{ post.reply_count }}</text>
           </view>
@@ -101,7 +112,12 @@
         <!-- 评论列表 -->
         <view v-for="comment in showComments" :key="comment.id" class="comment-item">
           <view class="comment-header">
-            <view class="comment-avatar">{{ getInitial(comment.nickname) }}</view>
+            <view class="comment-avatar">
+              <image v-if="comment.avatar" :src="comment.avatar" mode="" style="width:100%;height: 100%;border-radius: 50%;"></image>
+              <view v-if="!comment.avatar">
+                {{getInitial(comment.nickname)}}
+              </view>
+            </view>
             <view class="comment-info">
               <text class="comment-username">{{ comment.nickname }}</text>
               <text class="comment-meta">{{ comment.testCentre }}</text>
@@ -109,20 +125,22 @@
             <view class="comment-actions">
               <view class="comment-like-button" :class="{liked: comment.is_support}" @tap="toggleCommentLike(comment)">
                 <view class="comment-like-icon">
-                  <svg viewBox="0 0 24 24">
+                  <!-- <svg viewBox="0 0 24 24">
                     <path
                       d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                  </svg>
-
+                  </svg> -->
+                  <u-icon v-if="!comment.is_support" name="heart" size="36rpx" color="#999"></u-icon>
+                  <u-icon v-if="comment.is_support" name="heart-fill" size="36rpx" color="#FF6B6B"></u-icon>
                 </view>
                 <text class="comment-like-count">{{ comment.support_count }}</text>
               </view>
               <view class="comment-reply-button" @tap="replyToComment(comment)">
                 <view class="comment-reply-icon">
-                  <svg viewBox="0 0 24 24">
+                  <!-- <svg viewBox="0 0 24 24">
                     <path
                       d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-                  </svg>
+                  </svg> -->
+                  <u-icon name="chat" size="36rpx" color="#999"></u-icon>
                 </view>
                 <text class="comment-reply-label">Reply</text>
               </view>
@@ -135,7 +153,10 @@
             <view class="reply-item">
               <view class="comment-header">
                 <view class="comment-avatar reply-avatar">
-                  {{ getInitial(comment.children[0].nickname) }}
+                  <image v-if="comment.children[0].avatar" :src="comment.children[0].avatar" mode="" style="width:100%;height: 100%;border-radius: 50%;"></image>
+                  <view v-if="!comment.children[0].avatar">
+                    {{getInitial(comment.children[0].nickname)}}
+                  </view>
                 </view>
                 <view class="comment-info">
                   <text class="comment-username reply-username">{{ comment.children[0].nickname }}</text>
@@ -157,7 +178,10 @@
               <view v-for="(reply, index) in comment.children.slice(1)" :key="reply.id" class="reply-item">
                 <view class="comment-header">
                   <view class="comment-avatar reply-avatar">
-                    {{ getInitial(reply.nickname) }}
+                    <image v-if="reply.avatar" :src="reply.avatar" mode="" style="width:100%;height: 100%;border-radius: 50%;"></image>
+                    <view v-if="!reply.avatar">
+                      {{getInitial(reply.nickname)}}
+                    </view>
                   </view>
                   <view class="comment-info">
                     <text class="comment-username reply-username">{{ reply.nickname }}</text>
@@ -222,6 +246,16 @@
       }
     },
     methods: {
+      getExtension(url) {
+        // 匹配最后一个 '.' 后的内容（包括可能的查询参数）
+        const extensionMatch = url.match(/\.([a-zA-Z0-9]+)(?:$|\?|#)/);
+      
+        // 提取纯净的后缀（不包含查询参数）
+        const extension = extensionMatch ? extensionMatch[1] : null;
+      
+        return extension
+      
+      },
       // 返回上一页
       goBack() {
         console.log('Going back to forum list');
@@ -665,7 +699,7 @@
   .post-meta {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    // justify-content: space-between;
     // gap: 30rpx;
     font-size: 26rpx;
     color: #999;

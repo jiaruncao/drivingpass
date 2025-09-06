@@ -10,7 +10,8 @@ const store = new Vuex.Store({
     learnModeQuestion: {},
     // 语音播报
     storeIds: [],
-    audioList: []
+    audioList: [],
+    userMemberInfo: {}
   },
   mutations: {
     saveMoreOptions(state, data) {
@@ -21,6 +22,9 @@ const store = new Vuex.Store({
     },
     setData (stats, data) {
       state[data.key] = data.val;
+    },
+    setUserMemberInfo(state, data) {
+      state.userMemberInfo = data;
     }
   },
   actions: {},

@@ -207,7 +207,7 @@
 
 <script>
 import {getThree, startTrain} from '@/http/api/testQuestions.js'
-
+import {queryMemberInfo} from '@/http/api/login.js'
 export default {
   data() {
     return {
@@ -454,9 +454,7 @@ export default {
       let params
       if (this.currentView == 'learn' || this.currentView == 'category-detail') {
         // 学习模式
-        params = {
-          cate_id: this.selectedCategory 
-        }
+        params = this.getTrainParams()
       } else if (this.currentView == 'test') {
         // 测试模式
         params = {
@@ -495,11 +493,57 @@ export default {
         url: `/pages/roadSign/learn?cate_id=${sign.cate_id}` 
       })
     },
-  },
+    // 查询用户会员权益
+    queryMemberInfo () {
+      queryMemberInfo().then(res => {
+        if (res.code == 1) {
+          uni.setStorageSync('memberInfo', res.data)
+          this.getTrainParams()
+        }
+      })
+    },
+    // 根据会员权益，得到请求参数
+    getTrainParams () {
+      const memberInfo = uni.getStorageSync('memberInfo')
+      // TheoryTest
+      if (this.currentViewTitle == 'TheoryTest') {
+        const features = memberInfo.features_list.filter(item => item.title == 'THEORY TEST')[0].features
+        return {
+          cate_id: this.selectedCategory,
+          page_count: typeof features['DVSA Official Questions'] == 'boolean' && features['DVSA Official Questions'] ? 0 : features['DVSA Official Questions'],
+          type: features['Exclusive Questions'] ? 'all' : 'official'
+        }
+      } else if (this.currentViewTitle == 'HazardTest') {
+        // HazardTest
+        return {
+          cate_id: this.selectedCategory,
+          page_count: 0,
+          type: 'all'
+        }
+      } else if (this.currentViewTitle == 'HighwayCode') {
+        // HighwayCode
+        const features = memberInfo.features_list.filter(item => item.title == 'STUDY MATERIALS')[0].features
+        return {
+          cate_id: this.selectedCategory,
+          page_count: typeof features['Highway Code - Learn Mode'] == 'boolean' && features['Highway Code - Learn Mode'] ? 0 : features['Highway Code - Learn Mode'],
+          type: 'all'
+        }
+      } else if (this.currentViewTitle == 'RodeSign') {
+        // RodeSign
+        const features = memberInfo.features_list.filter(item => item.title == 'STUDY MATERIALS')[0].features
+        return {
+          cate_id: this.selectedCategory,
+          page_count: typeof features['Road Signs - Learn Mode'] == 'boolean' && features['Road Signs - Learn Mode'] ? 0 : features['Road Signs - Learn Mode'],
+          type: 'all'
+        }
+      }
+    }
+   },
   onLoad(options) {
     this.subject_id = options.id
     this.currentViewTitle = options.title
     this.fetchCategories();
+    this.queryMemberInfo()
   }
 }
 </script>

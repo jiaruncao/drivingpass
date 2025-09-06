@@ -267,7 +267,12 @@ export default {
     // this.updateProgress();
     // this.updateTranslate();
     this.cate_id = option.cate_id
-    this.startTrain()
+    // 取缓存数据
+    const questions = uni.getStorageSync('questions');
+    if (questions) {
+      this.codesList = questions;
+    }
+    // this.startTrain()
   }
 }
 </script>

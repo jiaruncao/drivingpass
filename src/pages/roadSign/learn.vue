@@ -222,7 +222,14 @@ export default {
   },
   onLoad(option) {
     this.cate_id = option.cate_id
-    this.startTrain()
+    
+    // 取缓存数据
+    const questions = uni.getStorageSync('questions');
+    if (questions) {
+      this.signsList = questions;
+    }
+    
+    // this.startTrain()
     // 页面加载后初始化数据
     // this.updateProgress();
     this.updateTranslate();
