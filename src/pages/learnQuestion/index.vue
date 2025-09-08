@@ -435,6 +435,7 @@
         const isCorrect = question.options_json[optionIndex].key == question.answer;
         
         question.isCorrect = isCorrect;
+        question.status = isCorrect ? 'correct' : 'incorrect';
 
         if (isCorrect) {
           // 答对了
@@ -467,6 +468,8 @@
           this.wrongAdd()
           this.$forceUpdate()
         }
+        // 缓存答题
+        uni.setStorageSync('records', this.questions)
         // this.$forceUpdate()
       },
       // 判断是否答对
@@ -572,31 +575,17 @@
       showQuestionList() {
         console.log('Show question list modal');
         // 可以导航到题目列表页面
+        uni.navigateTo({
+          url: '/pages/overview/overview'
+        })
       },
       // 初始化题目数据
       initQuestions() {
-        // let params 
-        // if (this.mode == 'learn') {
-        //   // 学习模式
-        //   params = {
-        //     cate_id: this.cate_id
-        //   }
-        // } else if (this.mode == 'test') {
-        //   // 测试模式
-        //   params = {
-        //     subject_id: this.subject_id
-        //   }
-        // }
-        // startTrain(params).then(res => {
-        //   this.questions = res.data.data
-        //   this.totalQuestions = res.data.data.length
-        //   // 缓存题目
-        //   uni.setStorageSync('questions', res.data.data)
-        // })
         const questions = uni.getStorageSync('questions')
         if (questions && questions.length) {
           this.questions = questions
           this.totalQuestions = questions.length
+          uni.setStorageSync('records', this.questions)
         }
       },
       // 查询评论

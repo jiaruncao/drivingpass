@@ -20,17 +20,17 @@
         <view class="stats-card">
           <view class="stats-row">
             <view class="stat-item correct">
-              <text class="stat-value">{{ stats.correct }}</text>
+              <text class="stat-value">{{ correctCount }}</text>
               <text class="stat-label">Correct</text>
             </view>
             <view class="stat-divider"></view>
             <view class="stat-item incorrect">
-              <text class="stat-value">{{ stats.incorrect }}</text>
+              <text class="stat-value">{{ incorrectCount }}</text>
               <text class="stat-label">Incorrect</text>
             </view>
             <view class="stat-divider"></view>
             <view class="stat-item score">
-              <text class="stat-value">{{ stats.correct }}/{{ totalQuestions }}</text>
+              <text class="stat-value">{{ correctCount }}/{{ totalQuestions }}</text>
               <text class="stat-label">Score</text>
             </view>
           </view>
@@ -65,12 +65,12 @@
       <view class="questions-container">
         <view class="questions-grid">
           <view 
-            v-for="question in questions" 
+            v-for="(question, index) in questions" 
             :key="question.id"
             class="question-circle"
             :class="[question.status, {flagged: question.flagged}]"
             @tap="viewQuestion(question.id)">
-            <text class="question-number">{{ question.id }}</text>
+            <text class="question-number">{{ index + 1 }}</text>
             <text v-if="question.flagged" class="flag-icon">🚩</text>
           </view>
         </view>
@@ -96,58 +96,7 @@ export default {
   data() {
     return {
       // 50道题目数据
-      questions: [
-        { id: 1, status: 'incorrect', flagged: false },
-        { id: 2, status: 'correct', flagged: false },
-        { id: 3, status: 'correct', flagged: false },
-        { id: 4, status: 'correct', flagged: false },
-        { id: 5, status: 'incorrect', flagged: true },
-        { id: 6, status: 'incorrect', flagged: false },
-        { id: 7, status: 'incorrect', flagged: false },
-        { id: 8, status: 'correct', flagged: false },
-        { id: 9, status: 'correct', flagged: false },
-        { id: 10, status: 'correct', flagged: false },
-        { id: 11, status: 'incorrect', flagged: false },
-        { id: 12, status: 'correct', flagged: false },
-        { id: 13, status: 'correct', flagged: false },
-        { id: 14, status: 'correct', flagged: false },
-        { id: 15, status: 'correct', flagged: false },
-        { id: 16, status: 'correct', flagged: false },
-        { id: 17, status: 'correct', flagged: false },
-        { id: 18, status: 'incorrect', flagged: false },
-        { id: 19, status: 'correct', flagged: false },
-        { id: 20, status: 'correct', flagged: false },
-        { id: 21, status: 'correct', flagged: false },
-        { id: 22, status: 'incorrect', flagged: false },
-        { id: 23, status: 'correct', flagged: false },
-        { id: 24, status: 'correct', flagged: false },
-        { id: 25, status: 'incorrect', flagged: false },
-        { id: 26, status: 'correct', flagged: false },
-        { id: 27, status: 'incorrect', flagged: true },
-        { id: 28, status: 'correct', flagged: false },
-        { id: 29, status: 'correct', flagged: false },
-        { id: 30, status: 'correct', flagged: false },
-        { id: 31, status: 'incorrect', flagged: false },
-        { id: 32, status: 'correct', flagged: false },
-        { id: 33, status: 'correct', flagged: false },
-        { id: 34, status: 'incorrect', flagged: false },
-        { id: 35, status: 'correct', flagged: false },
-        { id: 36, status: 'incorrect', flagged: false },
-        { id: 37, status: 'correct', flagged: false },
-        { id: 38, status: 'correct', flagged: false },
-        { id: 39, status: 'correct', flagged: false },
-        { id: 40, status: 'correct', flagged: false },
-        { id: 41, status: 'incorrect', flagged: false },
-        { id: 42, status: 'correct', flagged: false },
-        { id: 43, status: 'correct', flagged: false },
-        { id: 44, status: 'correct', flagged: false },
-        { id: 45, status: 'incorrect', flagged: false },
-        { id: 46, status: 'correct', flagged: false },
-        { id: 47, status: 'incorrect', flagged: false },
-        { id: 48, status: 'correct', flagged: false },
-        { id: 49, status: 'correct', flagged: false },
-        { id: 50, status: 'correct', flagged: false }
-      ],
+      questions: [],
       // 统计数据
       stats: {
         correct: 35,
@@ -164,6 +113,14 @@ export default {
     // 总题目数
     totalQuestions() {
       return this.questions.length;
+    },
+    correctCount () {
+      const correctQuestions = this.questions.filter(q => q.status === 'correct');
+      return correctQuestions.length;
+    },
+    incorrectCount () {
+      const incorrectQuestions = this.questions.filter(q => q.status === 'incorrect');
+      return incorrectQuestions.length;
     },
     // 是否为横屏
     isLandscape() {
@@ -189,7 +146,7 @@ export default {
       console.log('View question:', questionId);
       // 跳转到题目详情页面
       uni.navigateTo({
-        url: `/pages/question/detail?id=${questionId}`
+        url: `/pages/learnQuestion/detail?id=${questionId}`
       });
     },
     // 复习错题
@@ -250,9 +207,12 @@ export default {
     this.updateScreenInfo();
     
     // 如果有传递的测试ID，获取对应的题目数据
-    if (options.testId) {
-      this.fetchQuestions();
-    }
+    // if (options.testId) {
+    //   this.fetchQuestions();
+    // }
+    
+    const records = uni.getStorageSync('records')
+    this.questions = records
   },
   onResize() {
     // 监听屏幕旋转
