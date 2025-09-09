@@ -20,8 +20,8 @@
         </view>
       </view>
       <view class="header-right">
-        <view class="follow-button" :class="{following: isFollowing}" @tap="toggleFollow(post.id)">
-          {{ isFollowing ? 'Following' : 'Follow' }}
+        <view class="follow-button" :class="{following: post.is_follow}" @tap="toggleFollow(post.id)">
+          {{ post.is_follow ? 'Following' : 'Follow' }}
         </view>
         <view class="more-button" @tap="showMoreOptions">
           <u-icon name="more-dot-fill"></u-icon>

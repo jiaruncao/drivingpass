@@ -428,14 +428,18 @@ export default {
   },
   onLoad() {
     // 页面加载时获取数据
-    this.fetchUserData();
-    this.queryMemberInfo()
+    // this.fetchUserData();
+    // this.queryMemberInfo()
     // this.updateStats();
     
     // 测试不同订阅等级的效果
     // this.subscriptionData.type = 'free';    // 免费用户
     // this.subscriptionData.type = 'silver';  // 银牌会员
     // this.subscriptionData.type = 'gold';    // 金牌会员
+  },
+  onShow () {
+    this.fetchUserData();
+    this.queryMemberInfo()
   }
 }
 </script>

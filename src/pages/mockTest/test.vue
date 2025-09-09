@@ -132,7 +132,7 @@ export default {
       // 当前题目编号
       currentQuestion: 1,
       // 倒计时剩余秒数
-      timeRemaining: 54 * 60 + 24,
+      timeRemaining: 57 * 60,
       // Review面板是否显示
       reviewVisible: false,
       // 计时器
@@ -153,7 +153,6 @@ export default {
       const seconds = this.timeRemaining % 60
       return `${minutes}:${seconds.toString().padStart(2, '0')}`
     },
-    
     // 当前题目数据
     currentQuestionData() {
       // 如果当前题号有特定数据，使用特定数据，否则使用默认数据
@@ -254,20 +253,19 @@ export default {
         if (this.timeRemaining > 0) {
           this.timeRemaining--
           
-          if (this.timeRemaining == 3500) {
-            uni.showModal({
-              title: 'Finished Multiple-Choice',
-              content: 'You have finished answering multiple-choice questions and have 3 minutes to rest. You can also choose to skip and continue answering dangerous driving questions. Do you want to skip?',
-              showCancel: false,
-              success: () => {
-                // this.endTest()
-                // 开始危险驾驶的答题
-              }
+          if (this.timeRemaining == 180) { // 3分钟倒计时
+            // 考试结束，交卷
+            submitExamQuestion({
+              paper_id: this.paper_id,
+              questions: this.questionStates.map(q => ({
+                id: q.id,
+                answer: q.selectedOption
+              }))
             })
+            this.endTestAfter()
           }
         } else {
           clearInterval(this.timer)
-          
         }
       }, 1000)
     },
@@ -377,6 +375,19 @@ export default {
               console.log(res)
             })
           }
+        }
+      })
+    },
+    endTestAfter () {
+      uni.showModal({
+        title: 'Finished Multiple-Choice',
+        content: `You have finished answering multiple-choice questions and have 3 minutes to rest. You can also choose to skip and continue answering dangerous driving questions. Do you want to skip?`,
+        showCancel: false,
+        success: () => {
+          clearInterval(this.timer)
+          // clearInterval(this.toHazardTimer)
+          // this.endTest()
+          // 开始危险驾驶的答题
         }
       })
     }

@@ -24,7 +24,12 @@
       <view class="profile-card">
         <view class="profile-header">
           <view class="avatar-container">
-            <view class="avatar">{{ userInitial }}</view>
+            <view class="avatar">
+              <image v-if="userData.avatar" :src="userData.avatar" mode=""></image>
+              <view v-if="!userData.avatar">
+                {{userInitial}}
+              </view>
+            </view>
             <view v-if="userData.verified" class="verified-badge">
               <text class="badge-icon">✓</text>
             </view>
@@ -60,7 +65,7 @@
 
         <view class="profile-actions">
           <view class="action-button primary" @tap="toggleFollow">
-            {{ isFollowing ? 'Following' : 'Follow' }}
+            {{ userData.is_follow ? 'Following' : 'Follow' }}
           </view>
           <view class="action-button secondary" @tap="sendMessage">Message</view>
         </view>
@@ -83,26 +88,35 @@
               <text class="post-time">{{ $u.timeFormat(post.createtime) }}</text>
             </view>
             <text class="post-content">{{ post.content }}</text>
-            <view v-if="post.file_url && post.file_url.length > 0" class="post-media">
+            <!-- <view v-if="post.file_url && post.file_url.length > 0" class="post-media">
               <image v-for="(img, index) in post.file_url" 
                      :key="index" 
                      :src="img" 
                      class="post-image"
                      mode="aspectFill">
               </image>
+            </view> -->
+            <view v-if="post.file_url && post.file_url.length" class="images-grid">
+              <view v-for="(image, index) in post.file_url" :key="index" style="width: 100%;">
+                <image v-if="['webp', 'png', 'jpg', 'jpeg'].includes(getExtension(image))" :src="image" class="post-image"
+                  mode="aspectFill" @tap="viewImage(image)">
+                </image>
+                <video v-if="['mp4', 'avi'].includes(getExtension(image))" :src="image" :controls="false" :show-play-btn="false"  class="post-video"></video>
+              </view>
             </view>
             <!-- 互动栏 -->
             <view class="actions-bar">
               <view class="actions-left">
                 <view class="action-button" :class="{liked: post.is_support}" @tap.stop="toggleLike(post)">
                   <view class="action-icon">
-                    <image src="/static/icons/heart.svg" class="icon-svg" mode="aspectFit"></image>
+                    <u-icon v-if="!post.is_support" name="heart" size="40rpx" color="#999"></u-icon>
+                    <u-icon v-if="post.is_support" name="heart-fill" size="40rpx" color="#FF6B6B"></u-icon>
                   </view>
                   <text class="action-count">{{ post.support_count }}</text>
                 </view>
                 <view class="action-button" @tap.stop="openComments(post.id)">
                   <view class="action-icon">
-                    <image src="/static/icons/comment.svg" class="icon-svg" mode="aspectFit"></image>
+                    <u-icon name="chat" size="40rpx"></u-icon>
                   </view>
                   <text class="action-count">{{ post.reply_count }}</text>
                 </view>
@@ -163,6 +177,16 @@ export default {
     }
   },
   methods: {
+    getExtension(url) {
+      // 匹配最后一个 '.' 后的内容（包括可能的查询参数）
+      const extensionMatch = url.match(/\.([a-zA-Z0-9]+)(?:$|\?|#)/);
+    
+      // 提取纯净的后缀（不包含查询参数）
+      const extension = extensionMatch ? extensionMatch[1] : null;
+    
+      return extension
+    
+    },
     // 返回上一页
     goBack() {
       uni.navigateBack({
@@ -361,7 +385,7 @@ export default {
   },
   onLoad(options) {
     // 获取用户ID参数
-    this.userId = options.userId || 9;
+    this.userId = options.userId;
     
     // 页面加载时获取数据
     this.fetchUserData();
@@ -537,6 +561,11 @@ export default {
   font-size: 64rpx;
   color: white;
   font-weight: 600;
+  > image {
+    width: 160rpx;
+    height: 160rpx;
+    border-radius: 50%;
+  }
 }
 
 .verified-badge {
@@ -729,7 +758,17 @@ export default {
   margin-bottom: 24rpx;
   overflow-x: auto;
 }
-
+.images-grid {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  // gap: 20rpx;
+  margin-bottom: 30rpx;
+}
+.post-video {
+  width: 100%;
+  height: 300rpx;
+}
 .post-image {
   width: 200rpx;
   height: 200rpx;

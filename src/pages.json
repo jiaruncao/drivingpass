@@ -118,18 +118,8 @@
       }
     },
     {
-      "path": "pages/wrongQuestionBook/index",
-      "style": {
-        "navigationBarTitleText": "Wrong Question Book",
-        "navigationBarTextStyle": "black",
-        "navigationBarBackgroundColor": "#fff",
-        "navigationStyle": "custom"
-      }
-    },
-    {
       "path": "pages/login/index",
       "style": {
-        "navigationStyle": "default",
         "navigationBarTextStyle": "black",
         "navigationStyle": "custom",
         "navigationBarBackgroundColor": "#fff",
@@ -243,15 +233,6 @@
       "style": {
         "navigationBarBackgroundColor": "#fff",
         "navigationStyle": "custom"
-      }
-    },
-    {
-      "path": "pages/servers/servers",
-      "style": {
-        "navigationBarBackgroundColor": "#fff",
-        "navigationBarTextStyle": "black",
-        "navigationBarTitleText": "服务",
-        "enablePullDownRefresh": false
       }
     },
     {
@@ -461,7 +442,7 @@
         "pagePath": "pages/my/index",
         "text": "Account",
         "iconPath": "static/tabBar/tab_me_normal.png",
-        "selectedIconPath": "/src/static/tabBar/tab_me_select.png"
+        "selectedIconPath": "/static/tabBar/tab_me_select.png"
       }
     ]
   },

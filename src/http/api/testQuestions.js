@@ -195,3 +195,26 @@ export function collectClear(params) {
 export function getTestStatistics(params) {
   return fly.post("/exam/grade/testStatistics", params);
 }
+/*
+ * 查询今日试题练习次数
+ * author：huanyun
+ * subject_id
+ * create by date：2025/08/16
+ */
+export function getTestRecordCount(params) {
+  return fly.post("/exam/question/testRecordCount", params);
+}
+
+/*
+ * 试题练习记录
+ * author：huanyun
+ * subject_id
+ * time_used
+ * wrong_answers
+ * accuracy
+ * total
+ * create by date：2025/08/16
+ */
+export function testRecordAdd(params) {
+  return fly.post("/exam/question/testRecordAdd", params);
+}

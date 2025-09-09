@@ -279,7 +279,7 @@ export default {
     },
     // 日期变化
     onDateChange(e) {
-      this.formData.testDate = e.detail.value;
+      this.formData.test_date = e.detail.value;
     },
     
     // 选择测试中心
@@ -411,7 +411,7 @@ export default {
             uni.clearStorageSync();
             // 跳转到登录页
             uni.reLaunch({
-              url: '/pages/login/login'
+              url: '/pages/login/index'
             });
           }
         }

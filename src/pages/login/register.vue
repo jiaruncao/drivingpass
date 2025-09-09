@@ -95,8 +95,8 @@
             <view class="terms-checkbox" @tap="!isLoading && (signupForm.agreeTerms = !signupForm.agreeTerms)">
               <view class="checkbox" :class="{checked: signupForm.agreeTerms}"></view>
               <view class="terms-text">
-                I agree to the <text class="terms-link" @tap.stop="showTerms">Terms of Service</text> 
-                and <text class="terms-link" @tap.stop="showPrivacy">Privacy Policy</text>
+                I agree to the <text class="terms-link" @tap.stop="toTerms">Terms of Service</text> 
+                and <text class="terms-link" @tap.stop="toPrivacy">Privacy Policy</text>
               </view>
             </view>
           </view>
@@ -130,7 +130,7 @@
           
           <!-- Apple 登录按钮 -->
           <view class="apple-button" :class="{disabled: isLoading}" @tap="handleSocialLogin('apple')">
-            <view class="apple-icon"></view>
+            <u-icon name="apple-fill" color="#fff" size="28"></u-icon>
             <text>Create with Apple</text>
           </view>
         </view>
@@ -307,7 +307,7 @@ export default {
     goToLogin() {
       console.log('Navigate to login page');
       uni.redirectTo({
-        url: '/pages/login/login'
+        url: '/pages/login/index'
       });
     },
 
@@ -320,7 +320,16 @@ export default {
         showCancel: false
       });
     },
-
+    toTerms () {
+      uni.navigateTo({
+        url: '/pages/my/terms'
+      })
+    },
+    toPrivacy () {
+      uni.navigateTo({
+        url: '/pages/my/privacy'
+      })
+    },
     // 显示隐私政策
     showPrivacy() {
       console.log('Show Privacy Policy');

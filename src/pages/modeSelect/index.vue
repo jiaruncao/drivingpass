@@ -206,7 +206,7 @@
 </template>
 
 <script>
-import {getThree, startTrain} from '@/http/api/testQuestions.js'
+import {getThree, startTrain, getTestRecordCount} from '@/http/api/testQuestions.js'
 import {queryMemberInfo} from '@/http/api/login.js'
 export default {
   data() {
@@ -450,18 +450,49 @@ export default {
       }
     },
     // 获取题目
-    startTrain () {
+    async startTrain () {
+      
+      // 如果是test模式，查询是否还有test次数
+      if (this.currentView == 'test') {
+        const testCountRes = await getTestRecordCount({
+          subject_id: this.subject_id
+        })
+        if (testCountRes.code == 1) {
+          const testCount = testCountRes.data.count
+          // 对比
+          if (!this.contrastMebmberInfo(testCount)) {
+            // 提示次数不够，升级会员
+            uni.showModal({
+              title: 'Feature Locked',
+              content: `Not enough times, Upgrade to unlock this feature`,
+              confirmText: 'Upgrade',
+              cancelText: 'Cancel',
+              success: (res) => {
+                if (res.confirm) {
+                  uni.navigateTo({
+                    url: '/pages/my/subscription',
+                  })
+                }
+              }
+            });
+            return false
+          }
+        }
+      }
+
       let params
       if (this.currentView == 'learn' || this.currentView == 'category-detail') {
         // 学习模式
         params = this.getTrainParams()
       } else if (this.currentView == 'test') {
+        // params = this.getTrainParamsOfTest()
         // 测试模式
         params = {
           subject_id: this.subject_id,
           page_count: this.tempQuestionCount,
           mode: 'test',// normal=普通模式，random=随机查询，test=练习模式
-          jump: this.testOptions.skipCorrect ? 1 : 0
+          jump: this.testOptions.skipCorrect ? 1 : 0,
+          type: 'all'
         }
       }
       startTrain(params).then(res => {
@@ -498,7 +529,7 @@ export default {
       queryMemberInfo().then(res => {
         if (res.code == 1) {
           uni.setStorageSync('memberInfo', res.data)
-          this.getTrainParams()
+          // this.getTrainParams()
         }
       })
     },
@@ -535,6 +566,43 @@ export default {
           cate_id: this.selectedCategory,
           page_count: typeof features['Road Signs - Learn Mode'] == 'boolean' && features['Road Signs - Learn Mode'] ? 0 : features['Road Signs - Learn Mode'],
           type: 'all'
+        }
+      }
+    },
+    // 对比权益，判断是否有次数
+    contrastMebmberInfo (testCount) {
+      const memberInfo = uni.getStorageSync('memberInfo')
+      if (this.currentViewTitle == 'TheoryTest') {
+        const features = memberInfo.features_list.filter(item => item.title == 'THEORY TEST')[0].features
+        const count = features['Test Mode']
+        if (count && count > testCount) {
+          return true
+        } else {
+          return false
+        }
+      } else if (this.currentViewTitle == 'HazardTest') {
+        const features = memberInfo.features_list.filter(item => item.title == 'HAZARD PERCEPTION')[0].features
+        const count = features['Test Mode']
+        if (count && count > testCount) {
+          return true
+        } else {
+          return false
+        }
+      } else if (this.currentViewTitle == 'HighwayCode') {
+        const features = memberInfo.features_list.filter(item => item.title == 'STUDY MATERIALS')[0].features
+        const count = features['Highway Code - Test Mode']
+        if (count && count > testCount) {
+          return true
+        } else {
+          return false
+        }
+      } else if (this.currentViewTitle == 'RodeSign') {
+        const features = memberInfo.features_list.filter(item => item.title == 'STUDY MATERIALS')[0].features
+        const count = features['Road Signs - Test Mode']
+        if (count && count > testCount) {
+          return true
+        } else {
+          return false
         }
       }
     }

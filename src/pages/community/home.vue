@@ -34,7 +34,7 @@
       <!-- 帖子列表 -->
       <view v-for="post in discoverPosts" :key="post.id" class="post-card">
         <!-- 用户信息头部 -->
-        <view class="user-header" @click="userProfileClick">
+        <view class="user-header" @click="userProfileClick(post.user_id)">
           <view class="user-avatar">
             <image v-if="post.avatar" :src="post.avatar" mode=""></image>
             <view v-if="!post.avatar">
@@ -496,9 +496,9 @@
         }];
       },
       // 跳转user
-      userProfileClick(userId) {
+      userProfileClick(user_id) {
       	uni.navigateTo({
-      		url: '/pages/community/userProfile'
+      		url: '/pages/community/userProfile?userId=' + user_id
       	});
       	console.log('点击了UserProfile');
       },
@@ -684,7 +684,7 @@
     width: 90rpx;
     height: 90rpx;
     border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #4A9EFF 0%, #2196F3 100%);
     display: flex;
     align-items: center;
     justify-content: center;

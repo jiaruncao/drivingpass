@@ -178,7 +178,10 @@
             <!-- 用户信息 -->
             <view class="user-info">
               <view class="user-avatar">
-                {{ post.avatar ? post.avatar : getInitial(post.nickname) }}
+                <image v-if="post.avatar" :src="post.avatar" mode=""></image>
+                <view v-if="!post.avatar">
+                  {{getInitial(post.nickname)}}
+                </view>
               </view>
               <view class="user-details">
                 <text class="username">{{ post.nickname }}</text>
@@ -192,9 +195,17 @@
               <text class="post-text">{{ post.content }}</text>
               
               <!-- 图片网格 -->
-              <view v-if="post.file_url && post.file_url.length > 0" class="image-grid">
+              <!-- <view v-if="post.file_url && post.file_url.length > 0" class="image-grid">
                 <view v-for="(image, index) in post.file_url.slice(0, 3)" :key="index" class="image-item">
                   <image :src="image" mode="aspectFill"></image>
+                </view>
+              </view> -->
+              <view v-if="post.file_url && post.file_url.length" class="images-grid">
+                <view v-for="(image, index) in post.file_url" :key="index" style="width: 100%;">
+                  <image v-if="['webp', 'png', 'jpg', 'jpeg'].includes(getExtension(image))" :src="image" class="post-image"
+                    mode="aspectFill" @tap="viewImage(image)">
+                  </image>
+                  <video v-if="['mp4', 'avi'].includes(getExtension(image))" :src="image" :controls="false" :show-play-btn="false"  class="post-video"></video>
                 </view>
               </view>
             </view>
@@ -429,6 +440,16 @@ export default {
     }
   },
   methods: {
+    getExtension(url) {
+      // 匹配最后一个 '.' 后的内容（包括可能的查询参数）
+      const extensionMatch = url.match(/\.([a-zA-Z0-9]+)(?:$|\?|#)/);
+    
+      // 提取纯净的后缀（不包含查询参数）
+      const extension = extensionMatch ? extensionMatch[1] : null;
+    
+      return extension
+    
+    },
     // 返回
     goBack() {
       uni.navigateBack();
@@ -1328,6 +1349,11 @@ export default {
   color: white;
   font-size: 36rpx;
   font-weight: 600;
+  > image {
+    width: 90rpx;
+    height: 90rpx;
+    border-radius: 50%;
+  }
 }
 
 .user-details {
@@ -1371,13 +1397,23 @@ export default {
 }
 
 /* 图片网格 */
-.image-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16rpx;
+// .image-grid {
+//   display: grid;
+//   grid-template-columns: repeat(3, 1fr);
+//   gap: 16rpx;
+//   margin-bottom: 30rpx;
+// }
+.images-grid {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  // gap: 20rpx;
   margin-bottom: 30rpx;
 }
-
+.post-video {
+  width: 100%;
+  height: 300rpx;
+}
 .image-item {
   aspect-ratio: 1;
   border-radius: 24rpx;

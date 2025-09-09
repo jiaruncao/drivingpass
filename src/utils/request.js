@@ -17,7 +17,7 @@ fly.config.baseURL = "http://driving.asszo.com/addons";
 fly.interceptors.request.use(
   (request) => {
     console.log("req", request);
-	  console.log('req.url ===',request.url);
+    console.log('req.url ===', request.url);
     /*
      * author：Gengbaodada
      * create by date：2024/11/11
@@ -29,20 +29,20 @@ fly.interceptors.request.use(
      * create by date：2024/11/11
      * content：登录后接口调用是否使用token
      */
-	if (request.url !== 'exam/user/userLogin') { // 非登录接口
-	  const token = uni.getStorageSync("token");
-      console.log('token ===',token);
-	  if (token) { // 有token才设置
-	    request.headers['token'] = token;
-	  }
-	}
+    if (request.url !== 'exam/user/userLogin') { // 非登录接口
+      const token = uni.getStorageSync("token");
+      console.log('token ===', token);
+      if (token) { // 有token才设置
+        request.headers['token'] = token;
+      }
+    }
     uni.showLoading({
       mask: true,
       title: "加载中",
     });
     return request;
   },
-  function (error) {
+  function(error) {
     return Promise.reject(error);
   }
 );
@@ -75,11 +75,11 @@ fly.interceptors.response.use(
   },
   (error) => {
     console.log("error ===", error);
-	if(error.status == 401){
-		uni.navigateTo({
-			url: '/pages/login/index'
-		})
-	}
+    if (error.status == 401) {
+      uni.navigateTo({
+        url: '/pages/login/index'
+      })
+    }
     /*
      * author：Gengbaodada
      * create by date：2024/11/11
@@ -100,10 +100,10 @@ fly.interceptors.response.use(
 export const uploadFile = (url, filePath, formData = {}, onProgressUpdate) => {
   return new Promise((resolve, reject) => {
     fly.upload(url, {
-      filePath,          // 文件路径
-      name: 'file',      // 后端接收的字段名
-      formData,          // 额外表单数据
-      onProgressUpdate   // 进度回调
+      filePath, // 文件路径
+      name: 'file', // 后端接收的字段名
+      formData, // 额外表单数据
+      onProgressUpdate // 进度回调
     }).then(resolve).catch(reject)
   })
 }

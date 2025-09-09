@@ -93,7 +93,8 @@
           
           <!-- Apple 登录按钮 -->
           <view class="apple-button" :class="{disabled: isLoading}" @tap="handleSocialLogin('apple')">
-            <view class="apple-icon"></view>
+            <!-- <view class="apple-icon"></view> -->
+            <u-icon name="apple-fill" color="#fff" size="28"></u-icon>
             <text>Continue with Apple</text>
           </view>
         </view>

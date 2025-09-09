@@ -283,6 +283,51 @@
 
     <!-- 滑动提示 -->
     <view class="swipe-hint" v-if="showSwipeHint">Swipe left or right to navigate</view>
+    
+    
+    <view v-if="showResult" class="result-modal">
+      <view class="result-backdrop" @tap.stop></view>
+      <view class="result-content">
+        <view class="result-header">
+          <text class="result-title">Test Complete</text>
+        </view>
+        
+        <view class="result-score">
+          <view>
+            <text style="font-size: 40rpx;font-weight: 600;">{{accuracyCount}}</text> <text style="font-size: 20rpx;margin-left: 10rpx;">%</text>
+          </view>
+          <view style="font-size: 20rpx;">
+            Accuracy
+          </view>
+        </view>
+    
+        <!-- 标记统计 -->
+        <view class="result-stats">
+          <view class="stat-item">
+            
+            <text class="stat-value">{{ wrongCount }}</text>
+            <text class="stat-label">Wrong Answers</text>
+          </view>
+          <view class="stat-item">
+            
+            <text class="stat-value">{{ questions.length }}</text>
+            <text class="stat-label">Total</text>
+          </view>
+        </view>
+    
+        <!-- 操作按钮 -->
+        <view class="result-actions">
+          <button class="result-button exit-btn" @tap="goBack">
+            Exit
+          </button>
+          <button class="result-button review-btn" @tap="showQuestionList">
+            View Details
+          </button>
+        </view>
+      </view>
+    </view>
+    
+    
   </view>
 </template>
 
@@ -314,7 +359,8 @@
         },
         // 题目数据数组
         questions: [],
-        pid: null
+        pid: null,
+        showResult: false
       }
     },
     computed: {
@@ -326,6 +372,12 @@
       fontSizeClass() {
         const sizes = ['font-size-small', 'font-size-medium', 'font-size-large', 'font-size-extra-large'];
         return sizes[this.settings.fontSize - 1];
+      },
+      wrongCount () {
+        return this.questions.filter(q => q.status == 'incorrect').length
+      },
+      accuracyCount () {
+        return Math.round((this.questions.length - this.wrongCount) / this.questions.length)
       }
     },
     methods: {
@@ -461,6 +513,15 @@
           if (this.mode == 'learn') {
             // 查询评论
             this.queryPostList()
+          } else {
+            // test模式下，直接跳转下一题
+            if (this.settings.autoAdvance) {
+              setTimeout(() => {
+                if (this.currentQuestionIndex < this.questions.length - 1) {
+                  this.currentQuestionIndex++;
+                }
+              }, 1000);
+            }
           }
           // 答错了，重置连续答对
           this.correctStreak = 0;
@@ -468,6 +529,16 @@
           this.wrongAdd()
           this.$forceUpdate()
         }
+        
+        // 如果答题答完
+        const hasAllAnswered = this.questions.every(question => {
+          return question.showAnswer
+        });
+        if (hasAllAnswered) {
+          // 所有题目都答完了
+          this.showResult = true;
+        }
+        
         // 缓存答题
         uni.setStorageSync('records', this.questions)
         // this.$forceUpdate()
@@ -1057,12 +1128,13 @@
     width: 88rpx;
     height: 88rpx;
     border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    // background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #4A9EFF 0%, #2196F3 100%);
     border: none;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 8rpx 30rpx rgba(102, 126, 234, 0.3);
+    // box-shadow: 0 8rpx 30rpx rgba(102, 126, 234, 0.3);
     flex-shrink: 0;
   }
 
@@ -1111,7 +1183,8 @@
     overflow: hidden;
     margin-bottom: 50rpx;
     position: relative;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    // background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #4A9EFF 0%, #2196F3 100%);
     box-shadow: 0 20rpx 80rpx rgba(102, 126, 234, 0.15);
     
     > image {
@@ -1808,7 +1881,8 @@
   }
 
   .send-button {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    // background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #4A9EFF 0%, #2196F3 100%);
     border: none;
     width: 80rpx;
     height: 80rpx;
@@ -1866,7 +1940,8 @@
 
   /* 题目计数器 - 集成到底部栏（完整版） */
   .question-counter {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    // background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #4A9EFF 0%, #2196F3 100%);
     color: white;
     padding: 20rpx 40rpx;
     border-radius: 50rpx;
@@ -2387,5 +2462,186 @@
     border-radius: 40rpx;
     font-size: 28rpx;
     transition: all 0.3s ease;
+  }
+  
+  // 得分
+  /* 结果弹窗 */
+  .result-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+  }
+  
+  .result-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+  }
+  
+  .result-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 600rpx;
+    background: white;
+    border-radius: 30rpx;
+    padding: 50rpx;
+    box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.3);
+  }
+  
+  .result-header {
+    text-align: center;
+    margin-bottom: 40rpx;
+  }
+  
+  .result-title {
+    font-size: 42rpx;
+    font-weight: 600;
+    color: #333;
+  }
+  
+  .result-score {
+    text-align: center;
+    margin: 0 auto;
+    margin-bottom: 40rpx;
+    width: 200rpx;
+    height: 200rpx;
+    border-radius: 50%;
+    background: #4A9EFF;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .score-label {
+    font-size: 28rpx;
+    color: #666;
+    display: block;
+    margin-bottom: 20rpx;
+  }
+  
+  .score-display {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    margin-bottom: 20rpx;
+  }
+  
+  .score-number {
+    font-size: 80rpx;
+    font-weight: bold;
+    color: #4A9EFF;
+  }
+  
+  .score-divider {
+    font-size: 40rpx;
+    color: #999;
+    margin: 0 10rpx;
+  }
+  
+  .score-total {
+    font-size: 50rpx;
+    color: #666;
+  }
+  
+  /* 得分状态 */
+  .score-status {
+    display: inline-block;
+    padding: 10rpx 30rpx;
+    border-radius: 20rpx;
+    margin-top: 10rpx;
+  }
+  
+  .score-status.excellent {
+    background: linear-gradient(135deg, #66BB6A 0%, #4CAF50 100%);
+  }
+  
+  .score-status.good {
+    background: linear-gradient(135deg, #42A5F5 0%, #2196F3 100%);
+  }
+  
+  .score-status.pass {
+    background: linear-gradient(135deg, #FFA726 0%, #FF9800 100%);
+  }
+  
+  .score-status.fail {
+    background: linear-gradient(135deg, #EF5350 0%, #F44336 100%);
+  }
+  
+  .status-text {
+    color: white;
+    font-size: 28rpx;
+    font-weight: 600;
+  }
+  
+  /* 统计信息 */
+  .result-stats {
+    display: flex;
+    justify-content: space-around;
+    padding: 30rpx 0;
+    border-top: 1rpx solid #eee;
+    border-bottom: 1rpx solid #eee;
+    margin-bottom: 40rpx;
+  }
+  
+  .stat-item {
+    text-align: center;
+  }
+  
+  .stat-label {
+    font-size: 24rpx;
+    color: #999;
+    display: block;
+    margin-bottom: 10rpx;
+  }
+  
+  .stat-value {
+    font-size: 36rpx;
+    font-weight: 600;
+    color: #333;
+  }
+  
+  /* 操作按钮 */
+  .result-actions {
+    display: flex;
+    gap: 30rpx;
+  }
+  
+  .result-button {
+    flex: 1;
+    padding: 26rpx;
+    border-radius: 50rpx;
+    font-size: 28rpx;
+    font-weight: 600;
+    border: none;
+    transition: all 0.3s ease;
+  }
+  
+  .exit-btn {
+    background: #f5f5f5;
+    color: #666;
+  }
+  
+  .exit-btn:active {
+    background: #e0e0e0;
+  }
+  
+  .review-btn {
+    background: linear-gradient(135deg, #4A9EFF 0%, #2196F3 100%);
+    color: white;
+    box-shadow: 0 8rpx 30rpx rgba(74, 158, 255, 0.3);
+  }
+  
+  .review-btn:active {
+    transform: scale(0.98);
   }
 </style>

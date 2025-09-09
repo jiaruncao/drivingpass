@@ -1073,7 +1073,7 @@
     overflow: hidden;
     margin-bottom: 50rpx;
     position: relative;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #4A9EFF 0%, #2196F3 100%);
     box-shadow: 0 20rpx 80rpx rgba(102, 126, 234, 0.15);
     
     > image {
@@ -1770,7 +1770,7 @@
   }
 
   .send-button {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #4A9EFF 0%, #2196F3 100%);
     border: none;
     width: 80rpx;
     height: 80rpx;
@@ -1828,7 +1828,7 @@
 
   /* 题目计数器 - 集成到底部栏（完整版） */
   .question-counter {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #4A9EFF 0%, #2196F3 100%);
     color: white;
     padding: 20rpx 40rpx;
     border-radius: 50rpx;

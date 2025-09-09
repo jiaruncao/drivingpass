@@ -210,13 +210,13 @@ export default {
       console.log('Opening question:', result.question);
       // 实际应用中导航到问题详情页
       // 可以传递问题ID或完整问题对象
-      uni.showToast({
-        title: '打开问题详情',
-        icon: 'none'
-      });
+      // uni.showToast({
+      //   title: '打开问题详情',
+      //   icon: 'none'
+      // });
       
       uni.navigateTo({
-        url: '/pages/learnQuestion/index?cate_id=' + result.cate_id
+        url: '/pages/learnQuestion/detail?question_id=' + result.id
       })
     }
   },
