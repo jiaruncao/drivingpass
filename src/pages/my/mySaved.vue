@@ -1414,6 +1414,27 @@ export default {
   width: 100%;
   height: 300rpx;
 }
+/* #ifdef APP */
+  .post-image {
+    width: 200rpx;
+    height: 200rpx;
+    border-radius: 20rpx;
+    background: #F0F0F0;
+    margin-right: 20rpx;
+  }
+  /* #endif */
+  
+  /* #ifndef APP */
+  .post-image {
+    width: calc(33.333% - 14rpx);
+    height: 100%;
+    aspect-ratio: 1;
+    -webkit-aspect-ratio: 1; /* 对于旧的WebKit浏览器 */
+    border-radius: 20rpx;
+    background: #F0F0F0;
+    margin-right: 20rpx;
+  }
+  /* #endif */
 .image-item {
   aspect-ratio: 1;
   border-radius: 24rpx;
@@ -1782,7 +1803,8 @@ export default {
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
-  gap: 20rpx;
+  // gap: 20rpx;
+  margin-bottom: 20rpx;
 }
 
 .option-marker {
@@ -1895,7 +1917,7 @@ export default {
 /* 筛选栏 */
 .filter-bar {
   display: flex;
-  gap: 20rpx;
+  // gap: 20rpx;
   margin-bottom: 40rpx;
   overflow-x: auto;
   padding-bottom: 10rpx;
@@ -1910,6 +1932,7 @@ export default {
   color: #666;
   white-space: nowrap;
   transition: all 0.3s ease;
+  margin-right: 20rpx;
 }
 
 .filter-chip.active {

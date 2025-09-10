@@ -36,10 +36,10 @@ fly.interceptors.request.use(
         request.headers['token'] = token;
       }
     }
-    uni.showLoading({
-      mask: true,
-      title: "加载中",
-    });
+    // uni.showLoading({
+    //   mask: true,
+    //   title: "loading...",
+    // });
     return request;
   },
   function(error) {
@@ -85,10 +85,10 @@ fly.interceptors.response.use(
      * create by date：2024/11/11
      * content：做错误处理
      */
-    uni.showLoading({
-      mask: true,
-      title: "服务器错误！请联系管理员",
-    });
+    // uni.showLoading({
+    //   mask: true,
+    //   title: "服务器错误！请联系管理员",
+    // });
     setTimeout(() => {
       uni.hideLoading();
       return Promise.reject(error);

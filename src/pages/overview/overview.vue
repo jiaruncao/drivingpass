@@ -167,9 +167,10 @@ export default {
     continueTest() {
       console.log('Continue test');
       // 返回测试页面或开始新测试
-      uni.navigateTo({
-        url: '/pages/test/index'
-      });
+      // uni.navigateTo({
+      //   url: '/pages/test/index'
+      // });
+      this.goBack()
     },
     // 更新屏幕信息
     updateScreenInfo() {

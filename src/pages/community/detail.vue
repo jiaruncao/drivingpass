@@ -209,10 +209,11 @@
       <input type="text" class="input-field" v-model="commentText" placeholder="Say something..."
         @confirm="sendComment" />
       <view class="send-button" @tap="sendComment">
-        <svg viewBox="0 0 24 24">
+        <!-- <svg viewBox="0 0 24 24">
           <line x1="22" y1="2" x2="11" y2="13" />
           <polygon points="22 2 15 22 11 13 2 9 22 2" />
-        </svg>
+        </svg> -->
+        ➤
       </view>
     </view>
   </view>
@@ -1018,6 +1019,8 @@
     align-items: center;
     justify-content: center;
     box-shadow: 0 6rpx 20rpx rgba(74, 158, 255, 0.3);
+    color: #fff;
+    font-size: 28rpx;
   }
 
   .send-button:active {
