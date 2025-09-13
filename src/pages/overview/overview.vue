@@ -84,7 +84,7 @@
           Review Incorrect
         </view>
         <view class="action-button" @tap="continueTest">
-          Continue Test
+          Exit Test
         </view>
       </view>
     </view>

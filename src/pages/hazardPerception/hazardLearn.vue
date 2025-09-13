@@ -125,33 +125,14 @@ export default {
       let score = 0;
       
       // 判断得分
-      
-      
-      // 第一个危险区间：15%-45% (早期反应得高分)
-      if (this.progress >= 15 && this.progress < 20) {
-        score = 5;
-      } else if (this.progress >= 20 && this.progress < 25) {
-        score = 4;
-      } else if (this.progress >= 25 && this.progress < 35) {
-        score = 3;
-      } else if (this.progress >= 35 && this.progress < 45) {
-        score = 2;
-      }
-      // 第二个危险区间：60%-80% (另一个危险)
-      else if (this.progress >= 60 && this.progress < 65) {
-        score = 5;
-      } else if (this.progress >= 65 && this.progress < 70) {
-        score = 4;
-      } else if (this.progress >= 70 && this.progress < 75) {
-        score = 3;
-      } else if (this.progress >= 75 && this.progress < 80) {
-        score = 2;
-      }
-      // 其他区域不得分
-      else {
-        score = 0;
-      }
-      console.log(this.progress)
+      this.score_list.forEach((item) => {
+        item.forEach(jtem => {
+          if (this.progress >= jtem.startTime && this.progress <= jtem.endTime) {
+            score = jtem.score;
+          }
+        })
+      })
+      console.log('this.progress', this.progress)
       // 添加标记
       this.addMark(this.progress, score);
     },
@@ -439,7 +420,7 @@ export default {
 
 .thin-progress-fill {
   height: 100%;
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 0, 0, 0.8);
   width: 0%;
   transition: width 0.1s linear;
 }
@@ -535,7 +516,7 @@ export default {
 /* 旗子样式 */
 .flag-container {
   position: relative;
-  width: 40rpx;
+  width: 24rpx;
   height: 50rpx;
 }
 

@@ -260,8 +260,9 @@
       <!-- 普通模式：显示Save和题号 -->
       <view v-if="!showCommentInput" class="save-section">
         <view class="save-button" :class="{ saved: currentQuestion && currentQuestion.collected }" @tap="toggleSave">
-          <text class="save-icon">{{ currentQuestion && currentQuestion.collected ? '⭐' : '☆' }}</text>
-          <text>Save</text>
+          <u-icon name="star-fill" color="#6b7280" size="40rpx" v-if="currentQuestion && currentQuestion.collected"></u-icon>
+          <u-icon name="star" color="#6b7280" size="40rpx" v-if="currentQuestion && !currentQuestion.collected"></u-icon>
+          <text>{{ currentQuestion && currentQuestion.collected ? 'Saved' : 'Save' }}</text>
         </view>
         <view class="question-counter" @tap="showQuestionList">
           {{ currentQuestionIndex + 1 }}/{{ totalQuestions }}

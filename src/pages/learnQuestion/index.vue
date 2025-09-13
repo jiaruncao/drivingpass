@@ -146,7 +146,7 @@
               <view class="ai-content">
                 <text>{{ question.explain }}</text>
                 <text class="remember-tip">
-                  <text class="strong">Remember:</text>
+                  <text class="strong" style="margin-right: 20rpx;">Remember:</text>
                   {{ question.rememberTip || 'Always check your mirrors and follow the Highway Code.' }}
                 </text>
               </view>
@@ -187,7 +187,11 @@
 
                 <view class="comment-header">
                   <view class="comment-avatar">
-                    <text>{{ comment.avatar }}</text>
+                    <!-- <text>{{ comment.avatar }}</text> -->
+                    <image v-if="comment.avatar" :src="comment.avatar" mode=""></image>
+                    <view v-if="!comment.avatar">
+                      {{getInitial(comment.nickname)}}
+                    </view>
                   </view>
                   <view class="comment-info">
                     <text class="comment-username">{{ comment.nickname }}</text>
@@ -196,11 +200,14 @@
                   <view class="comment-actions">
                     <button class="comment-like-button" :class="{ liked: comment.is_support }"
                       @tap="toggleCommentLike(comment)">
-                      <text class="comment-like-icon">{{ comment.is_support ? '❤️' : '🤍' }}</text>
+                      <u-icon v-if="!comment.is_support" name="heart" size="40rpx" color="#999"></u-icon>
+                      <u-icon v-if="comment.is_support" name="heart-fill" size="40rpx" color="#FF6B6B"></u-icon>
+                      <!-- <text class="comment-like-icon">{{ comment.is_support ? '❤️' : '🤍' }}</text> -->
                       <text class="comment-like-count">{{ comment.support_count }}</text>
                     </button>
                     <button class="comment-reply-button" @tap="replyToComment(comment)">
-                      <text class="comment-reply-icon">💬</text>
+                      <!-- <text class="comment-reply-icon">💬</text> -->
+                      <u-icon name="chat" size="40rpx"></u-icon>
                       <text class="comment-reply-label">Reply</text>
                     </button>
                   </view>
@@ -263,8 +270,10 @@
       <!-- 普通模式：显示Save和题号 -->
       <view v-if="!showCommentInput" class="save-section">
         <view class="save-button" :class="{ saved: currentQuestion && currentQuestion.collected }" @tap="toggleSave">
-          <text class="save-icon">{{ currentQuestion && currentQuestion.collected ? '⭐' : '☆' }}</text>
-          <text>Save</text>
+          <!-- <text class="save-icon">{{ currentQuestion && currentQuestion.collected ? '⭐' : '☆' }}</text> -->
+          <u-icon name="star-fill" color="#6b7280" size="40rpx" v-if="currentQuestion && currentQuestion.collected"></u-icon>
+          <u-icon name="star" color="#6b7280" size="40rpx" v-if="currentQuestion && !currentQuestion.collected"></u-icon>
+          <text>{{ currentQuestion && currentQuestion.collected ? 'Saved' : 'Save' }}</text>
         </view>
         <view class="question-counter" @tap="showQuestionList">
           {{ currentQuestionIndex + 1 }}/{{ totalQuestions }}
@@ -289,24 +298,24 @@
       <view class="result-backdrop" @tap.stop></view>
       <view class="result-content">
         <view class="result-header">
-          <text class="result-title">Test Complete</text>
+          <view class="result-title">Accuracy</view>
+          <view>Test Complete</view>
         </view>
         
         <view class="result-score">
           <view>
-            <text style="font-size: 40rpx;font-weight: 600;">{{accuracyCount}}</text> <text style="font-size: 20rpx;margin-left: 10rpx;">%</text>
+            <text style="font-size: 70rpx;font-weight: 500;">{{accuracyCount}}</text> <text style="font-size: 50rpx;margin-left: 10rpx;">%</text>
           </view>
-          <view style="font-size: 20rpx;">
+          <!-- <view style="font-size: 20rpx;">
             Accuracy
-          </view>
+          </view> -->
         </view>
     
         <!-- 标记统计 -->
         <view class="result-stats">
           <view class="stat-item">
-            
-            <text class="stat-value">{{ wrongCount }}</text>
-            <text class="stat-label">Wrong Answers</text>
+            <text class="stat-value" style="color:#F44336 !important;">{{ wrongCount }}</text>
+            <text class="stat-label" style="color:#F44336 !important;">Incorrect</text>
           </view>
           <view class="stat-item">
             
@@ -333,7 +342,7 @@
 
 <script>
   import {startTrain, collectAdd, collectCancel, wrongAdd, recordAdd} from '@/http/api/testQuestions.js'
-  import {queryPostList, createPost, replyPost} from '@/http/api/community.js'
+  import {queryPostList, createPost, replyPost, supportPost} from '@/http/api/community.js'
   export default {
     data() {
       return {
@@ -381,6 +390,9 @@
       }
     },
     methods: {
+      getInitial(username) {
+        return username.charAt(0).toUpperCase();
+      },
       onScroll(e) {
         // 只在答错时才需要切换评论输入框
         if (!this.currentQuestion.showAnswer || this.isCorrectAnswer(this.currentQuestion) || this.mode == 'test') {
@@ -559,8 +571,16 @@
       },
       // 切换评论点赞
       toggleCommentLike(comment) {
-        comment.is_support = !comment.is_support;
-        comment.likes += comment.is_support ? 1 : -1;
+        this.supportPost(comment)
+      },
+      supportPost (comment) {
+        supportPost({
+          post_id: comment.id
+        }).then(res => {
+          comment.is_support = !comment.is_support;
+          comment.support_count += comment.is_support ? 1 : -1;
+          this.$forceUpdate()
+        })
       },
       // 回复评论
       replyToComment(comment) {
@@ -630,7 +650,7 @@
             console.log(res)
             this.currentQuestion.collected = !this.currentQuestion.collected;
             console.log("this.startLearnQuestion", this.startLearnQuestion);
-            this.$utils.toast("Collected questions successfully！");
+            // this.$utils.toast("Collected questions successfully！");
           })
         } else {
           collectCancel({
@@ -638,7 +658,7 @@
           }).then(res => {
             console.log(res)
             this.currentQuestion.collected = !this.currentQuestion.collected;
-            this.$utils.toast("Cancel collection successfully！");
+            // this.$utils.toast("Cancel collection successfully！");
           })
         }
       },
@@ -1129,7 +1149,7 @@
     height: 88rpx;
     border-radius: 50%;
     // background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    background: linear-gradient(135deg, #4A9EFF 0%, #2196F3 100%);
+    // background: linear-gradient(135deg, #4A9EFF 0%, #2196F3 100%);
     border: none;
     display: flex;
     align-items: center;
@@ -1609,6 +1629,11 @@
     font-weight: 600;
     font-size: 28rpx;
     flex-shrink: 0;
+    > iamge {
+      width: 72rpx;
+      height: 72rpx;
+      border-radius: 50%;
+    }
   }
 
   .comment-info {
@@ -1925,7 +1950,7 @@
   }
 
   .save-button.saved {
-    color: #fbbf24;
+    // color: #fbbf24;
   }
 
   .save-icon {
