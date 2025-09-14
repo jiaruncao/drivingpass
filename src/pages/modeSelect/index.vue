@@ -258,8 +258,8 @@ export default {
       if (!this.searchKeyword.trim()) {
         return this.roadSignCategories;
       }
-      
-      return this.roadSignCategories.filter(category => category.name.toLowerCase().includes(this.searchKeyword.toLowerCase()))
+
+      return this.roadSignCategories.filter(category => category.name.includes(this.searchKeyword))
       
       // return this.roadSignCategories.map(category => {
       //   console.log('263',category)
@@ -353,6 +353,7 @@ export default {
       this.selectedCategory = category.id;
       this.selectedCategoryName = category.name;
       this.currentView = 'category-detail';
+      this.selectedSignCategory.progress = category.progress
       this.startTrain()
     },
     // 开始测试

@@ -57,7 +57,7 @@
 </template>
 
 <script>
-import {getThree, startTrain} from '@/http/api/testQuestions.js'
+import {getThree, startTrain, recordAdd} from '@/http/api/testQuestions.js'
 export default {
   data() {
     return {
@@ -113,8 +113,8 @@ export default {
     // 切换已读状态
     toggleReadStatus(index) {
       this.signsList[index].isRead = !this.signsList[index].isRead;
-      // this.updateProgress();
-      // this.saveProgress();
+      this.updateProgress();
+      this.saveProgress();
     },
     // 触摸开始
     onTouchStart(e) {
@@ -180,23 +180,13 @@ export default {
     },
     // 保存学习进度 - API调用示例
     async saveProgress() {
+      
       try {
-        const progressData = {
-          signId: this.currentSign.id,
-          isRead: this.currentSign.isRead,
-          categoryProgress: this.categoryProgress
-        };
+        const response = await recordAdd({
+          question_id: this.currentSign.id
+        })
         
-        const response = await uni.request({
-          url: '/api/learning-progress',
-          method: 'POST',
-          header: {
-            'Content-Type': 'application/json'
-          },
-          data: progressData
-        });
-        
-        if (response[1].statusCode === 200) {
+        if (response.code === 1) {
           console.log('Progress saved successfully');
         }
       } catch (error) {

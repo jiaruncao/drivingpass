@@ -208,7 +208,6 @@ export default {
       
       // 添加标记（允许重叠）
       this.userMarks.push(newMark);
-      
       console.log(`Mark ${this.clickCount} added at ${newMark.time}s with score ${finalScore}`);
     },
     
@@ -501,8 +500,8 @@ export default {
 
 .user-mark {
   position: absolute;
-  top: 50%;
-  transform: translate(-50%, -50%);
+  top: 0;
+  // transform: translate(-50%, -50%);
   pointer-events: auto;
   z-index: 10;
   transition: transform 0.2s ease;
