@@ -169,8 +169,6 @@
           </view>
         </view>
       </view>
-      
-      
     </view>
 
     <!-- 数量选择器模态框 -->
@@ -202,6 +200,9 @@
         </view>
       </view>
     </view>
+    
+    <!-- 升级弹框 -->
+    <u-modal title="Feature Locked" :show="showFeature" :showCancelButton="true" cancelText="Cancel" confirmText="Upgrade" :content='content' @confirm="confirmFeature" @cancel="cancelFeature"></u-modal>
   </view>
 </template>
 
@@ -237,6 +238,8 @@ export default {
         signs: [],
         progress: 0
       },
+      showFeature: false,
+      content: ''
     }
   },
   computed: {
@@ -360,10 +363,10 @@ export default {
     startTest() {
       console.log('Starting test with options:', this.testOptions);
       // 这里可以调用API开始测试
-      uni.showToast({
-        title: '开始测试',
-        icon: 'success'
-      });
+      // uni.showToast({
+      //   title: '开始测试',
+      //   icon: 'success'
+      // });
       switch (this.currentViewTitle) {
         case 'TheoryTest':
           // 跳转答题
@@ -396,10 +399,10 @@ export default {
       const category = this.categories.find(c => c.id === this.selectedCategory);
       console.log('Starting learning for category:', category);
       // 这里可以调用API开始学习
-      uni.showToast({
-        title: '开始学习',
-        icon: 'success'
-      });
+      // uni.showToast({
+      //   title: '开始学习',
+      //   icon: 'success'
+      // });
       // 区别什么类型的科目
       switch (this.currentViewTitle){
         case 'TheoryTest':
@@ -463,19 +466,21 @@ export default {
           // 对比
           if (!this.contrastMebmberInfo(testCount)) {
             // 提示次数不够，升级会员
-            uni.showModal({
-              title: 'Feature Locked',
-              content: `Not enough times, Upgrade to unlock this feature`,
-              confirmText: 'Upgrade',
-              cancelText: 'Cancel',
-              success: (res) => {
-                if (res.confirm) {
-                  uni.navigateTo({
-                    url: '/pages/my/subscription',
-                  })
-                }
-              }
-            });
+            // uni.showModal({
+            //   title: 'Feature Locked',
+            //   content: `Not enough times, Upgrade to unlock this feature`,
+            //   confirmText: 'Upgrade',
+            //   cancelText: 'Cancel',
+            //   success: (res) => {
+            //     if (res.confirm) {
+            //       uni.navigateTo({
+            //         url: '/pages/my/subscription',
+            //       })
+            //     }
+            //   }
+            // });
+            this.showFeature = true
+            this.content = `Not enough times, Upgrade to unlock this feature`
             return false
           }
         }
@@ -522,7 +527,7 @@ export default {
       console.log('Selected detail sign:', sign);
       // 这里可以导航到标志学习页面或显示标志详细信息
       uni.navigateTo({
-        url: `/pages/roadSign/learn?cate_id=${sign.cate_id}` 
+        url: `/pages/roadSign/learn?cate_id=${sign.cate_id}&categoryProgress=` +  this.selectedSignCategory.progress
       })
     },
     // 查询用户会员权益
@@ -542,7 +547,7 @@ export default {
         const features = memberInfo.features_list.filter(item => item.title == 'THEORY TEST')[0].features
         return {
           cate_id: this.selectedCategory,
-          page_count: typeof features['DVSA Official Questions'] == 'boolean' && features['DVSA Official Questions'] ? 0 : features['DVSA Official Questions'],
+          page_count: features['DVSA Official Questions'] == 'true' ? 0 : features['DVSA Official Questions'],
           type: features['Exclusive Questions'] ? 'all' : 'official'
         }
       } else if (this.currentViewTitle == 'HazardTest') {
@@ -557,7 +562,7 @@ export default {
         const features = memberInfo.features_list.filter(item => item.title == 'STUDY MATERIALS')[0].features
         return {
           cate_id: this.selectedCategory,
-          page_count: typeof features['Highway Code - Learn Mode'] == 'boolean' && features['Highway Code - Learn Mode'] ? 0 : features['Highway Code - Learn Mode'],
+          page_count: features['Highway Code - Learn Mode'] == 'true' ? 0 : features['Highway Code - Learn Mode'],
           type: 'all'
         }
       } else if (this.currentViewTitle == 'RodeSign') {
@@ -565,7 +570,7 @@ export default {
         const features = memberInfo.features_list.filter(item => item.title == 'STUDY MATERIALS')[0].features
         return {
           cate_id: this.selectedCategory,
-          page_count: typeof features['Road Signs - Learn Mode'] == 'boolean' && features['Road Signs - Learn Mode'] ? 0 : features['Road Signs - Learn Mode'],
+          page_count: features['Road Signs - Learn Mode'] == 'true' ? 0 : features['Road Signs - Learn Mode'],
           type: 'all'
         }
       }
@@ -576,7 +581,10 @@ export default {
       if (this.currentViewTitle == 'TheoryTest') {
         const features = memberInfo.features_list.filter(item => item.title == 'THEORY TEST')[0].features
         const count = features['Test Mode']
-        if (count && count > testCount) {
+        console.log('typeof count', typeof count == 'boolean')
+        if (count == 'true') {
+          return true
+        } else if (count > testCount) {
           return true
         } else {
           return false
@@ -584,7 +592,9 @@ export default {
       } else if (this.currentViewTitle == 'HazardTest') {
         const features = memberInfo.features_list.filter(item => item.title == 'HAZARD PERCEPTION')[0].features
         const count = features['Test Mode']
-        if (count && count > testCount) {
+        if (count == 'true') {
+          return true
+        } else if (count > testCount) {
           return true
         } else {
           return false
@@ -592,7 +602,9 @@ export default {
       } else if (this.currentViewTitle == 'HighwayCode') {
         const features = memberInfo.features_list.filter(item => item.title == 'STUDY MATERIALS')[0].features
         const count = features['Highway Code - Test Mode']
-        if (count && count > testCount) {
+        if (count == 'true') {
+          return true
+        } else if (count > testCount) {
           return true
         } else {
           return false
@@ -600,12 +612,23 @@ export default {
       } else if (this.currentViewTitle == 'RodeSign') {
         const features = memberInfo.features_list.filter(item => item.title == 'STUDY MATERIALS')[0].features
         const count = features['Road Signs - Test Mode']
-        if (count && count > testCount) {
+        if (count == 'true') {
+          return true
+        } else if (count > testCount) {
           return true
         } else {
           return false
         }
       }
+    },
+    confirmFeature () {
+      this.showFeature = false
+      uni.navigateTo({
+        url: '/pages/my/subscription',
+      })
+    },
+    cancelFeature () {
+      this.showFeature = false
     }
    },
   onLoad(options) {

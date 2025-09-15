@@ -60,6 +60,9 @@
         </view>
       </view>
     </view>
+    
+    <u-modal title="Test Instructions" :show="showTest" :showCancelButton="true" cancelText="Cancel" confirmText="Start" content='You will have 57 minutes to complete 50 multiple-choice questions, followed by 14 hazard perception video clips. You must score at least 43/50 in multiple-choice and 44/75 in hazard perception to pass.' @confirm="confirm" @cancel="cancel"></u-modal>
+    
   </view>
 </template>
 
@@ -85,7 +88,8 @@
             passMarks: 44,
             totalMarks: 75
           }
-        }
+        },
+        showTest: false
       }
     },
     onLoad() {
@@ -169,20 +173,27 @@
       // 显示测试说明
       showTestInstructions() {
         // 显示测试前的说明和准备事项
-        uni.showModal({
-          title: 'Test Instructions',
-          content: 'You will have 57 minutes to complete 50 multiple-choice questions, followed by 14 hazard perception video clips. You must score at least 43/50 in multiple-choice and 44/75 in hazard perception to pass.',
-          confirmText: 'Start',
-          cancelText: 'Cancel',
-          success: (res) => {
-            if (res.confirm) {
-              // 开始测试
-              this.navigateToTest();
-            }
-          }
-        });
+        // uni.showModal({
+        //   title: 'Test Instructions',
+        //   content: 'You will have 57 minutes to complete 50 multiple-choice questions, followed by 14 hazard perception video clips. You must score at least 43/50 in multiple-choice and 44/75 in hazard perception to pass.',
+        //   confirmText: 'Start',
+        //   cancelText: 'Cancel',
+        //   success: (res) => {
+        //     if (res.confirm) {
+        //       // 开始测试
+        //       this.navigateToTest();
+        //     }
+        //   }
+        // });
+        this.showTest = true
       },
-
+      confirm () {
+        this.navigateToTest();
+        this.showTest = false
+      },
+      cancel () {
+        this.showTest = false
+      },
       // 导航到测试页面
       navigateToTest() {
         uni.navigateTo({

@@ -10,6 +10,17 @@
    */
   "pages": [
     {
+      "path": "pages/splashscreen/index",
+      "style": {
+        "navigationBarTextStyle": "black",
+        "navigationStyle": "custom",
+        "navigationBarBackgroundColor": "#fff",
+        "app-plus": {
+          "bounce": "none"
+        }
+      }
+    },
+    {
       "path": "pages/login/index",
       "style": {
         "navigationBarTextStyle": "black",
@@ -69,6 +80,15 @@
       "path": "pages/learnQuestion/index",
       "style": {
         "navigationBarTitleText": "start Learn Mode",
+        "navigationBarTextStyle": "black",
+        "navigationBarBackgroundColor": "#fff",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/learnQuestion/wrong",
+      "style": {
+        "navigationBarTitleText": "wrong",
         "navigationBarTextStyle": "black",
         "navigationBarBackgroundColor": "#fff",
         "navigationStyle": "custom"

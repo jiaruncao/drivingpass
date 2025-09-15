@@ -224,6 +224,9 @@
         </view>
       </view>
     </view>
+    
+    <!-- 升级弹框 -->
+    <u-modal title="Feature Locked" :show="showFeature" :showCancelButton="true" cancelText="Cancel" confirmText="Upgrade" :content='content' @confirm="confirmFeature" @cancel="cancelFeature"></u-modal>
   </view>
 </template>
 
@@ -240,7 +243,9 @@ export default {
       },
       // 测试进度数据
       currentQuestionBank: 'Type 1',
-      passRate: 70
+      passRate: 70,
+      showFeature: false,
+      content: ''
     }
   },
   computed: {
@@ -290,20 +295,31 @@ export default {
       } else {
         console.log(`Feature locked. Upgrade to ${levels[requiredLevel]} to unlock.`);
         // 显示升级提示
-        uni.showModal({
-          title: 'Feature Locked',
-          content: `Upgrade to ${levels[requiredLevel].toUpperCase()} to unlock this feature`,
-          confirmText: 'Upgrade',
-          cancelText: 'Cancel',
-          success: (res) => {
-            if (res.confirm) {
-              uni.navigateTo({
-                url: '/pages/my/subscription',
-              })
-            }
-          }
-        });
+        this.showFeature = true
+        this.content = `Upgrade to ${levels[requiredLevel].toUpperCase()} to unlock this feature`
+        // uni.showModal({
+        //   title: 'Feature Locked',
+        //   content: `Upgrade to ${levels[requiredLevel].toUpperCase()} to unlock this feature`,
+        //   confirmText: 'Upgrade',
+        //   cancelText: 'Cancel',
+        //   success: (res) => {
+        //     if (res.confirm) {
+        //       uni.navigateTo({
+        //         url: '/pages/my/subscription',
+        //       })
+        //     }
+        //   }
+        // });
       }
+    },
+    confirmFeature () {
+      this.showFeature = false
+      uni.navigateTo({
+        url: '/pages/my/subscription',
+      })
+    },
+    cancelFeature () {
+      this.showFeature = false
     },
     // 编辑个人资料
     editProfile() {

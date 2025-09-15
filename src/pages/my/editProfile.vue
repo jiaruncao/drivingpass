@@ -190,6 +190,9 @@
     <view v-if="showSuccessToast" class="success-toast">
       <text class="toast-text">Profile Updated Successfully!</text>
     </view>
+    
+    <u-modal :show="modalShow" :title="modalTitle" :showCancelButton="true" :content='modalContent' :cancelText="cancelText" :confirmText="confirmText" @cancel="cancel" @confirm="confirm"></u-modal>
+    
   </view>
 </template>
 
@@ -230,7 +233,13 @@ export default {
         'Intermediate',
         'Advanced',
         'Ready for Test'
-      ]
+      ],
+      modalShow: false,
+      modalTitle: '',
+      modalType: '',
+      modalContent: '',
+      cancelText: 'Cancel',
+      confirmText: 'Confirm'
     }
   },
   
@@ -381,19 +390,49 @@ export default {
         console.error('Failed to save profile:', error);
       }
     },
-    
+    confirm () {
+      this.modalShow = false
+      if (this.modalType == 'UnsavedChanges') {
+        this.goBack();
+      } else if (this.modalType == 'SignOut') {
+        uni.clearStorageSync();
+        // 跳转到登录页
+        uni.reLaunch({
+          url: '/pages/login/index'
+        });
+      } else if (this.modalType == 'DeleteAccount') {
+        this.modalShow = true
+        this.modalTitle =  'Final Confirmation'
+        this.modalType = 'FinalConfirmation'
+        this.modalContent = 'This will permanently delete all your data. Are you absolutely sure?'
+      } else if (this.modalType == 'FinalConfirmation') {
+        uni.showToast({
+          title: 'Account deleted',
+          icon: 'success'
+        });
+      }
+    },
+    cancel () {
+      this.modalShow = false
+    },
     // 取消编辑
     cancelEdit() {
       if (this.hasChanges) {
-        uni.showModal({
-          title: 'Unsaved Changes',
-          content: 'You have unsaved changes. Are you sure you want to cancel?',
-          success: (res) => {
-            if (res.confirm) {
-              this.goBack();
-            }
-          }
-        });
+        // uni.showModal({
+        //   title: 'Unsaved Changes',
+        //   content: 'You have unsaved changes. Are you sure you want to cancel?',
+        //   success: (res) => {
+        //     if (res.confirm) {
+        //       this.goBack();
+        //     }
+        //   }
+        // });
+        
+        this.modalShow = true
+        this.modalTitle =  'Unsaved Changes'
+        this.modalType = 'UnsavedChanges'
+        this.modalContent = 'You have unsaved changes. Are you sure you want to cancel?'
+
       } else {
         this.goBack();
       }
@@ -401,47 +440,59 @@ export default {
     
     // 登出
     signOut() {
-      uni.showModal({
-        title: 'Sign Out',
-        content: 'Are you sure you want to sign out?',
-        success: (res) => {
-          if (res.confirm) {
-            console.log('Signing out...');
-            // 清除本地存储
-            uni.clearStorageSync();
-            // 跳转到登录页
-            uni.reLaunch({
-              url: '/pages/login/index'
-            });
-          }
-        }
-      });
+      
+      this.modalShow = true
+      this.modalTitle =  'Sign Out'
+      this.modalType = 'SignOut'
+      this.modalContent = 'Are you sure you want to sign out?'
+      
+      // uni.showModal({
+      //   title: 'Sign Out',
+      //   content: 'Are you sure you want to sign out?',
+      //   success: (res) => {
+      //     if (res.confirm) {
+      //       console.log('Signing out...');
+      //       // 清除本地存储
+      //       uni.clearStorageSync();
+      //       // 跳转到登录页
+      //       uni.reLaunch({
+      //         url: '/pages/login/index'
+      //       });
+      //     }
+      //   }
+      // });
     },
     
     // 删除账号
     deleteAccount() {
-      uni.showModal({
-        title: 'Delete Account',
-        content: 'Are you sure you want to delete your account? This action cannot be undone.',
-        success: (res) => {
-          if (res.confirm) {
-            uni.showModal({
-              title: 'Final Confirmation',
-              content: 'This will permanently delete all your data. Are you absolutely sure?',
-              success: (res2) => {
-                if (res2.confirm) {
-                  console.log('Deleting account...');
-                  // 实际应用中调用API删除账号
-                  uni.showToast({
-                    title: 'Account deleted',
-                    icon: 'success'
-                  });
-                }
-              }
-            });
-          }
-        }
-      });
+      
+      this.modalShow = true
+      this.modalTitle =  'Delete Account'
+      this.modalType = 'DeleteAccount'
+      this.modalContent = 'Are you sure you want to delete your account? This action cannot be undone.'
+      
+      // uni.showModal({
+      //   title: 'Delete Account',
+      //   content: 'Are you sure you want to delete your account? This action cannot be undone.',
+      //   success: (res) => {
+      //     if (res.confirm) {
+      //       uni.showModal({
+      //         title: 'Final Confirmation',
+      //         content: 'This will permanently delete all your data. Are you absolutely sure?',
+      //         success: (res2) => {
+      //           if (res2.confirm) {
+      //             console.log('Deleting account...');
+      //             // 实际应用中调用API删除账号
+      //             uni.showToast({
+      //               title: 'Account deleted',
+      //               icon: 'success'
+      //             });
+      //           }
+      //         }
+      //       });
+      //     }
+      //   }
+      // });
     },
     
     // 返回上一页

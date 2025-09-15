@@ -69,7 +69,7 @@
             :key="question.id"
             class="question-circle"
             :class="[question.status, {flagged: question.flagged}]"
-            @tap="viewQuestion(question.id)">
+            @tap="viewQuestion(question.id, index)">
             <text class="question-number">{{ index + 1 }}</text>
             <text v-if="question.flagged" class="flag-icon">🚩</text>
           </view>
@@ -80,7 +80,7 @@
     <!-- 竖版模式下底部按钮 - 始终显示在底部 -->
     <view class="button-container mobile-buttons">
       <view class="action-buttons">
-        <view class="action-button secondary" @tap="reviewIncorrect">
+        <view class="action-button secondary" @tap="reviewIncorrect" v-if="mode == 'learn'">
           Review Incorrect
         </view>
         <view class="action-button" @tap="continueTest">
@@ -95,6 +95,7 @@
 export default {
   data() {
     return {
+      mode: 'learn',
       // 50道题目数据
       questions: [],
       // 统计数据
@@ -132,7 +133,7 @@ export default {
     goBack() {
       console.log('Go back');
       uni.navigateBack({
-        delta: 1,
+        delta: 2,
         fail: () => {
           // 如果没有上一页，返回首页
           uni.switchTab({
@@ -140,14 +141,20 @@ export default {
           });
         }
       });
+      
     },
     // 查看题目详情
-    viewQuestion(questionId) {
+    viewQuestion(questionId, index) {
       console.log('View question:', questionId);
       // 跳转到题目详情页面
-      uni.navigateTo({
-        url: `/pages/learnQuestion/detail?id=${questionId}`
-      });
+      // uni.navigateTo({
+      //   url: `/pages/learnQuestion/detail?question_id=${questionId}`
+      // });
+      uni.$emit('chooseQuestion', {
+        index: index,
+        question: questionId
+      })
+      uni.navigateBack()
     },
     // 复习错题
     reviewIncorrect() {
@@ -156,7 +163,7 @@ export default {
       console.log('Incorrect questions:', incorrectQuestions);
       // 跳转到错题复习页面
       uni.navigateTo({
-        url: '/pages/my/mySaved',
+        url: '/pages/learnQuestion/wrong',
         // success: () => {
         //   // 传递错题数据
         //   uni.$emit('incorrectQuestions', incorrectQuestions);
@@ -204,6 +211,7 @@ export default {
     }
   },
   onLoad(options) {
+    this.mode = options.mode ? options.mode : 'learn'
     // 页面加载时更新屏幕信息
     this.updateScreenInfo();
     

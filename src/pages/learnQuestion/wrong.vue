@@ -275,7 +275,7 @@
           <u-icon name="star" color="#6b7280" size="40rpx" v-if="currentQuestion && !currentQuestion.collected"></u-icon>
           <text>{{ currentQuestion && currentQuestion.collected ? 'Saved' : 'Save' }}</text>
         </view>
-        <view class="question-counter" @tap="showQuestionList">
+        <view class="question-counter">
           {{ currentQuestionIndex + 1 }}/{{ totalQuestions }}
         </view>
       </view>
@@ -667,16 +667,15 @@
         console.log('Show question list modal');
         // 可以导航到题目列表页面
         uni.navigateTo({
-          url: '/pages/overview/overview?mode=' + this.mode
+          url: '/pages/overview/overview'
         })
       },
       // 初始化题目数据
       initQuestions() {
-        const questions = uni.getStorageSync('questions')
-        if (questions && questions.length) {
-          this.questions = questions
-          this.totalQuestions = questions.length
-          uni.setStorageSync('records', this.questions)
+        const records = uni.getStorageSync('records')
+        if (records && records.length) {
+          this.questions = records.filter(item => !item.isCorrect)
+          this.totalQuestions = this.questions.length
         }
       },
       // 查询评论
@@ -722,13 +721,6 @@
       if (this.settings.voiceAutoRead) {
         this.readCurrentQuestion();
       }
-      // 监听
-      const _this= this
-      uni.$on('chooseQuestion',function(data) {
-        console.log(data)
-        // 跳转到指定的题目
-        _this.currentQuestionIndex = data.index
-      })
     }
   }
 </script>

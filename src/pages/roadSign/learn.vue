@@ -7,10 +7,10 @@
         <text class="page-title">{{ currentSign.title }}</text>
         <view class="header-right">
           <view class="share-button" @tap="shareSign">
-            <text class="share-icon">⋯</text>
+            <u-icon name="share" size="40rpx"></u-icon>
           </view>
           <view class="progress-circle">
-            <text class="progress-text">{{ currentSign.accuracy }}%</text>
+            <text class="progress-text">{{ categoryProgress }}%</text>
           </view>
         </view>
       </view>
@@ -35,8 +35,8 @@
               </view>
               <text class="sign-title">{{ sign.title }}</text>
               <text class="sign-description">{{ sign.explain }}</text>
-              <view class="status-button" :class="{unread: !sign.isRead}" @tap="toggleReadStatus(index)">
-                <text class="status-text">{{ sign.isRead ? 'Read' : 'Mark as Read' }}</text>
+              <view class="status-button" :class="{unread: !sign.is_read}" @tap="toggleReadStatus(index)">
+                <text class="status-text">{{ sign.is_read ? 'Read' : 'Mark as Read' }}</text>
               </view>
             </view>
           </view>
@@ -63,7 +63,7 @@ export default {
     return {
       cate_id: null,
       currentIndex: 0, // 当前标志索引
-      categoryProgress: 60, // 分类进度
+      categoryProgress: 0, // 分类进度
       translateX: 0, // 滑动偏移量
       startX: 0, // 触摸起始位置
       isDragging: false, // 是否正在拖拽
@@ -112,7 +112,8 @@ export default {
     },
     // 切换已读状态
     toggleReadStatus(index) {
-      this.signsList[index].isRead = !this.signsList[index].isRead;
+      this.signsList[index].is_read = !this.signsList[index].is_read;
+      this.$forceUpdate()
       this.updateProgress();
       this.saveProgress();
     },
@@ -175,7 +176,7 @@ export default {
     },
     // 更新进度
     updateProgress() {
-      const readCount = this.signsList.filter(sign => sign.isRead).length;
+      const readCount = this.signsList.filter(sign => sign.is_read).length;
       this.categoryProgress = Math.round((readCount / this.totalSigns) * 100);
     },
     // 保存学习进度 - API调用示例
@@ -200,6 +201,8 @@ export default {
       }).then(res => {
         if (res.code == 1) {
           this.signsList = res.data.data
+          console.log(this.signsList)
+          this.updateProgress()
         }
       })
     }
@@ -217,12 +220,14 @@ export default {
     const questions = uni.getStorageSync('questions');
     if (questions) {
       this.signsList = questions;
+      this.updateProgress()
+      // this.categoryProgress = option.categoryProgress
     }
     
     // this.startTrain()
     // 页面加载后初始化数据
     // this.updateProgress();
-    this.updateTranslate();
+    // this.updateTranslate();
   }
 }
 </script>

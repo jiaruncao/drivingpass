@@ -265,7 +265,7 @@ export default {
       console.log('Selected detail sign:', sign);
       // 这里可以导航到标志学习页面或显示标志详细信息
       uni.navigateTo({
-        url: `/pages/roadSign/learn?cate_id=${sign.cate_id}` 
+        url: `/pages/roadSign/learn?cate_id=${sign.cate_id}&categoryProgress=` +  this.selectedCategory.progress
       })
     },
     // 滑块变化事件

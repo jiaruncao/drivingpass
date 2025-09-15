@@ -115,6 +115,9 @@
         </view>
       </view>
     </view>
+    
+    <u-modal :show="modalShow" :title="modalTitle" :showCancelButton="showCancel" :content='modalContent' :cancelText="cancelText" :confirmText="confirmText" @cancel="cancel" @confirm="confirm"></u-modal>
+    
   </view>
 </template>
 
@@ -142,7 +145,15 @@ export default {
       questionStates: [],
       
       // 题目数据
-      questionsData: []
+      questionsData: [],
+      
+      modalShow: false,
+      modalTitle: '',
+      modalType: '',
+      modalContent: '',
+      cancelText: 'Cancel',
+      confirmText: 'Confirm',
+      showCancel: true
     }
   },
   
@@ -349,47 +360,83 @@ export default {
       this.goToQuestion(questionNumber)
       this.closeReview()
     },
-    
+    confirm () {
+      this.modalShow = false
+      if (this.modalType === 'EndTest') {
+        uni.showToast({
+          title: 'Test ended. Calculating results...',
+          icon: 'none',
+          duration: 2000
+        })
+        this.closeReview()
+        // 这里可以添加跳转到结果页面的逻辑
+        submitExamQuestion({
+          paper_id: this.paper_id,
+          questions: this.questionStates.map(q => ({
+            id: q.id,
+            answer: q.selectedOption
+          }))
+        }).then(res => {
+          console.log(res)
+        })
+      } else if (this.modalType === 'Finished') {
+        clearInterval(this.timer)
+      }
+    },
+    cancel () {
+      this.modalShow = false
+    },
     // 结束考试
     endTest() {
       const unanswered = this.questionStates.filter(q => !q.answered).length
-      uni.showModal({
-        title: 'End Test',
-        content: `Are you sure you want to end the test? You have ${unanswered} unanswered questions.`,
-        success: (res) => {
-          if (res.confirm) {
-            uni.showToast({
-              title: 'Test ended. Calculating results...',
-              icon: 'none',
-              duration: 2000
-            })
-            this.closeReview()
-            // 这里可以添加跳转到结果页面的逻辑
-            submitExamQuestion({
-              paper_id: this.paper_id,
-              questions: this.questionStates.map(q => ({
-                id: q.id,
-                answer: q.selectedOption
-              }))
-            }).then(res => {
-              console.log(res)
-            })
-          }
-        }
-      })
+
+      this.modalShow = true
+      this.showCancel = true
+      this.modalTitle =  'End Test'
+      this.modalType = 'EndTest'
+      this.modalContent = `Are you sure you want to end the test? You have ${unanswered} unanswered questions.`
+
+      // uni.showModal({
+      //   title: 'End Test',
+      //   content: `Are you sure you want to end the test? You have ${unanswered} unanswered questions.`,
+      //   success: (res) => {
+      //     if (res.confirm) {
+      //       uni.showToast({
+      //         title: 'Test ended. Calculating results...',
+      //         icon: 'none',
+      //         duration: 2000
+      //       })
+      //       this.closeReview()
+
+      //       submitExamQuestion({
+      //         paper_id: this.paper_id,
+      //         questions: this.questionStates.map(q => ({
+      //           id: q.id,
+      //           answer: q.selectedOption
+      //         }))
+      //       }).then(res => {
+      //         console.log(res)
+      //       })
+      //     }
+      //   }
+      // })
     },
     endTestAfter () {
-      uni.showModal({
-        title: 'Finished Multiple-Choice',
-        content: `You have finished answering multiple-choice questions and have 3 minutes to rest. You can also choose to skip and continue answering dangerous driving questions. Do you want to skip?`,
-        showCancel: false,
-        success: () => {
-          clearInterval(this.timer)
-          // clearInterval(this.toHazardTimer)
-          // this.endTest()
-          // 开始危险驾驶的答题
-        }
-      })
+      
+      this.modalShow = true
+      this.showCancel = false
+      this.modalTitle =  'Finished Multiple-Choice'
+      this.modalType = 'Finished'
+      this.modalContent = `You have finished answering multiple-choice questions and have 3 minutes to rest. You can also choose to skip and continue answering dangerous driving questions. Do you want to skip?`
+      
+      // uni.showModal({
+      //   title: 'Finished Multiple-Choice',
+      //   content: `You have finished answering multiple-choice questions and have 3 minutes to rest. You can also choose to skip and continue answering dangerous driving questions. Do you want to skip?`,
+      //   showCancel: false,
+      //   success: () => {
+      //     clearInterval(this.timer)
+      //   }
+      // })
     }
   },
   onLoad (option) {

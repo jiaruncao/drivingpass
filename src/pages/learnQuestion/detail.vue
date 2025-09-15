@@ -494,7 +494,7 @@
             post_id: this.pid,
             content: this.commentText.trim()
           }).then(res => {
-            this.$utils.toast("Comment successful!");
+            // this.$utils.toast("Comment successful!");
             this.commentText = '';
             this.pid = null;
             this.showCommentInput = false;
@@ -505,7 +505,7 @@
             question_id: this.question_id,
             content: this.commentText.trim(),
           }).then(res => {
-            this.$utils.toast("Comment successful!");
+            // this.$utils.toast("Comment successful!");
             this.commentText = '';
             this.showCommentInput = false;
             this.queryPostList()
@@ -521,7 +521,7 @@
             console.log(res)
             this.currentQuestion.collected = !this.currentQuestion.collected;
             console.log("this.startLearnQuestion", this.startLearnQuestion);
-            this.$utils.toast("Collected questions successfully！");
+            // this.$utils.toast("Collected questions successfully！");
           })
         } else {
           collectCancel({
@@ -529,7 +529,7 @@
           }).then(res => {
             console.log(res)
             this.currentQuestion.collected = !this.currentQuestion.collected;
-            this.$utils.toast("Cancel collection successfully！");
+            // this.$utils.toast("Cancel collection successfully！");
           })
         }
       },
@@ -1814,7 +1814,7 @@
   }
 
   .save-button.saved {
-    color: #fbbf24;
+    // color: #fbbf24;
   }
 
   .save-icon {
