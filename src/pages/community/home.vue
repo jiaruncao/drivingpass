@@ -220,6 +220,7 @@
       switchTab(tab) {
         this.activeTab = tab;
         console.log(`Switched to ${tab} tab`);
+        uni.setStorageSync('activeTab', tab)
         this.loadTabData(tab);
       },
 
@@ -387,6 +388,7 @@
         };
         queryPostList(params)
           .then((res) => {
+            console.log(res)
             if (res.code === 1) {
               // 登录成功逻辑
               console.log('操作成功', res.data.list.data);
@@ -397,6 +399,7 @@
                 this.nodata = true;
               }
             } else {
+              this.discoverPosts = []
               // 登录失败（业务错误）
               console.log('操作失败', res.msg);
             }
@@ -442,59 +445,6 @@
         }
       },
 
-      // 初始化示例数据
-      initSampleData() {
-        this.discoverPosts = [{
-            id: 1,
-            username: 'StormChaser',
-            testCentre: 'Birmingham',
-            category: 'tips_tricks',
-            highlight: 'Featured',
-            text: 'Pass your driving theory test in just 3 days! Private tutoring makes ALL the difference, ladies! The exam is simpler than you think - just focus on',
-            images: ['/static/images/sample1.jpg', '/static/images/sample2.jpg', '/static/images/sample3.jpg'],
-            topComment: {
-              author: 'GOOOgo',
-              text: 'Just passed with 97%!'
-            },
-            replyCount: 5,
-            tags: ['#TheoryTest', '#Tips', '#GoodLuck'],
-            likeCount: 999,
-            commentCount: 16,
-            isLiked: false
-          },
-          {
-            id: 2,
-            username: 'DrivingPro',
-            testCentre: 'London',
-            category: 'hazard_perception',
-            highlight: null,
-            text: 'Finally passed my hazard perception test! Here are my top tips: 1. Click as soon as you see a potential hazard developing 2. Don\'t click too many times or you\'ll get 0 3. Practice with the official DVSA videos',
-            images: [],
-            topComment: null,
-            replyCount: 0,
-            tags: ['#HazardPerception', '#Tips', '#Passed'],
-            likeCount: 234,
-            commentCount: 8,
-            isLiked: true
-          }
-        ];
-
-        this.followedPosts = [{
-          id: 3,
-          username: 'MyFriend',
-          testCentre: 'Leeds',
-          category: 'theory_test',
-          highlight: null,
-          text: 'Just finished my 5th mock test today - scored 48/50! The app is really helping me prepare. Next test date is in 2 weeks, feeling confident! 💪',
-          images: [],
-          topComment: null,
-          replyCount: 0,
-          tags: ['#Progress', '#MockTest', '#Confident'],
-          likeCount: 123,
-          commentCount: 5,
-          isLiked: true
-        }];
-      },
       // 跳转user
       userProfileClick(user_id) {
       	uni.navigateTo({
@@ -520,9 +470,10 @@
         })
       }
     },
-    onLoad() {
+    onShow () {
+      const activeTab = uni.getStorageSync('activeTab')
+      this.activeTab = activeTab
       // 页面加载时初始化数据
-      // this.initSampleData();
       this.queryPostCategory()
       this.loadTabData(this.activeTab);
     }

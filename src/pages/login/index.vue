@@ -150,11 +150,11 @@ export default {
         // 延迟跳转以显示成功消息
         setTimeout(() => {
           // 这里可以跳转到主应用
-          uni.showToast({
-            title: 'Login Success',
-            icon: 'success'
-          });
-          
+          // uni.showToast({
+          //   title: 'Login Success',
+          //   icon: 'success'
+          // });
+          uni.setStorageSync('activeTab', 'discover')
           // 跳转到主页
           uni.switchTab({
             url: '/pages/index/index'

@@ -18,10 +18,12 @@
       <view class="trainee-card fade-in">
         <view class="trainee-info">
           <view class="trainee-details">
-            <text class="trainee-label">Trainee: </text>
             <text class="trainee-name">{{ info.nickname }}</text>
           </view>
-          <text class="registration-date">{{ formatUKDate(info.register_time) }}</text>
+          <view class="registration-date">
+            <text class="trainee-label">Joined on: </text>
+            <text style="margin-left: 20rpx;">{{ formatUKDate(info.register_time) }}</text>
+          </view>
         </view>
         
         <view class="test-date-card">
@@ -37,7 +39,7 @@
       <view class="ai-insight-card fade-in">
         <view class="ai-header">
           <text class="ai-icon">🤖</text>
-          <text class="ai-title">AI Insight: Your Pass Rate</text>
+          <text class="ai-title">AI Insight: <text style="margin-left: 20rpx;">Your Pass Rate</text></text>
           <text class="info-icon" @tap="showAIInfo">ⓘ</text>
         </view>
         
@@ -63,8 +65,8 @@
         </view>
         
         <view class="stat-card">
-          <text class="stat-number">{{ info.passed }}</text>
-          <text class="stat-label">Passed</text>
+          <text class="stat-number" style="color: #4CAF50;">{{ info.passed }}</text>
+          <text class="stat-label" style="color: #4CAF50;">Passed</text>
         </view>
         
         <view class="stat-card">

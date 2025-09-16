@@ -326,7 +326,7 @@
           </view>
           
           <view class="question-body">
-            <text class="question-text">{{ question.title }}</text>
+            <view class="question-text">{{ question.title }}</view>
             
             <image v-if="question.title_video_url" :src="question.title_video_url" class="question-image" mode="aspectFill"></image>
             
@@ -749,6 +749,7 @@ export default {
       uni.switchTab({
         url: '/pages/community/home'
       });
+      uni.setStorageSync('activeTab', 'discover')
     },
     // 加载保存的数据
     loadSavedData() {
@@ -850,15 +851,16 @@ export default {
       })
     },
     setAutoRemoveWrong () {
-      this.mistakeData.auto_remove_wrong = this.mistakeData.auto_remove_wrong == 1 ? 2 : 1
+      // this.mistakeData.auto_remove_wrong = this.mistakeData.auto_remove_wrong == 1 ? 2 : 1
       setAutoRemoveWrong({
         auto_remove_wrong: this.mistakeData.auto_remove_wrong ? 1 : 2
       }).then(res=> {
         if (res.code == 1) {
-          uni.showToast({
-            title: res.msg,
-            icon: 'success'
-          });
+          // uni.showToast({
+          //   title: res.msg,
+          //   icon: 'success'
+          // });
+          this.mistakeData.auto_remove_wrong = this.mistakeData.auto_remove_wrong == 1 ? 2 : 1
         }
       })
     },
@@ -1735,7 +1737,7 @@ export default {
 }
 
 .badge {
-  padding: 8rpx 20rpx;
+  padding: 8rpx 20rpx 8rpx 0;
   border-radius: 24rpx;
   font-size: 22rpx;
   font-weight: 500;
@@ -1759,6 +1761,7 @@ export default {
 .badge.accuracy {
   background: #F3E5F5;
   color: #9C27B0;
+  padding-left: 20rpx;
 }
 
 .remove-button {
@@ -1772,9 +1775,11 @@ export default {
 }
 
 .question-text {
-  font-size: 30rpx;
+  font-size: 32rpx;
   color: #333;
   line-height: 1.6;
+  margin-bottom: 30rpx;
+  font-weight: 550;
   margin-bottom: 30rpx;
 }
 

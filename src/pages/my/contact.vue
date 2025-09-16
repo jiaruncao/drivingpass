@@ -56,7 +56,7 @@
               </view>
             </view>
             <view class="faq-answer" :class="{expanded: expandedFaq === index}">
-              <text class="faq-answer-content">{{ faq.answer }}</text>
+              <view class="faq-answer-content">{{ faq.answer }}</view>
             </view>
           </view>
         </view>
@@ -69,8 +69,8 @@
             <text class="icon-text">✉</text>
           </view>
           <view class="info-content">
-            <text class="info-title">Email Support</text>
-            <text class="info-detail email-link" @tap="sendEmail">info@drivingpass.co.uk</text>
+            <view class="info-title">Email Support</view>
+            <view class="info-detail email-link" @tap="sendEmail">info@drivingpass.co.uk</view>
           </view>
         </view>
 
@@ -79,7 +79,7 @@
             <text class="icon-text">⏰</text>
           </view>
           <view class="info-content">
-            <text class="info-title">Business Hours</text>
+            <view class="info-title">Business Hours</view>
             <text class="info-detail">Monday - Friday: 08:00 - 16:00
 Weekend & Bank Holidays: Closed</text>
           </view>
@@ -88,7 +88,7 @@ Weekend & Bank Holidays: Closed</text>
 
       <!-- 联系表单 -->
       <view class="form-card">
-        <text class="form-title">Send us a Message</text>
+        <view class="form-title">Send us a Message</view>
         <form @submit="submitForm">
           <view class="form-group">
             <text class="form-label">Your Name <text class="required">*</text></text>
@@ -676,6 +676,7 @@ page {
   font-weight: 600;
   color: #333;
   margin-bottom: 40rpx;
+  text-align: center;
 }
 
 .form-group {

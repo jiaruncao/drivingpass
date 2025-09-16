@@ -60,14 +60,14 @@ fly.interceptors.response.use(
      * create by date：2024/11/11
      * content：响应成功处理
      */
-    if (res.data.code != 1) {
-      uni.showToast({
-        title: res.data.msg,
-        icon: "none",
-        duration: 3000
-      })
-      return new Promise(() => {})
-    }
+    // if (res.data.code != 1) {
+    //   uni.showToast({
+    //     title: res.data.msg,
+    //     icon: "none",
+    //     duration: 3000
+    //   })
+    //   return new Promise(() => {})
+    // }
     setTimeout(() => {
       uni.hideLoading();
     }, 500);

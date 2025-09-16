@@ -48,7 +48,7 @@
       <!-- 订阅卡片 -->
       <view class="subscription-card">
         <view class="subscription-header">
-          <text class="subscription-title">Subscription Features</text>
+          <text class="subscription-title">Subscription</text>
           <view class="subscription-badge" :class="getBadgeClass">
             <text class="badge-text">{{ replace(subscriptionData.type) }}</text>
           </view>
