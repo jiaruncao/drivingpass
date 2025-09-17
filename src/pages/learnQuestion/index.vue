@@ -273,7 +273,7 @@
           <!-- <text class="save-icon">{{ currentQuestion && currentQuestion.collected ? '⭐' : '☆' }}</text> -->
           <u-icon name="star-fill" color="#6b7280" size="40rpx" v-if="currentQuestion && currentQuestion.collected"></u-icon>
           <u-icon name="star" color="#6b7280" size="40rpx" v-if="currentQuestion && !currentQuestion.collected"></u-icon>
-          <text>{{ currentQuestion && currentQuestion.collected ? 'Saved' : 'Save' }}</text>
+          <text style="margin-left: 16rpx;">{{ currentQuestion && currentQuestion.collected ? 'Saved' : 'Save' }}</text>
         </view>
         <view class="question-counter" @tap="showQuestionList">
           {{ currentQuestionIndex + 1 }}/{{ totalQuestions }}
@@ -299,7 +299,7 @@
       <view class="result-content">
         <view class="result-header">
           <view class="result-title">Accuracy</view>
-          <view>Test Complete</view>
+          <view>Test Completed</view>
         </view>
         
         <view class="result-score">

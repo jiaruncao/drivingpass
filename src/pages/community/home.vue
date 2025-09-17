@@ -67,7 +67,7 @@
         <view v-if="post.first_reply.nickname" class="comment-preview">
           <text class="comment-text">
             <text class="comment-author">{{ post.first_reply.nickname }}:</text>
-            {{ post.first_reply.content }}
+            <text style="margin-left: 16rpx;">{{ post.first_reply.content }}</text>
           </text>
           <text v-if="post.reply_count > 1" class="view-replies-button" @tap="viewAllReplies(post.id)">
             View all replies →

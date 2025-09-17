@@ -442,6 +442,7 @@ page {
 .update-date {
   color: #4A9EFF;
   font-weight: 600;
+  margin-left: 16rpx;
 }
 
 /* 内容卡片 */

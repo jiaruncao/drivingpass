@@ -239,11 +239,12 @@
 
       // 订阅计划
       subscribeToPlan(plan) {
-        if (this.currentPlan.toLowerCase() === plan.type) {
+        console.log(plan)
+        if (this.currentPlan.toLowerCase() === plan.features) {
           return;
         }
 
-        this.selectedPlan = plan.type;
+        this.selectedPlan = plan.features;
 
         console.log(`Subscribing to ${plan} plan`);
         console.log(`Price type: ${this.priceType}`);

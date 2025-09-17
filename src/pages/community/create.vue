@@ -112,7 +112,7 @@
 
       <!-- 发布提示 -->
       <view class="tips-section">
-        <text class="tips-title">Posting Tips:</text>
+        <view class="tips-title">Posting Tips:</view>
         <view class="tips-list">
           <view class="tip-item">
             <text class="tip-dot">•</text>

@@ -22,7 +22,7 @@
           </view>
           <view class="registration-date">
             <text class="trainee-label">Joined on: </text>
-            <text style="margin-left: 20rpx;">{{ formatUKDate(info.register_time) }}</text>
+            <text style="margin-left: 16rpx;">{{ formatUKDate(info.register_time) }}</text>
           </view>
         </view>
         

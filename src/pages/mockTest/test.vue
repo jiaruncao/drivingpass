@@ -1,124 +1,125 @@
 <template>
-  <view class="container">
-    <!-- 顶部栏 -->
-    <view class="top-bar">
-      <text class="question-counter">Question {{ currentQuestion }} of {{paperInfo.quantity}}</text>
-      <text :class="['time-remaining', timeRemaining <= 300 ? 'warning' : '']">
-        Time: {{ formattedTime }}
-      </text>
-    </view>
-
-    <!-- 主要内容区域 -->
-    <view :class="['main-content', !currentQuestionData.title_video_url ? 'no-image' : '']">
-      <!-- 左侧问题区域 -->
-      <view class="question-section">
-        <view class="question-header">
-          <text class="question-text">{{ currentQuestionData.title }}</text>
-          <view class="mark-instruction">Mark one answer</view>
-        </view>
-
-        <view class="answer-options">
-          <view 
-            v-for="(option, index) in currentQuestionData.options_json" 
-            :key="index"
-            :class="['answer-option', currentQuestionData.selectedOption === option.key ? 'selected' : '']"
-            @click="selectAnswer(option.key, index)"
-          >
-            <view class="answer-checkbox"></view>
-            <text class="answer-text">{{ option.value }}</text>
-          </view>
-        </view>
+  <view>
+    <view class="container">
+      <!-- 顶部栏 -->
+      <view class="top-bar">
+        <text class="question-counter">Question {{ currentQuestion }} of {{paperInfo.quantity}}</text>
+        <text :class="['time-remaining', timeRemaining <= 300 ? 'warning' : '']">
+          Time: {{ formattedTime }}
+        </text>
       </view>
-
-      <!-- 右侧图片区域 -->
-      <view v-if="currentQuestionData.title_video_url" class="image-section">
-        <image 
-          :src="currentQuestionData.title_video_url" 
-          class="question-image"
-          mode="aspectFit"
-        />
-      </view>
-    </view>
-
-    <!-- 底部控制栏 -->
-    <view class="bottom-controls">
-      <view class="control-buttons">
-        <button class="control-button previous" @click="previousQuestion">
-          <text class="arrow">←</text>
-          <text>Previous</text>
-        </button>
-        <button 
-          :class="['control-button', 'flag', questionStates[currentQuestion - 1].flagged ? 'flagged' : '']" 
-          @click="toggleFlag"
-        >
-          <text class="flag-icon">!</text>
-          <text>Flag</text>
-        </button>
-        <button class="control-button review" @click="showReview">
-          <text class="review-icon">👓</text>
-          <text>Review</text>
-        </button>
-        <button class="control-button sound" @click="playAudio">
-          <text class="sound-icon">🔊</text>
-        </button>
-      </view>
-      <button class="control-button next" @click="nextQuestion">
-        <text>Next</text>
-        <text class="arrow">→</text>
-      </button>
-    </view>
-
-    <!-- Review面板遮罩层 -->
-    <view v-if="reviewVisible" class="review-overlay active" @click="handleOverlayClick">
-      <view class="review-panel" @click.stop>
-        <view class="review-header">
-          <text class="review-title">Review Questions</text>
-          <button class="review-close" @click="closeReview">×</button>
-        </view>
-        
-        <view class="review-stats">
-          <view class="stat-item">
-            <view class="stat-indicator answered"></view>
-            <text>Answered: <text class="stat-bold">{{ answeredCount }}</text></text>
+    
+      <!-- 主要内容区域 -->
+      <view :class="['main-content', !currentQuestionData.title_video_url ? 'no-image' : '']">
+        <!-- 左侧问题区域 -->
+        <view class="question-section">
+          <view class="question-header">
+            <text class="question-text">{{ currentQuestionData.title }}</text>
+            <view class="mark-instruction">Mark one answer</view>
           </view>
-          <view class="stat-item">
-            <view class="stat-indicator flagged"></view>
-            <text>Flagged: <text class="stat-bold">{{ flaggedCount }}</text></text>
-          </view>
-          <view class="stat-item">
-            <view class="stat-indicator unanswered"></view>
-            <text>Unanswered: <text class="stat-bold">{{ unansweredCount }}</text></text>
-          </view>
-        </view>
-        
-        <scroll-view class="review-grid-container" scroll-y>
-          <view class="review-grid">
+    
+          <view class="answer-options">
             <view 
-              v-for="(state, index) in questionStates" 
+              v-for="(option, index) in currentQuestionData.options_json" 
               :key="index"
-              :class="[
-                'question-box',
-                state.id === currentQuestion ? 'current' : '',
-                state.answered ? 'answered' : '',
-                state.flagged ? 'flagged' : ''
-              ]"
-              @click="goToQuestionFromReview(state.id)"
+              :class="['answer-option', currentQuestionData.selectedOption === option.key ? 'selected' : '']"
+              @click="selectAnswer(option.key, index)"
             >
-              <text>{{ state.index }}</text>
+              <view class="answer-checkbox"></view>
+              <text class="answer-text">{{ option.value }}</text>
             </view>
           </view>
-        </scroll-view>
-        
-        <view class="review-footer">
-          <view class="review-action-btn secondary" @click="closeReview">Continue Test</view>
-          <view class="review-action-btn primary" @click="endTest">End Test</view>
+        </view>
+    
+        <!-- 右侧图片区域 -->
+        <view v-if="currentQuestionData.title_video_url" class="image-section">
+          <image 
+            :src="currentQuestionData.title_video_url" 
+            class="question-image"
+            mode="aspectFit"
+          />
+        </view>
+      </view>
+    
+      <!-- 底部控制栏 -->
+      <view class="bottom-controls">
+        <view class="control-buttons">
+          <button class="control-button previous" @click="previousQuestion">
+            <text class="arrow">←</text>
+            <text>Previous</text>
+          </button>
+          <button 
+            :class="['control-button', 'flag', questionStates[currentQuestion - 1].flagged ? 'flagged' : '']" 
+            @click="toggleFlag"
+          >
+            <text class="flag-icon">!</text>
+            <text>Flag</text>
+          </button>
+          <button class="control-button review" @click="showReview">
+            <text class="review-icon">👓</text>
+            <text>Review</text>
+          </button>
+          <button class="control-button sound" @click="playAudio">
+            <text class="sound-icon">🔊</text>
+          </button>
+        </view>
+        <button class="control-button next" @click="nextQuestion">
+          <text>Next</text>
+          <text class="arrow">→</text>
+        </button>
+      </view>
+    
+      <!-- Review面板遮罩层 -->
+      <view v-if="reviewVisible" class="review-overlay active" @click="handleOverlayClick">
+        <view class="review-panel" @click.stop>
+          <view class="review-header">
+            <text class="review-title">Review Questions</text>
+            <button class="review-close" @click="closeReview">×</button>
+          </view>
+          
+          <view class="review-stats">
+            <view class="stat-item">
+              <view class="stat-indicator answered"></view>
+              <text>Answered: <text class="stat-bold">{{ answeredCount }}</text></text>
+            </view>
+            <view class="stat-item">
+              <view class="stat-indicator flagged"></view>
+              <text>Flagged: <text class="stat-bold">{{ flaggedCount }}</text></text>
+            </view>
+            <view class="stat-item">
+              <view class="stat-indicator unanswered"></view>
+              <text>Unanswered: <text class="stat-bold">{{ unansweredCount }}</text></text>
+            </view>
+          </view>
+          
+          <scroll-view class="review-grid-container" scroll-y>
+            <view class="review-grid">
+              <view 
+                v-for="(state, index) in questionStates" 
+                :key="index"
+                :class="[
+                  'question-box',
+                  (index + 1) === currentQuestion ? 'current' : '',
+                  state.answered ? 'answered' : '',
+                  state.flagged ? 'flagged' : ''
+                ]"
+                @click="goToQuestionFromReview(index + 1)"
+              >
+                <text>{{ state.index }}</text>
+              </view>
+            </view>
+          </scroll-view>
+          
+          <view class="review-footer">
+            <view class="review-action-btn secondary" @click="closeReview">Continue Test</view>
+            <view class="review-action-btn primary" @click="endTest">End Test</view>
+          </view>
         </view>
       </view>
     </view>
-    
     <u-modal :show="modalShow" :title="modalTitle" :showCancelButton="showCancel" :content='modalContent' :cancelText="cancelText" :confirmText="confirmText" @cancel="cancel" @confirm="confirm"></u-modal>
-    
   </view>
+  
 </template>
 
 <script>

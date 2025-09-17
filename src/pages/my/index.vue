@@ -46,7 +46,7 @@
       </view>
 
       <!-- 订阅卡片 -->
-      <view class="subscription-card">
+      <view class="subscription-card"  @click="toFeature">
         <view class="subscription-header">
           <text class="subscription-title">Subscription</text>
           <view class="subscription-badge" :class="getBadgeClass">
@@ -61,7 +61,7 @@
           <!-- Silver Features - 第一行 -->
           <view class="feature-item" 
                 :class="getFeatureClass('silver', 'official_questions')"
-                @tap="handleFeatureClick('official_questions')">
+                @tap.stop="handleFeatureClick('official_questions')">
             <view class="feature-icon-wrapper">
               <view class="feature-icon">
                 <text class="icon-text">📝</text>
@@ -72,7 +72,7 @@
           
           <view class="feature-item" 
                 :class="getFeatureClass('silver', 'official_hazard')"
-                @tap="handleFeatureClick('official_hazard')">
+                @tap.stop="handleFeatureClick('official_hazard')">
             <view class="feature-icon-wrapper">
               <view class="feature-icon">
                 <text class="icon-text">🎬</text>
@@ -83,7 +83,7 @@
           
           <view class="feature-item" 
                 :class="getFeatureClass('silver', 'mock_tests')"
-                @tap="handleFeatureClick('mock_tests')">
+                @tap.stop="handleFeatureClick('mock_tests')">
             <view class="feature-icon-wrapper">
               <view class="feature-icon">
                 <text class="icon-text">📊</text>
@@ -94,7 +94,7 @@
           
           <view class="feature-item" 
                 :class="getFeatureClass('silver', 'study_material')"
-                @tap="handleFeatureClick('study_material')">
+                @tap.stop="handleFeatureClick('study_material')">
             <view class="feature-icon-wrapper">
               <view class="feature-icon">
                 <text class="icon-text">📚</text>
@@ -109,7 +109,7 @@
           <!-- Gold Features - 第二行 -->
           <view class="feature-item" 
                 :class="getFeatureClass('gold', 'exclusive_questions')"
-                @tap="handleFeatureClick('exclusive_questions')">
+                @tap.stop="handleFeatureClick('exclusive_questions')">
             <view class="feature-icon-wrapper">
               <view class="feature-icon">
                 <text class="icon-text">⭐</text>
@@ -120,7 +120,7 @@
           
           <view class="feature-item" 
                 :class="getFeatureClass('gold', 'exclusive_hazard')"
-                @tap="handleFeatureClick('exclusive_hazard')">
+                @tap.stop="handleFeatureClick('exclusive_hazard')">
             <view class="feature-icon-wrapper">
               <view class="feature-icon">
                 <text class="icon-text">🎯</text>
@@ -131,7 +131,7 @@
           
           <view class="feature-item" 
                 :class="getFeatureClass('gold', 'exclusive_study')"
-                @tap="handleFeatureClick('exclusive_study')">
+                @tap.stop="handleFeatureClick('exclusive_study')">
             <view class="feature-icon-wrapper">
               <view class="feature-icon">
                 <text class="icon-text">🛣️</text>
@@ -142,7 +142,7 @@
           
           <view class="feature-item" 
                 :class="getFeatureClass('gold', 'priority_support')"
-                @tap="handleFeatureClick('priority_support')">
+                @tap.stop="handleFeatureClick('priority_support')">
             <view class="feature-icon-wrapper">
               <view class="feature-icon">
                 <text class="icon-text">💎</text>
@@ -170,7 +170,7 @@
         </view>
         <view class="pass-rate">
           <text class="pass-rate-label">Current pass rate: </text>
-          <text class="pass-rate-value">{{ passRate }}%</text>
+          <view class="pass-rate-value" style="margin-left: 16rpx;">{{ passRate }}%</view>
         </view>
       </view>
 
@@ -320,6 +320,11 @@ export default {
     },
     cancelFeature () {
       this.showFeature = false
+    },
+    toFeature () {
+      uni.navigateTo({
+        url: '/pages/my/subscription',
+      })
     },
     // 编辑个人资料
     editProfile() {
@@ -845,7 +850,7 @@ export default {
 .question-bank-selector {
   display: flex;
   align-items: center;
-  gap: 16rpx;
+  // gap: 16rpx;
   margin-bottom: 24rpx;
 }
 
@@ -857,7 +862,8 @@ export default {
 .bank-type {
   display: flex;
   align-items: center;
-  gap: 8rpx;
+  // gap: 8rpx;
+  margin-left: 16rpx;
 }
 
 .bank-type-text {
@@ -869,6 +875,7 @@ export default {
 .arrow {
   color: #999;
   font-size: 30rpx;
+  margin-left: 8rpx;
 }
 
 .pass-rate {

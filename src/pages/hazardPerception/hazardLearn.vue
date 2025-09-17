@@ -418,7 +418,7 @@ export default {
 }
 
 .thin-progress-fill {
-  height: 100%;
+  height: 6rpx;
   background: rgba(255, 0, 0, 0.8);
   width: 0%;
   transition: width 0.1s linear;

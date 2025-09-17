@@ -487,6 +487,7 @@ page {
 .date-value {
   color: #F9A825;
   font-weight: 600;
+  margin-left: 16rpx;
 }
 
 /* 内容卡片 */

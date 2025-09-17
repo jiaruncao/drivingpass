@@ -10,7 +10,7 @@
             <text class="share-icon">⋯</text>
           </view>
           <view class="progress-circle">
-            <text class="progress-text">{{ currentCode.accuracy }}%</text>
+            <text class="progress-text">{{ categoryProgress }}%</text>
           </view>
         </view>
       </view>
@@ -67,8 +67,8 @@
                 <text class="nav-arrow" :class="{enabled: canGoNext, disabled: !canGoNext}" @tap="goToNext">›</text>
               </view>
 
-              <view class="status-button" :class="{unread: !code.isRead}" @tap="toggleReadStatus(index)">
-                <text class="status-text">{{ code.isRead ? 'Readed' : 'Mark as Read' }}</text>
+              <view class="status-button" :class="{unread: !code.is_read}" @tap="toggleReadStatus(index)">
+                <text class="status-text">{{ code.is_read ? 'Readed' : 'Mark as Read' }}</text>
               </view>
             </view>
           </view>
@@ -95,7 +95,7 @@ export default {
     return {
       cate_id: null,
       currentIndex: 0, // 当前代码索引
-      categoryProgress: 60, // 分类进度
+      categoryProgress: 0, // 分类进度
       translateX: 0, // 滑动偏移量
       startX: 0, // 触摸起始位置
       isDragging: false, // 是否正在拖拽
@@ -161,7 +161,7 @@ export default {
     },
     // 切换已读状态
     toggleReadStatus(index) {
-      this.codesList[index].isRead = !this.codesList[index].isRead;
+      this.codesList[index].is_read = !this.codesList[index].is_read;
       this.updateProgress();
       this.saveProgress();
     },
@@ -238,7 +238,7 @@ export default {
     },
     // 更新进度
     updateProgress() {
-      const readCount = this.codesList.filter(code => code.isRead).length;
+      const readCount = this.codesList.filter(code => code.is_read).length;
       this.categoryProgress = Math.round((readCount / this.totalCodes) * 100);
     },
     // 保存学习进度 
@@ -259,7 +259,7 @@ export default {
   watch: {
     // 监听当前索引变化，自动保存进度
     currentIndex() {
-      this.saveProgress();
+      // this.saveProgress();
     }
   },
   onLoad(option) {
@@ -271,6 +271,7 @@ export default {
     const questions = uni.getStorageSync('questions');
     if (questions) {
       this.codesList = questions;
+      this.updateProgress()
     }
     // this.startTrain()
   }
