@@ -69,6 +69,9 @@
         </view>
       </view>
     </view>
+    
+    <u-modal :show="modalShow" :title="modalTitle" :showCancelButton="showCancelButton" :content='modalContent' :cancelText="cancelText" :confirmText="confirmText" @cancel="cancel" @confirm="confirm"></u-modal>
+    
   </view>
 </template>
 
@@ -87,7 +90,14 @@ export default {
       playInterval: null, // 播放定时器
       clickCount: 0, // 点击计数
       recentClicks: [], // 最近的点击时间记录
-      scoreDisqualified: false // 分数是否被取消
+      scoreDisqualified: false ,// 分数是否被取消
+      modalShow: false,
+      modalTitle: '',
+      modalType: '',
+      modalContent: '',
+      showCancelButton: false,
+      cancelText: 'Cancel',
+      confirmText: 'Confirm'
     }
   },
   methods: {
@@ -181,13 +191,18 @@ export default {
       });
       
       // 显示警告
-      uni.showModal({
-        title: '⚠️ Score Disqualified!',
-        content: `You scored 0 for this video.\n\nReason: ${reason}`,
-        showCancel: false,
-        confirmText: 'OK'
-      });
-      
+      // uni.showModal({
+      //   title: '⚠️ Score Disqualified!',
+      //   content: `You scored 0 for this video.\n\nReason: ${reason}`,
+      //   showCancel: false,
+      //   confirmText: 'OK'
+      // });
+      this.modalShow = true
+      this.modalTitle =  '⚠️ Score Disqualified!'
+      this.modalType = 'Score'
+      this.showCancelButton = false
+      this.confirmText = 'OK'
+      this.modalContent = `You scored 0 for this video.\n\nReason: ${reason}`
       console.log('Score disqualified:', reason);
     },
     
@@ -222,16 +237,34 @@ export default {
         clearInterval(this.playInterval);
       }
       
-      uni.showModal({
-        title: 'Exit',
-        content: 'Are you sure you want to exit?',
-        success: (res) => {
-          if (res.confirm) {
-            // 返回上一页
-            uni.navigateBack();
-          }
-        }
-      });
+      // uni.showModal({
+      //   title: 'Exit',
+      //   content: 'Are you sure you want to exit?',
+      //   success: (res) => {
+      //     if (res.confirm) {
+      //       // 返回上一页
+      //       uni.navigateBack();
+      //     }
+      //   }
+      // });
+      
+      this.modalShow = true
+      this.modalTitle =  'Exit'
+      this.modalType = 'Exit'
+      this.showCancelButton = true
+      this.confirmText = 'OK'
+      this.modalContent = `Are you sure you want to exit?`
+    },
+    confirm () {
+      this.modalShow = false
+      if (this.modalType == 'Score') {
+        
+      } else if (this.modalType == 'Exit') {
+        uni.navigateBack();
+      }
+    },
+    cancel () {
+      this.modalShow = false
     },
     // 查询详情
     getQuestionDetail () {

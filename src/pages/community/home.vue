@@ -170,6 +170,8 @@
         <text class="nav-label">Account</text>
       </view>
     </view> -->
+    
+    <u-modal :show="modalShow" :title="modalTitle" :showCancelButton="true" :content='modalContent' :cancelText="cancelText" :confirmText="confirmText" @cancel="cancel" @confirm="confirm"></u-modal>
   </view>
 </template>
 
@@ -187,7 +189,13 @@
         // Discover标签的帖子数据
         discoverPosts: [],
         // Followed标签的帖子数据
-        followedPosts: []
+        followedPosts: [],
+        modalShow: false,
+        modalTitle: '',
+        modalType: '',
+        modalContent: '',
+        cancelText: 'Cancel',
+        confirmText: 'Confirm'
       }
     },
     computed: {
@@ -289,15 +297,21 @@
       // 举报帖子
       reportPost(postId) {
         console.log(`Reporting post ${postId}`);
-        uni.showModal({
-          title: 'Report Post',
-          content: 'Are you sure you want to report this post?',
-          success: (res) => {
-            if (res.confirm) {
-              // this.submitReport(postId);
-            }
-          }
-        });
+        // uni.showModal({
+        //   title: 'Report Post',
+        //   content: 'Are you sure you want to report this post?',
+        //   success: (res) => {
+        //     if (res.confirm) {
+        //       // this.submitReport(postId);
+        //     }
+        //   }
+        // });
+        
+        this.modalShow = true
+        this.modalTitle =  'Report Post'
+        this.modalType = 'ReportPost'
+        this.modalContent = 'Are you sure you want to report this post?'
+        
       },
 
       // 查看所有回复
@@ -468,7 +482,16 @@
             this.categories = res.data.list
           }
         })
-      }
+      },
+      confirm () {
+        this.modalShow = false
+        if (this.modalType == 'ReportPost') {
+          // 举报
+        }
+      },
+      cancel () {
+        this.modalShow = false
+      },
     },
     onShow () {
       const activeTab = uni.getStorageSync('activeTab')

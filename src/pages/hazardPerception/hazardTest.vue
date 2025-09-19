@@ -105,6 +105,9 @@
         Close Review
       </button>
     </view>
+    
+    <u-modal :show="modalShow" :title="modalTitle" :showCancelButton="true" :content='modalContent' :cancelText="cancelText" :confirmText="confirmText" @cancel="cancel" @confirm="confirm"></u-modal>
+    
   </view>
 </template>
 
@@ -126,7 +129,14 @@ export default {
       showResult: false, // 是否显示结果弹窗
       totalScore: 0, // 总得分
       reviewMode: false, // 是否处于review模式
-      testCompleted: false // 测试是否已完成
+      testCompleted: false ,// 测试是否已完成
+      modalShow: false,
+      modalTitle: '',
+      modalType: '',
+      modalContent: '',
+      showCancelButton: false,
+      cancelText: 'Cancel',
+      confirmText: 'Confirm'
     }
   },
   
@@ -335,20 +345,26 @@ export default {
         clearInterval(this.playInterval);
       }
       
-      uni.showModal({
-        title: 'Exit Test',
-        content: 'Are you sure you want to exit? Your progress will be lost.',
-        success: (res) => {
-          if (res.confirm) {
-            uni.navigateBack();
-          } else {
-            // 如果取消退出且视频未完成，继续播放
-            if (!this.testCompleted) {
-              this.startAutoPlay();
-            }
-          }
-        }
-      });
+      // uni.showModal({
+      //   title: 'Exit Test',
+      //   content: 'Are you sure you want to exit? Your progress will be lost.',
+      //   success: (res) => {
+      //     if (res.confirm) {
+      //       uni.navigateBack();
+      //     } else {
+      //       // 如果取消退出且视频未完成，继续播放
+      //       if (!this.testCompleted) {
+      //         this.startAutoPlay();
+      //       }
+      //     }
+      //   }
+      // });
+      this.modalShow = true
+      this.modalTitle =  'Exit Test'
+      this.modalType = 'ExitTest'
+      this.showCancelButton = true
+      this.confirmText = 'Confirm'
+      this.modalContent = `Are you sure you want to exit? Your progress will be lost.`
     },
     
     // 处理结果弹窗的Exit按钮
@@ -374,7 +390,21 @@ export default {
       }).then(res => {
     
       })
-    }
+    },
+    confirm () {
+      this.modalShow = false
+      if (this.modalType == 'ExitTest') {
+        uni.navigateBack();
+      }
+    },
+    cancel () {
+      this.modalShow = false
+      if (this.modalType == 'ExitTest') {
+        if (!this.testCompleted) {
+          this.startAutoPlay();
+        }
+      }
+    },
   },
   
   onLoad(options) {

@@ -373,6 +373,9 @@
         </view>
       </scroll-view>
     </view>
+    
+    <u-modal :show="modalShow" :title="modalTitle" :showCancelButton="true" :content='modalContent' :cancelText="cancelText" :confirmText="confirmText" @cancel="cancel" @confirm="confirm"></u-modal>
+    
   </view>
 </template>
 
@@ -409,7 +412,16 @@ export default {
         distribution: [],
         total_saved: 0,
         total_saved: 0
-      }
+      },
+      modalShow: false,
+      modalTitle: '',
+      modalType: '',
+      modalContent: '',
+      showCancelButton: false,
+      cancelText: 'Cancel',
+      confirmText: 'Confirm',
+      questionId: null,
+      post_id: null
     }
   },
   filters: {
@@ -475,48 +487,58 @@ export default {
     },
     // 清除错题
     clearMistakes() {
-      uni.showModal({
-        title: 'Clear All Mistakes',
-        content: 'Are you sure you want to clear all mistakes?',
-        success: (res) => {
-          if (res.confirm) {
-            // this.mistakeCategories = [];
-            // this.totalErrors = 0;
-            // this.todayMistakes = 0;
-            // this.errorRate = 0;
-            collectClear().then(res => {
-              if (res.code == 1) {
-                this.savedDistribution()
-                uni.showToast({
-                  title: 'Cleared',
-                  icon: 'success'
-                });
-              }
-            })
-          }
-        }
-      });
+      
+      this.modalShow = true
+      this.modalTitle =  'Clear All Mistakes'
+      this.modalType = 'ClearAllMistakes'
+      this.showCancelButton = true
+      this.confirmText = 'Confirm'
+      this.modalContent = `Are you sure you want to clear all mistakes?`
+      
+      // uni.showModal({
+      //   title: 'Clear All Mistakes',
+      //   content: 'Are you sure you want to clear all mistakes?',
+      //   success: (res) => {
+      //     if (res.confirm) {
+      //       collectClear().then(res => {
+      //         if (res.code == 1) {
+      //           this.savedDistribution()
+      //           uni.showToast({
+      //             title: 'Cleared',
+      //             icon: 'success'
+      //           });
+      //         }
+      //       })
+      //     }
+      //   }
+      // });
     },
     
     // 清除收藏
     clearSaved() {
-      uni.showModal({
-        title: 'Clear All Saved',
-        content: 'Are you sure you want to clear all saved questions?',
-        success: (res) => {
-          if (res.confirm) {
-            collectClear().then(res => {
-              if (res.code == 1) {
-                this.savedDistribution()
-                uni.showToast({
-                  title: 'Cleared',
-                  icon: 'success'
-                });
-              }
-            })
-          }
-        }
-      });
+      // uni.showModal({
+      //   title: 'Clear All Saved',
+      //   content: 'Are you sure you want to clear all saved questions?',
+      //   success: (res) => {
+      //     if (res.confirm) {
+      //       collectClear().then(res => {
+      //         if (res.code == 1) {
+      //           this.savedDistribution()
+      //           uni.showToast({
+      //             title: 'Cleared',
+      //             icon: 'success'
+      //           });
+      //         }
+      //       })
+      //     }
+      //   }
+      // });
+      this.modalShow = true
+      this.modalTitle =  'Clear All Saved'
+      this.modalType = 'ClearAllSaved'
+      this.showCancelButton = true
+      this.confirmText = 'Confirm'
+      this.modalContent = `Are you sure you want to clear all saved questions?`
     },
     
     // 查看分类
@@ -575,35 +597,34 @@ export default {
     
     // 移除题目
     removeQuestion(questionId) {
-      uni.showModal({
-        title: 'Remove Question',
-        content: 'Remove this question from saved items?',
-        success: (res) => {
-          if (res.confirm) {
+      // uni.showModal({
+      //   title: 'Remove Question',
+      //   content: 'Remove this question from saved items?',
+      //   success: (res) => {
+      //     if (res.confirm) {
             
-            wrongDelete({
-              question_id: questionId
-            }).then(res => {
-              if (res.code == 1) {
-                uni.showToast({
-                  title: 'Removed',
-                  icon: 'success',
-                  duration: 2000
-                });
-                this.currentQuestions = this.currentQuestions.filter(q => q.id !== questionId);
-              }
-            })
-
-            // 更新统计
-            // if (this.questionView === 'wrongs') {
-            //   this.totalErrors = Math.max(0, this.totalErrors - 1);
-            // } else {
-            //   this.totalSaved = Math.max(0, this.totalSaved - 1);
-            // }
-            
-          }
-        }
-      });
+      //       wrongDelete({
+      //         question_id: questionId
+      //       }).then(res => {
+      //         if (res.code == 1) {
+      //           uni.showToast({
+      //             title: 'Removed',
+      //             icon: 'success',
+      //             duration: 2000
+      //           });
+      //           this.currentQuestions = this.currentQuestions.filter(q => q.id !== questionId);
+      //         }
+      //       })
+      //     }
+      //   }
+      // });
+      this.questionId = questionId
+      this.modalShow = true
+      this.modalTitle =  'Remove Question'
+      this.modalType = 'RemoveQuestion'
+      this.showCancelButton = true
+      this.confirmText = 'Confirm'
+      this.modalContent = `Remove this question from saved items?`
     },
     
     // 练习题目
@@ -665,20 +686,27 @@ export default {
     
     // 删除帖子
     deletePost() {
-      uni.showModal({
-        title: 'Delete Post',
-        content: 'Are you sure you want to delete this saved post?',
-        success: (res) => {
-          if (res.confirm) {
-            this.savedPosts = this.savedPosts.filter(p => p.id !== this.selectedPostId);
-            this.closeMenu();
-            uni.showToast({
-              title: 'Deleted',
-              icon: 'success'
-            });
-          }
-        }
-      });
+      // uni.showModal({
+      //   title: 'Delete Post',
+      //   content: 'Are you sure you want to delete this saved post?',
+      //   success: (res) => {
+      //     if (res.confirm) {
+      //       this.savedPosts = this.savedPosts.filter(p => p.id !== this.selectedPostId);
+      //       this.closeMenu();
+      //       uni.showToast({
+      //         title: 'Deleted',
+      //         icon: 'success'
+      //       });
+      //     }
+      //   }
+      // });
+
+      this.modalShow = true
+      this.modalTitle =  'Delete Post'
+      this.modalType = 'DeletePost'
+      this.showCancelButton = true
+      this.confirmText = 'Confirm'
+      this.modalContent = `Are you sure you want to delete this saved post?`
     },
     
     // 关注用户
@@ -719,28 +747,35 @@ export default {
     },
     // 取消保存帖子
     unsavePost(id) {
-      uni.showModal({
-        title: 'Unsave Post',
-        content: 'Remove this post from saved items?',
-        success: (res) => {
-          if (res.confirm) {
-            // this.savedPosts = this.savedPosts.filter(p => p.id !== postId);
+      // uni.showModal({
+      //   title: 'Unsave Post',
+      //   content: 'Remove this post from saved items?',
+      //   success: (res) => {
+      //     if (res.confirm) {
+      //       // this.savedPosts = this.savedPosts.filter(p => p.id !== postId);
             
-            collectPost({
-              post_id: id
-            }).then(res => {
-              if (res.code == 1) {
-                uni.showToast({
-                  title: 'Removed',
-                  icon: 'success'
-                });
-                // this.loadPostDetail()
-                this.querySavedPostList()
-              }
-            })
-          }
-        }
-      });
+      //       collectPost({
+      //         post_id: id
+      //       }).then(res => {
+      //         if (res.code == 1) {
+      //           uni.showToast({
+      //             title: 'Removed',
+      //             icon: 'success'
+      //           });
+      //           // this.loadPostDetail()
+      //           this.querySavedPostList()
+      //         }
+      //       })
+      //     }
+      //   }
+      // });
+      this.post_id = id
+      this.modalShow = true
+      this.modalTitle =  'Unsave Post'
+      this.modalType = 'UnsavePost'
+      this.showCancelButton = true
+      this.confirmText = 'Confirm'
+      this.modalContent = `Remove this post from saved items?`
     },
     
     // 前往论坛
@@ -879,7 +914,67 @@ export default {
       uni.navigateTo({
         url: `/pages/community/detail?id=${id}`
       });
-    }
+    },
+    confirm () {
+      this.modalShow = false
+      if (this.modalType == 'ClearAllMistakes') {
+        collectClear().then(res => {
+          if (res.code == 1) {
+            this.savedDistribution()
+            uni.showToast({
+              title: 'Cleared',
+              icon: 'success'
+            });
+          }
+        })
+      } else if (this.modalType == 'ClearAllSaved') {
+        collectClear().then(res => {
+          if (res.code == 1) {
+            this.savedDistribution()
+            uni.showToast({
+              title: 'Cleared',
+              icon: 'success'
+            });
+          }
+        })
+      } else if (this.modalType == 'RemoveQuestion') {
+        wrongDelete({
+          question_id: this.questionId
+        }).then(res => {
+          if (res.code == 1) {
+            uni.showToast({
+              title: 'Removed',
+              icon: 'success',
+              duration: 2000
+            });
+            this.currentQuestions = this.currentQuestions.filter(q => q.id !== this.questionId);
+          }
+        })
+      } else if (this.modalType == 'DeletePost') {
+        this.savedPosts = this.savedPosts.filter(p => p.id !== this.selectedPostId);
+        this.closeMenu();
+        uni.showToast({
+          title: 'Deleted',
+          icon: 'success'
+        });
+      } else if (this.modalType == 'UnsavePost') {
+        collectPost({
+          post_id: this.post_id
+        }).then(res => {
+          if (res.code == 1) {
+            uni.showToast({
+              title: 'Removed',
+              icon: 'success'
+            });
+            // this.loadPostDetail()
+            this.querySavedPostList()
+          }
+        })
+      }
+    },
+    cancel () {
+      this.modalShow = false
+    },
   },
   onLoad() {
     // 页面加载时初始化数据

@@ -71,6 +71,8 @@
         </view>
       </view>
     </view>
+    
+    <u-modal :show="modalShow" :title="modalTitle" :showCancelButton="true" :content='modalContent' :cancelText="cancelText" :confirmText="confirmText" @cancel="cancel" @confirm="confirm"></u-modal>
   </view>
 </template>
 
@@ -83,7 +85,14 @@ export default {
       isLoading: false, // 加载状态
       reminders: {
         enabled: false // 提醒功能默认关闭
-      }
+      },
+      modalShow: false,
+      modalTitle: '',
+      modalType: '',
+      modalContent: '',
+      showCancelButton: false,
+      cancelText: 'Cancel',
+      confirmText: 'Confirm'
     }
   },
   computed: {
@@ -135,11 +144,17 @@ export default {
               icon: 'success'
             });
           } else {
-            uni.showModal({
-              title: 'Permission Required',
-              content: 'Please enable notifications to receive exam reminders',
-              showCancel: false
-            });
+            // uni.showModal({
+            //   title: 'Permission Required',
+            //   content: 'Please enable notifications to receive exam reminders',
+            //   showCancel: false
+            // });
+            this.modalShow = true
+            this.modalTitle =  'Permission Required'
+            this.modalType = 'PermissionRequired'
+            this.showCancelButton = false
+            this.confirmText = 'OK'
+            this.modalContent = `Please enable notifications to receive exam reminders`
             console.log('Notification permission denied');
           }
         } catch (error) {
@@ -244,7 +259,13 @@ export default {
       //     resolve(settings);
       //   }, 1000);
       // });
-    }
+    },
+    confirm () {
+      this.modalShow = false
+    },
+    cancel () {
+      this.modalShow = false
+    },
   },
 
   onLoad(options) {
