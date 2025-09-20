@@ -117,7 +117,7 @@
             </view>
 
             <!-- 选项列表 -->
-            <view class="options-list">
+            <view class="options-list" v-if="mode == 'learn'">
               <view v-for="(option, optIndex) in question.options_json" :key="optIndex" class="option-item" :class="optionClass(question, option)" @tap="selectOption(index, optIndex)">
                 <view class="option-label">
                   <text
@@ -129,14 +129,28 @@
                 <text class="option-text">{{ option.value }}</text>
               </view>
             </view>
-
+            
+            <!-- test模式，只出现选中的答案 -->
+            <view class="options-list" v-if="mode == 'test'">
+              <view v-for="(option, optIndex) in question.options_json" :key="optIndex" class="option-item" :class="optionClass(question, option)" @tap="selectOption(index, optIndex)">
+                <view class="option-label">
+                  <text
+                    v-if="!question.showAnswer || ((question.selectedOption != option.key) && (option.key != question.answer))">{{ option.key }}</text>
+                  <text v-else-if="option.key == question.answer" class="option-label-icon check">✓</text>
+                  <text v-else-if="(question.selectedOption == option.key) && (option.key != question.answer)"
+                    class="option-label-icon cross">✗</text>
+                </view>
+                <text class="option-text">{{ option.value }}</text>
+              </view>
+            </view>
+            
             <!-- Key Point - 极简设计，直接跟在选项后面 -->
-            <view v-if="question.showAnswer && !isCorrectAnswer(question) && mode == 'learn'" class="key-point-section">
+            <view v-if="question.showAnswer && !isCorrectAnswer(question) && mode == 'learn' || hasAllAnswered" class="key-point-section">
               <text class="key-point-text">💡 {{ question.key_point }}</text>
             </view>
 
             <!-- AI解释 - 只在答错时显示 -->
-            <view v-if="question.showAnswer && !isCorrectAnswer(question) && mode == 'learn'" class="ai-explanation">
+            <view v-if="question.showAnswer && !isCorrectAnswer(question) && mode == 'learn' || hasAllAnswered" class="ai-explanation">
               <view class="ai-header">
                 <view class="ai-avatar">
                   <text class="ai-avatar-icon">🤖</text>
@@ -153,7 +167,7 @@
             </view>
 
             <!-- 统计信息 - 只在答错时显示 -->
-            <view v-if="question.showAnswer && !isCorrectAnswer(question) && mode == 'learn'" class="stats-container">
+            <view v-if="question.showAnswer && !isCorrectAnswer(question) && mode == 'learn' || hasAllAnswered" class="stats-container">
               <view class="stat-card">
                 <text class="stat-label">Difficulty Level</text>
                 <view class="difficulty-visual">
@@ -172,7 +186,7 @@
             </view>
 
             <!-- 社区评论区 - 只在答错时显示 -->
-            <view v-if="question.showAnswer && !isCorrectAnswer(question) && mode == 'learn'" class="comments-section">
+            <view v-if="question.showAnswer && !isCorrectAnswer(question) && mode == 'learn' || hasAllAnswered" class="comments-section">
               <view class="comments-header">
                 <text>Community Discussion</text>
                 <text class="comments-count">{{ question.comments ? question.comments.length : 0 }} comments</text>
@@ -369,7 +383,8 @@
         // 题目数据数组
         questions: [],
         pid: null,
-        showResult: false
+        showResult: false,
+        hasAllAnswered: false // 是否全部答完，即是否是回顾
       }
     },
     computed: {
@@ -386,7 +401,7 @@
         return this.questions.filter(q => q.status == 'incorrect').length
       },
       accuracyCount () {
-        return Math.round((this.questions.length - this.wrongCount) / this.questions.length)
+        return Math.round(((this.questions.length - this.wrongCount) / this.questions.length) * 100)
       }
     },
     methods: {
@@ -664,6 +679,7 @@
       },
       // 显示题目列表
       showQuestionList() {
+        this.showResult = false
         console.log('Show question list modal');
         // 可以导航到题目列表页面
         uni.navigateTo({
@@ -729,6 +745,13 @@
         // 跳转到指定的题目
         _this.currentQuestionIndex = data.index
       })
+    },
+    onShow () {
+      // 这里有一个判断是否是回顾
+      const hasAllAnswered = this.questions.every(question => {
+        return question.showAnswer
+      });
+      this.hasAllAnswered = hasAllAnswered
     }
   }
 </script>

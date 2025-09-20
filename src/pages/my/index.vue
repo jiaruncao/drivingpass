@@ -49,13 +49,19 @@
       <view class="subscription-card"  @click="toFeature">
         <view class="subscription-header">
           <text class="subscription-title">Subscription</text>
-          <view class="subscription-badge" :class="getBadgeClass">
+          <!-- <view class="subscription-badge" :class="getBadgeClass">
+            <text class="badge-text">{{ replace(subscriptionData.type) }}</text>
+          </view> -->
+          <view>
+            Change plan
+          </view>
+        </view>
+        <view class="expires-text" v-if="replace(subscriptionData.type) !== 'free'">
+          Current plan: 
+          <view style="margin-left: 16rpx;" class="subscription-badge" :class="getBadgeClass">
             <text class="badge-text">{{ replace(subscriptionData.type) }}</text>
           </view>
         </view>
-        <text class="expires-text" v-if="replace(subscriptionData.type) !== 'free'">
-          Expires {{ subscriptionData.expire_time }}
-        </text>
         
         <view class="features-grid">
           <!-- Silver Features - 第一行 -->
@@ -711,7 +717,8 @@ export default {
   font-size: 26rpx;
   color: #999;
   margin-bottom: 40rpx;
-  display: block;
+  display: flex;
+  align-items: center;
 }
 
 .features-grid {
