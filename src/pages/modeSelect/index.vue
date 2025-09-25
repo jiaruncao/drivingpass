@@ -501,16 +501,25 @@ export default {
           type: 'all'
         }
       }
-      startTrain(params).then(res => {
-        uni.setStorageSync('questions', res.data.data)
-        if (this.currentView == 'learn') {
-          this.startLearning()
-        } else if (this.currentView == 'test') {
-          this.startTest()
-        } else if (this.currentView == 'category-detail') {
-          this.selectedSignCategory.signs = res.data.data
-        }
-      })
+      const questions = this.selectSubjects(params)
+      uni.setStorageSync('questions', questions)
+      if (this.currentView == 'learn') {
+        this.startLearning()
+      } else if (this.currentView == 'test') {
+        this.startTest()
+      } else if (this.currentView == 'category-detail') {
+        this.selectedSignCategory.signs = questions
+      }
+      // startTrain(params).then(res => {
+      //   uni.setStorageSync('questions', res.data.data)
+      //   if (this.currentView == 'learn') {
+      //     this.startLearning()
+      //   } else if (this.currentView == 'test') {
+      //     this.startTest()
+      //   } else if (this.currentView == 'category-detail') {
+      //     this.selectedSignCategory.signs = res.data.data
+      //   }
+      // })
     },
     // 搜索道路标志
     searchSigns() {
@@ -629,6 +638,22 @@ export default {
     },
     cancelFeature () {
       this.showFeature = false
+    },
+    // 查询本地题目
+    selectSubjects (params) {
+      const subjects = uni.getStorageSync('subjects')
+      console.log(params)
+      
+      for (let item of subjects) {
+        if (item.id == this.subject_id) {
+          for (let jtem of item.cate) {
+            if (jtem.id == params.cate_id) {
+              return jtem.question // 直接返回找到的数据
+            }
+          }
+        }
+      }
+      return null // 如果没有找到，返回null或undefined
     }
    },
   onLoad(options) {

@@ -54,7 +54,8 @@
 
 <script>
   import {
-    getTypeFind
+    getTypeFind,
+    queryAllQuestion
   } from '@/http/api/index.js'
   export default {
     data() {
@@ -65,6 +66,12 @@
         ],
         drivingTest: [] // 测试模块
       };
+    },
+    onLoad () {
+      const subjects = uni.getStorageSync('subjects')
+      if (!subjects) {
+        this.queryAllQuestion()
+      }
     },
     onShow() {
       this.doGetTypeFind()
@@ -113,8 +120,18 @@
       getScore(name) {
         const scoreInfo = this.drivingTest.find(item => item.name === name)
         return scoreInfo ? scoreInfo.score : 0
+      },
+      // 第一次进入，获取题库
+      queryAllQuestion () {
+        queryAllQuestion().then(res => {
+          console.log(res)
+          if (res.code == 1) {
+            // 缓存题目
+            uni.setStorageSync('subjects', res.data.subjects)
+          }
+        })
       }
-    },
+    }
   };
 </script>
 

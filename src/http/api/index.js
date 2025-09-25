@@ -85,3 +85,11 @@ export function getTypeFind(params) {
 export function getCateThree(params) {
   return fly.post("/exam/cate/getThree", params);
 }
+
+
+/*
+ * 查询全量题库
+ */
+export function queryAllQuestion(params) {
+  return fly.post("/exam/question/queryAllQuestion", params);
+}
