@@ -408,7 +408,7 @@ export default {
         case 'TheoryTest':
           // 跳转答题
           uni.navigateTo({
-            url: '/pages/learnQuestion/index?cate_id=' + this.selectedCategory
+            url: '/pages/learnQuestion/index?cate_id=' + this.selectedCategory + '&subject_id=' + this.subject_id
           })
           break;
         case 'HazardTest':

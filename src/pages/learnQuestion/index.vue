@@ -519,7 +519,7 @@
         if (isCorrect) {
           // 答对了
           this.correctStreak++;
-
+          this.$forceUpdate()
           // 显示连续答对庆祝
           if (this.settings.streakCelebration && this.correctStreak >= 3) {
             this.showStreakCelebration = true;
@@ -536,6 +536,7 @@
               }
             }, 1000);
           }
+
         } else {
           if (this.mode == 'learn') {
             // 查询评论
@@ -663,17 +664,23 @@
             question_id: this.currentQuestion.id
           }).then(res => {
             console.log(res)
-            this.currentQuestion.collected = !this.currentQuestion.collected;
+            this.currentQuestion.collected = true;
+            // 缓存
+            this.setStorageSyncSubjects(this.currentQuestion.id, 'collected', true)
+            console.log(this.currentQuestion)
             console.log("this.startLearnQuestion", this.startLearnQuestion);
             // this.$utils.toast("Collected questions successfully！");
+            this.$forceUpdate()
           })
         } else {
           collectCancel({
             question_id: this.currentQuestion.id
           }).then(res => {
             console.log(res)
-            this.currentQuestion.collected = !this.currentQuestion.collected;
+            this.currentQuestion.collected = false;
+            this.setStorageSyncSubjects(this.currentQuestion.id, 'collected', false)
             // this.$utils.toast("Cancel collection successfully！");
+            this.$forceUpdate()
           })
         }
       },
@@ -718,12 +725,34 @@
           result: this.currentQuestion.isCorrect
         })
       },
+      // setStorageSyncSubjects
+      setStorageSyncSubjects (id, key, value) {
+        const subjects = uni.getStorageSync('subjects')
+        if (subjects && subjects.length) {
+          subjects.forEach(item => {
+            if (item.id == this.subject_id) {
+              item.cate.forEach(cate => {
+                if (cate.id == this.cate_id) {
+                  cate.question.forEach(questionItem => {
+                    if (id == questionItem.id) {
+                      questionItem[key] = value
+                    }
+                  })
+                }
+              })
+            }
+          })
+          // 更新缓存
+          uni.setStorageSync('subjects', subjects)
+        }
+      }
     },
     onLoad(option) {
       this.mode = option.mode ? option.mode : 'learn'
       if (option.mode == 'test') {
         this.subject_id = option.subject_id
       } else {
+        this.subject_id = option.subject_id
         this.cate_id = option.cate_id
       }
       // 初始化题目数据

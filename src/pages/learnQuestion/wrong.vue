@@ -650,7 +650,9 @@
             console.log(res)
             this.currentQuestion.collected = !this.currentQuestion.collected;
             console.log("this.startLearnQuestion", this.startLearnQuestion);
-            // this.$utils.toast("Collected questions successfully！");
+            this.setStorageSyncSubjects(this.currentQuestion.id, 'collected', true)
+            // this.$utils.toast("Cancel collection successfully！");
+            this.$forceUpdate()
           })
         } else {
           collectCancel({
@@ -658,7 +660,9 @@
           }).then(res => {
             console.log(res)
             this.currentQuestion.collected = !this.currentQuestion.collected;
+            this.setStorageSyncSubjects(this.currentQuestion.id, 'collected', false)
             // this.$utils.toast("Cancel collection successfully！");
+            this.$forceUpdate()
           })
         }
       },
@@ -701,6 +705,26 @@
           result: this.currentQuestion.isCorrect
         })
       },
+      setStorageSyncSubjects (id, key, value) {
+        const subjects = uni.getStorageSync('subjects')
+        if (subjects && subjects.length) {
+          subjects.forEach(item => {
+            if (item.id == this.subject_id) {
+              item.cate.forEach(cate => {
+                if (cate.id == this.cate_id) {
+                  cate.question.forEach(questionItem => {
+                    if (id == questionItem.id) {
+                      questionItem[key] = value
+                    }
+                  })
+                }
+              })
+            }
+          })
+          // 更新缓存
+          uni.setStorageSync('subjects', subjects)
+        }
+      }
     },
     onLoad(option) {
       this.mode = option.mode ? option.mode : 'learn'
