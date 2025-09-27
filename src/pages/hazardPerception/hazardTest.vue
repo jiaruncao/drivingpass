@@ -1,114 +1,116 @@
 <template>
-  <view class="app">
-    <!-- 视频区域 - 点击任何地方都能添加标记 -->
-    <view class="video-container" @tap="addMarkAtCurrentTime">
-      <view class="video-content">
-        <!-- <view class="road-scene">
-          <view class="road-lines"></view>
-        </view> -->
-        <video id="videoId" class="video" :autoplay="true" :controls="false" :show-center-play-btn="false" :src="title_video_url" muted playsinline></video>
+  <view>
+    <view class="app">
+      <!-- 视频区域 - 点击任何地方都能添加标记 -->
+      <view class="video-container" @tap="addMarkAtCurrentTime">
+        <view class="video-content">
+          <!-- <view class="road-scene">
+            <view class="road-lines"></view>
+          </view> -->
+          <video id="videoId" class="video" :autoplay="true" :controls="false" :show-center-play-btn="false" :src="title_video_url" muted playsinline></video>
+        </view>
+    
+        <!-- 退出按钮 -->
+        <button class="exit-button" @tap.stop="exitTestMode">Exit</button>
       </view>
-
-      <!-- 退出按钮 -->
-      <button class="exit-button" @tap.stop="exitTestMode">Exit</button>
-    </view>
-
-    <!-- 底部控制区域 -->
-    <view class="bottom-controls">
-      <!-- 细进度条 -->
-      <view class="thin-progress-bar">
-        <view class="thin-progress-fill" :style="{width: progress + '%'}"></view>
-      </view>
-
-      <!-- 测试模式得分条 - 不显示得分区间，只显示灰色背景 -->
-      <view class="score-bar-container">
-        <!-- 全灰色背景，不显示得分 -->
-        <view class="test-mode-bar"></view>
-
-        <!-- 用户标记的旗子 -->
-        <view class="user-marks">
-          <view v-for="(mark, index) in userMarks" 
-                :key="mark.id"
-                class="user-mark" 
-                :style="{left: mark.position + '%'}"
-                @tap.stop="showMarkInfo(mark, index)">
-            <view class="flag-container">
-              <view class="flag-pole"></view>
-              <view class="flag-banner"></view>
+    
+      <!-- 底部控制区域 -->
+      <view class="bottom-controls">
+        <!-- 细进度条 -->
+        <view class="thin-progress-bar">
+          <view class="thin-progress-fill" :style="{width: progress + '%'}"></view>
+        </view>
+    
+        <!-- 测试模式得分条 - 不显示得分区间，只显示灰色背景 -->
+        <view class="score-bar-container">
+          <!-- 全灰色背景，不显示得分 -->
+          <view class="test-mode-bar"></view>
+    
+          <!-- 用户标记的旗子 -->
+          <view class="user-marks">
+            <view v-for="(mark, index) in userMarks" 
+                  :key="mark.id"
+                  class="user-mark" 
+                  :style="{left: mark.position + '%'}"
+                  @tap.stop="showMarkInfo(mark, index)">
+              <view class="flag-container">
+                <view class="flag-pole"></view>
+                <view class="flag-banner"></view>
+              </view>
             </view>
           </view>
         </view>
       </view>
-    </view>
-
-    <!-- 结果弹窗 -->
-    <view v-if="showResult" class="result-modal">
-      <view class="result-backdrop" @tap.stop></view>
-      <view class="result-content">
-        <view class="result-header">
-          <text class="result-title">Test Complete</text>
-        </view>
-        
-        <view class="result-score">
-          <text class="score-label">Your Score</text>
-          <view class="score-display">
-            <text class="score-number">{{ totalScore }}</text>
-            <text class="score-divider">/</text>
-            <text class="score-total">10</text>
+    
+      <!-- 结果弹窗 -->
+      <view v-if="showResult" class="result-modal">
+        <view class="result-backdrop" @tap.stop></view>
+        <view class="result-content">
+          <view class="result-header">
+            <text class="result-title">Test Complete</text>
           </view>
           
-          <!-- 得分状态 -->
-          <view class="score-status" :class="scoreStatusClass">
-            <text class="status-text">{{ scoreStatusText }}</text>
+          <view class="result-score">
+            <text class="score-label">Your Score</text>
+            <view class="score-display">
+              <text class="score-number">{{ totalScore }}</text>
+              <text class="score-divider">/</text>
+              <text class="score-total">10</text>
+            </view>
+            
+            <!-- 得分状态 -->
+            <view class="score-status" :class="scoreStatusClass">
+              <text class="status-text">{{ scoreStatusText }}</text>
+            </view>
           </view>
-        </view>
-
-        <!-- 标记统计 -->
-        <view class="result-stats">
-          <view class="stat-item">
-            <text class="stat-label">Total Clicks</text>
-            <text class="stat-value">{{ clickCount }}</text>
+    
+          <!-- 标记统计 -->
+          <view class="result-stats">
+            <view class="stat-item">
+              <text class="stat-label">Total Clicks</text>
+              <text class="stat-value">{{ clickCount }}</text>
+            </view>
+            <view class="stat-item">
+              <text class="stat-label">Valid Marks</text>
+              <text class="stat-value">{{ validMarksCount }}</text>
+            </view>
           </view>
-          <view class="stat-item">
-            <text class="stat-label">Valid Marks</text>
-            <text class="stat-value">{{ validMarksCount }}</text>
-          </view>
-        </view>
-
-        <!-- 操作按钮 -->
-        <view class="result-actions">
-          <button class="result-button exit-btn" @tap="handleExit">
-            Exit
-          </button>
-          <button class="result-button review-btn" @tap="handleReview">
-            Review
-          </button>
-        </view>
-      </view>
-    </view>
-
-    <!-- Review模式遮罩 -->
-    <view v-if="reviewMode" class="review-overlay">
-      <view class="review-bar">
-        <view v-for="(item, index) in score_list" :key="index">
-          <view v-for="(jtem, idx) in item" :key="idx" class="score-zone" :class="'zone-' + jtem.score" 
-          :style="{
-            'left': jtem.startTime / duration * 100 + '%',
-            'width': (jtem.endTime - jtem.startTime) / duration * 100 + '%'
-          }">
-            {{jtem.score}}
+    
+          <!-- 操作按钮 -->
+          <view class="result-actions">
+            <button class="result-button exit-btn" @tap="handleExit">
+              Exit
+            </button>
+            <button class="result-button review-btn" @tap="handleReview">
+              Review
+            </button>
           </view>
         </view>
       </view>
-      
-      <button class="close-review-btn" @tap="closeReview">
-        Close Review
-      </button>
+    
+      <!-- Review模式遮罩 -->
+      <view v-if="reviewMode" class="review-overlay">
+        <view class="review-bar">
+          <view v-for="(item, index) in score_list" :key="index">
+            <view v-for="(jtem, idx) in item" :key="idx" class="score-zone" :class="'zone-' + jtem.score" 
+            :style="{
+              'left': jtem.startTime / duration * 100 + '%',
+              'width': (jtem.endTime - jtem.startTime) / duration * 100 + '%'
+            }">
+              {{jtem.score}}
+            </view>
+          </view>
+        </view>
+        
+        <button class="close-review-btn" @tap="closeReview">
+          Close Review
+        </button>
+      </view>
     </view>
     
     <u-modal :show="modalShow" :title="modalTitle" :showCancelButton="true" :content='modalContent' :cancelText="cancelText" :confirmText="confirmText" @cancel="cancel" @confirm="confirm"></u-modal>
-    
   </view>
+  
 </template>
 
 <script>

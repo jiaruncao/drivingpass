@@ -396,6 +396,15 @@
       }
     },
     {
+      "path" : "pages/mockTest/testVideo",
+      "style" : 
+      {
+        "navigationBarTitleText" : "",
+        "navigationStyle": "custom",
+        "pageOrientation": "landscape"
+      }
+    },
+    {
       "path" : "pages/mockTest/record",
       "style" : 
       {

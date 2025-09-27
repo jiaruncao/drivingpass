@@ -3,46 +3,67 @@
     <view class="container">
       <!-- 顶部栏 -->
       <view class="top-bar">
-        <text class="question-counter">Question {{ currentQuestion }} of {{questionsData.length}}</text>
-        <text :class="['time-remaining', timeRemaining <= 300 ? 'warning' : '']">
+        <view class="question-counter">Video {{ currentQuestion }} of {{questionsData.length}}</view>
+        <!-- <text :class="['time-remaining', timeRemaining <= 300 ? 'warning' : '']">
           Time: {{ formattedTime }}
-        </text>
+        </text> -->
+        
+        <view style="display: flex;height: 100%;">
+          <view class="control-button previous" @click="previousQuestion">
+            <text class="arrow">←</text>
+            <text>Previous</text>
+          </view>
+          <view class="control-button next" @click="nextQuestion">
+            <text>Next</text>
+            <text class="arrow">→</text>
+          </view>
+        </view>
       </view>
     
       <!-- 主要内容区域 -->
       <view :class="['main-content', !currentQuestionData.title_video_url ? 'no-image' : '']">
-        <!-- 左侧问题区域 -->
-        <view class="question-section">
-          <view class="question-header">
-            <text class="question-text">{{ currentQuestionData.title }}</text>
-            <view class="mark-instruction">Mark one answer</view>
+        <view class="video-container" @tap="addMarkAtCurrentTime">
+          <view class="video-content">
+            <!-- <view class="road-scene">
+              <view class="road-lines"></view>
+            </view> -->
+            <video id="videoId" class="video" :autoplay="true" :controls="false" :show-center-play-btn="false" :src="currentQuestionData.title_video_url" muted playsinline></video>
           </view>
-    
-          <view class="answer-options">
-            <view 
-              v-for="(option, index) in currentQuestionData.options_json" 
-              :key="index"
-              :class="['answer-option', currentQuestionData.selectedOption === option.key ? 'selected' : '']"
-              @click="selectAnswer(option.key, index)"
-            >
-              <view class="answer-checkbox"></view>
-              <text class="answer-text">{{ option.value }}</text>
+        </view>
+        
+        <view class="bottom-controls-video">
+          <!-- 细进度条 -->
+          <view class="thin-progress-bar">
+            <view class="thin-progress-fill" :style="{width: progress + '%'}"></view>
+          </view>
+        
+          <!-- 测试模式得分条 - 不显示得分区间，只显示灰色背景 -->
+          <view class="score-bar-container">
+            <!-- 全灰色背景，不显示得分 -->
+            <view class="test-mode-bar"></view>
+        
+            <!-- 用户标记的旗子 -->
+            <view class="user-marks">
+              <view v-for="(mark, index) in userMarks" 
+                    :key="mark.id"
+                    class="user-mark" 
+                    :style="{left: mark.position + '%'}"
+                    @tap.stop="showMarkInfo(mark, index)">
+                <view class="flag-container">
+                  <view class="flag-pole"></view>
+                  <view class="flag-banner"></view>
+                </view>
+              </view>
             </view>
           </view>
         </view>
-    
-        <!-- 右侧图片区域 -->
-        <view v-if="currentQuestionData.title_video_url" class="image-section">
-          <image 
-            :src="currentQuestionData.title_video_url" 
-            class="question-image"
-            mode="aspectFit"
-          />
-        </view>
       </view>
-    
+      
+      
+      
+      
       <!-- 底部控制栏 -->
-      <view class="bottom-controls">
+      <!-- <view class="bottom-controls">
         <view class="control-buttons">
           <button class="control-button previous" @click="previousQuestion">
             <text class="arrow">←</text>
@@ -67,7 +88,7 @@
           <text>Next</text>
           <text class="arrow">→</text>
         </button>
-      </view>
+      </view> -->
     
       <!-- Review面板遮罩层 -->
       <view v-if="reviewVisible" class="review-overlay active" @click="handleOverlayClick">
@@ -117,7 +138,7 @@
         </view>
       </view>
     </view>
-    <u-modal :show="modalShow" width="400rpx" :title="modalTitle" :showCancelButton="showCancel" :content='modalContent' :cancelText="cancelText" :confirmText="confirmText" @cancel="cancel" @confirm="confirm"></u-modal>
+    <u-modal width="400rpx" :show="modalShow" :title="modalTitle" :showCancelButton="showCancel" :content='modalContent' :cancelText="cancelText" :confirmText="confirmText" @cancel="cancel" @confirm="confirm"></u-modal>
   </view>
   
 </template>
@@ -156,19 +177,19 @@ export default {
       confirmText: 'Confirm',
       showCancel: true,
       
-      // 视频题倒计时
-      videoTime: 3 * 60,
-      videoTimer: null
+      score_list: [],
+      currentTime: 0, // 当前时间（秒）
+      duration: 0, // 视频总时长（秒）
+      progress: 0, // 进度百分比
+      userMarks: [], // 用户标记的危险点
+      playInterval: null, // 播放定时器
+      clickCount: 0, // 点击计数
+      recentClicks: [], // 最近的点击时间记录
+      scoreDisqualified: false ,// 分数是否被取消
     }
   },
   
   computed: {
-    // 格式化的时间显示
-    formattedTime() {
-      const minutes = Math.floor(this.timeRemaining / 60)
-      const seconds = this.timeRemaining % 60
-      return `${minutes}:${seconds.toString().padStart(2, '0')}`
-    },
     // 当前题目数据
     currentQuestionData() {
       // 如果当前题号有特定数据，使用特定数据，否则使用默认数据
@@ -204,8 +225,8 @@ export default {
   
   mounted() {
     this.getExamQuestion()
-    // 启动倒计时
-    this.startTimer()
+
+    // this.startAutoPlay();
   },
 
   beforeDestroy() {
@@ -226,25 +247,20 @@ export default {
   methods: {
     // 取题
     getExamQuestion () {
-      getExamQuestion().then(res => {
-        console.log(res)
-        if (res.code == 1) {
-          // this.paperInfo = res.data.paper
-          this.paper_id = res.data.paper.paper_id
-          // this.timeRemaining = res.data.paper.limit_time * 60
-          this.timeRemaining = 1 * 60
-          this.questionsData = res.data.questions.filter(item => item.kind == 'SINGLE') // 单选题
-          this.videoData = res.data.questions.filter(item => item.kind == 'VIDEO') // 视频题
-          
-          uni.setStorageSync('videoMockTest', {
-            paper_id: this.paper_id,
-            videoData: this.videoData
-          })
-          
-          // 初始化题目状态
-          this.initQuestionStates()
-        }
-      })
+      const videoMockTest = uni.getStorageSync('videoMockTest')
+      // {
+      //   paper_id: this.paper_id,
+      //   videoData: this.videoData
+      // }
+      this.paper_id = videoMockTest.paper_id
+      
+      this.questionsData = videoMockTest.videoData
+      
+      this.duration = this.currentQuestionData.total_time
+      
+      this.startAutoPlay()
+      
+      this.initQuestionStates()
     },
     // 初始化题目状态
     initQuestionStates() {
@@ -260,31 +276,7 @@ export default {
       console.log('this.questionStates', this.questionStates)
     },
     
-    // 启动倒计时
-    startTimer() {
-      this.timer = setInterval(() => {
-        if (this.timeRemaining > 0) {
-          this.timeRemaining--
-        } else {
-          uni.setStorageSync('mockTestResult', {
-            paper_id: this.paper_id,
-            questions: this.questionStates.map(q => ({
-              id: q.id,
-              answer: q.selectedOption
-            }))
-          })
-          this.endTestAfter()
-          clearInterval(this.timer)
-        }
-      }, 1000)
-    },
-    
-    // 选择答案
-    selectAnswer(key, index) {
-      this.questionStates[this.currentQuestion - 1].answered = true
-      this.questionStates[this.currentQuestion - 1].selectedOption = key
-    },
-    
+
     // 切换标记状态
     toggleFlag() {
       const current = this.questionStates[this.currentQuestion - 1]
@@ -298,7 +290,7 @@ export default {
         this.goToQuestion(this.currentQuestion + 1)
       } else {
         uni.showToast({
-          title: 'This is the last question. Click Review to check your answers.',
+          title: 'This is the last video. Click Review to check your answers.',
           icon: 'none',
           duration: 2000
         })
@@ -311,20 +303,11 @@ export default {
         this.goToQuestion(this.currentQuestion - 1)
       } else {
         uni.showToast({
-          title: 'This is the first question.',
+          title: 'This is the first video.',
           icon: 'none',
           duration: 2000
         })
       }
-    },
-    
-    // 播放音频
-    playAudio() {
-      uni.showToast({
-        title: 'No audio available for this question',
-        icon: 'none',
-        duration: 2000
-      })
     },
     
     // 显示Review面板
@@ -361,37 +344,24 @@ export default {
     confirm () {
       this.modalShow = false
       if (this.modalType === 'EndTest') {
-        // uni.showToast({
-        //   title: 'Test ended. Calculating results...',
-        //   icon: 'none',
-        //   duration: 2000
-        // })
+        uni.showToast({
+          title: 'Test ended. Calculating results...',
+          icon: 'none',
+          duration: 2000
+        })
         this.closeReview()
         // 这里可以添加跳转到结果页面的逻辑
-        // submitExamQuestion({
-        //   paper_id: this.paper_id,
-        //   questions: this.questionStates.map(q => ({
-        //     id: q.id,
-        //     answer: q.selectedOption
-        //   }))
-        // }).then(res => {
-        //   console.log(res)
-        // })
-        // 缓存答题情况，跳转视频题
-        
-        uni.setStorageSync('mockTestResult', {
+        submitExamQuestion({
           paper_id: this.paper_id,
           questions: this.questionStates.map(q => ({
             id: q.id,
             answer: q.selectedOption
           }))
+        }).then(res => {
+          console.log(res)
         })
-        
-        this.endTestAfter()
       } else if (this.modalType === 'Finished') {
-        this.goToVideo()
         clearInterval(this.timer)
-        clearInterval(this.videoTimer)
       }
     },
     cancel () {
@@ -406,7 +376,6 @@ export default {
       this.modalTitle =  'End Test'
       this.modalType = 'EndTest'
       this.modalContent = `Are you sure you want to end the test? You have ${unanswered} unanswered questions.`
-
     },
     endTestAfter () {
       
@@ -415,33 +384,136 @@ export default {
       this.modalTitle =  'Finished Multiple-Choice'
       this.modalType = 'Finished'
       this.modalContent = `You have finished answering multiple-choice questions and have 3 minutes to rest. You can also choose to skip and continue answering dangerous driving questions. Do you want to skip?`
-      this.startVideoTimer()
-
     },
-    startVideoTimer() {
-      this.videoTimer = setInterval(() => {
-        if (this.videoTime > 0) {
-          this.videoTime--
-          const minutes = Math.floor(this.videoTime / 60)
-          const seconds = this.videoTime % 60
-          const videoTimeValue = `${minutes}:${seconds.toString().padStart(2, '0')}`
-          this.modalContent = `You have finished answering multiple-choice questions and have ${videoTimeValue} minutes to rest. You can also choose to skip and continue answering dangerous driving questions. Do you want to skip?`
+    // 自动播放
+    startAutoPlay() {
+      this.playInterval = setInterval(() => {
+        if (this.currentTime < this.duration) {
+          this.currentTime += 1;
+          this.progress = (this.currentTime / this.duration) * 100;
         } else {
-          this.goToVideo()
-          clearInterval(this.videoTimer)
+          clearInterval(this.playInterval);
+          this.currentTime = this.duration;
+          this.progress = 100;
+          // 跳转到下一题
+          this.nextQuestion()
         }
-      }, 1000)
+      }, 100);
     },
-    // 跳转视频题
-    goToVideo () {
-      this.modelShow = false
-      uni.redirectTo({
-        url: '/pages/mockTest/testVideo'
+    // 在当前时间添加标记
+    addMarkAtCurrentTime() {
+      // 检查是否已被取消资格
+      if (this.scoreDisqualified) {
+        return;
+      }
+    
+      // 防作弊检测
+      if (this.checkForCheating()) {
+        return;
+      }
+    
+      // 计算当前进度对应的得分
+      // 得分区间设置（只在危险区间内有分数）
+      let score = 0;
+      
+      // 判断得分
+      this.score_list.forEach((item) => {
+        item.forEach(jtem => {
+          if (this.progress >= jtem.startTime && this.progress <= jtem.endTime) {
+            score = jtem.score;
+          }
+        })
       })
-    }
+      console.log('this.progress', this.progress)
+      // 添加标记
+      this.addMark(this.progress, score);
+    },
+    // 防作弊检测
+    checkForCheating() {
+      const now = Date.now();
+      
+      // 规则1: 两次点击之间至少要间隔0.5秒（500ms）
+      if (this.recentClicks.length > 0) {
+        const lastClick = this.recentClicks[this.recentClicks.length - 1];
+        if (now - lastClick < 500) {
+          this.handleCheating('Clicks too fast (minimum 0.5s between clicks)');
+          return true;
+        }
+      }
+      
+      // 清理3秒前的点击记录
+      this.recentClicks = this.recentClicks.filter(time => now - time < 3000);
+      
+      // 添加当前点击
+      this.recentClicks.push(now);
+      
+      // 规则2: 3秒内不超过3次点击
+      if (this.recentClicks.length > 3) {
+        this.handleCheating('Too many clicks in 3 seconds (max 3)');
+        return true;
+      }
+      
+      // 规则3: 整个视频最多15次点击
+      if (this.clickCount >= 15) {
+        this.handleCheating('Maximum 15 clicks exceeded');
+        return true;
+      }
+      
+      return false;
+    },
+    
+    // 处理作弊行为
+    handleCheating(reason) {
+      this.scoreDisqualified = true;
+      
+      // 清除所有标记的分数
+      this.userMarks.forEach(mark => {
+        mark.score = 0;
+      });
+      
+      // 显示警告
+      // uni.showModal({
+      //   title: '⚠️ Score Disqualified!',
+      //   content: `You scored 0 for this video.\n\nReason: ${reason}`,
+      //   showCancel: false,
+      //   confirmText: 'OK'
+      // });
+      this.modalShow = true
+      this.modalTitle =  '⚠️ Score Disqualified!'
+      this.modalType = 'Score'
+      this.showCancelButton = false
+      this.confirmText = 'OK'
+      this.modalContent = `You scored 0 for this video.\n\nReason: ${reason}`
+      console.log('Score disqualified:', reason);
+    },
+    // 添加标记
+    addMark(position, score) {
+      this.clickCount++;
+      
+      // 如果已被取消资格，分数为0
+      const finalScore = this.scoreDisqualified ? 0 : score;
+      
+      const newMark = {
+        id: Date.now(),
+        time: Math.round((position / 100) * this.duration),
+        position: position,
+        score: finalScore,
+        clickNumber: this.clickCount
+      };
+      
+      // 添加标记（允许重叠）
+      this.userMarks.push(newMark);
+      console.log(`Mark ${this.clickCount} added at ${newMark.time}s with score ${finalScore}`);
+    },
+    
+    // 显示标记信息
+    showMarkInfo(mark, index) {
+      console.log(`Mark ${index + 1} at ${mark.time}s with score ${mark.score}`);
+    },
   },
   onLoad (option) {
     // this.paper_id = option.paper_id
+    
   }
 }
 </script>
@@ -500,9 +572,10 @@ export default {
   flex: 1;
   display: flex;
   flex-direction: row;
-  padding: 0.625rem 0.9375rem; /* 10px 15px → 0.625rem 0.9375rem */
+  /* padding: 0.625rem 0.9375rem; */
   background: #FFFFFF;
   min-height: 0;
+  position: relative;
 }
 
 /* 当没有图片时，问题区域占满 */
@@ -644,7 +717,6 @@ export default {
 }
 
 .control-button {
-  padding: 0.75rem 1.25rem; /* 12px 20px → 0.75rem 1.25rem */
   font-size: 1rem; /* 16px → 1rem */
   border: 0.125rem solid #B0A090; /* 2px → 0.125rem */
   border-radius: 0.5rem; /* 8px → 0.5rem */
@@ -657,7 +729,7 @@ export default {
   box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.1); /* 2px 4px → 0.125rem 0.25rem */
   white-space: nowrap;
   font-weight: 500;
-  min-height: 3rem; /* 48px → 3rem */
+  
   margin-right: 0.625rem; /* 10px → 0.625rem */
   height: 100%;
 }
@@ -964,9 +1036,9 @@ export default {
     font-size: 0.8125rem; /* 13px → 0.8125rem */
   }
   
-  .main-content {
-    padding: 0.5rem 0.75rem 0 0.75rem; /* 8px 12px → 0.5rem 0.75rem */
-  }
+  /* .main-content {
+    padding: 0.5rem 0.75rem 0 0.75rem;
+  } */
   
   .question-text {
     font-size: 1rem; /* 16px → 1rem */
@@ -1000,7 +1072,7 @@ export default {
   .control-button {
     font-size: 0.875rem; /* 14px → 0.875rem */
     padding: 0.625rem 1rem; /* 10px 16px → 0.625rem 1rem */
-    min-height: 2.75rem; /* 44px → 2.75rem */
+    
   }
   
   .review-grid {
@@ -1051,5 +1123,127 @@ export default {
   .answer-text {
     font-size: 0.875rem; /* 14px → 0.875rem */
   }
+}
+
+/* 视频容器 */
+.video-container {
+  position: relative;
+  width: 100%;
+  flex: 1;
+  background: #1a1a1a;
+  overflow: hidden;
+  padding: 0;
+  margin: 0;
+}
+
+/* 模拟视频背景 - 道路场景 */
+.video-content {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to bottom, #4a5568 0%, #2d3748 40%, #1a202c 100%);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.video-content .video {
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+}
+
+/* 底部控制区域 */
+.bottom-controls-video {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1.9375rem; /* 56rpx → 3.5rem */
+  background: transparent;
+}
+
+/* 细进度条 */
+.thin-progress-bar {
+  position: absolute;
+  height: 1.5625rem; /* 50rpx → 3.125rem */
+  left: 0;
+  right: 0;
+  height: 0.375rem; /* 6rpx → 0.375rem */
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.thin-progress-fill {
+  height: 100%;
+  background: rgba(255, 255, 255, 0.8);
+  width: 0%;
+  transition: width 0.1s linear;
+}
+
+/* 得分条容器 */
+.score-bar-container {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1.5625rem; /* 50rpx → 3.125rem */
+  display: flex;
+  align-items: stretch;
+  background: #f5f5f5;
+}
+
+/* 测试模式条 - 全灰色 */
+.test-mode-bar {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  /* background: #a0a0a0; */
+}
+
+/* 用户标记旗子 */
+.user-marks {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.user-mark {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+  z-index: 10;
+  transition: transform 0.2s ease;
+}
+
+/* 旗子样式 */
+.flag-container {
+  position: relative;
+  width: 1.25rem; /* 40rpx → 2.5rem */
+  height: 1.5625rem; /* 50rpx → 3.125rem */
+}
+
+.flag-pole {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0.125rem; /* 4rpx → 0.25rem */
+  height: 1.5625rem; /* 50rpx → 3.125rem */
+  background: #333;
+}
+
+.flag-banner {
+  position: absolute;
+  left: 0.125rem; /* 4rpx → 0.25rem */
+  top: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0.375rem 0 0.375rem 0.75rem; /* 12rpx 0 12rpx 24rpx → 0.75rem 0 0.75rem 1.5rem */
+  border-color: transparent transparent transparent #FF0000;
+  filter: drop-shadow(0 0.0625rem 0.1875rem rgba(0,0,0,0.3)); /* 2rpx 6rpx → 0.125rem 0.375rem */
 }
 </style>

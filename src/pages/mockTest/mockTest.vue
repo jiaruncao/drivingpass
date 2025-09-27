@@ -61,7 +61,7 @@
       </view>
     </view>
     
-    <u-modal title="Test Instructions" :show="showTest" :showCancelButton="true" cancelText="Cancel" confirmText="Start" content='You will have 57 minutes to complete 50 multiple-choice questions, followed by 14 hazard perception video clips. You must score at least 43/50 in multiple-choice and 44/75 in hazard perception to pass.' @confirm="confirm" @cancel="cancel"></u-modal>
+    <u-modal title="Test Instructions" width="400rpx" :show="showTest" :showCancelButton="true" cancelText="Cancel" confirmText="Start" content='You will have 57 minutes to complete 50 multiple-choice questions, followed by 14 hazard perception video clips. You must score at least 43/50 in multiple-choice and 44/75 in hazard perception to pass.' @confirm="confirm" @cancel="cancel"></u-modal>
     
   </view>
 </template>
@@ -197,7 +197,7 @@
       // 导航到测试页面
       navigateToTest() {
         uni.navigateTo({
-          url: '/pages/mockTest/test?paper_id=2',
+          url: '/pages/mockTest/test',
           success: () => {
             console.log('导航到多选题测试页面');
           }
