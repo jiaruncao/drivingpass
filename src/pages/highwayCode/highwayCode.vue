@@ -93,6 +93,7 @@ import {startTrain, collectAdd, collectCancel, wrongAdd, recordAdd} from '@/http
 export default {
   data() {
     return {
+      subject_id: null,
       cate_id: null,
       currentIndex: 0, // 当前代码索引
       categoryProgress: 0, // 分类进度
@@ -161,9 +162,11 @@ export default {
     },
     // 切换已读状态
     toggleReadStatus(index) {
-      this.codesList[index].is_read = !this.codesList[index].is_read;
+      this.codesList[index].is_read = true;
       this.updateProgress();
       this.saveProgress();
+
+      this.setStorageSyncSubjects(this.codesList[index].id, 'is_read', true)
     },
     // 前往上一个
     goToPrevious() {
@@ -254,6 +257,26 @@ export default {
       } catch (error) {
         console.error('Failed to save progress:', error);
       }
+    },
+    setStorageSyncSubjects (id, key, value) {
+      const subjects = uni.getStorageSync('subjects')
+      if (subjects && subjects.length) {
+        subjects.forEach(item => {
+          if (item.id == this.subject_id) {
+            item.cate.forEach(cate => {
+              if (cate.id == this.cate_id) {
+                cate.question.forEach(questionItem => {
+                  if (id == questionItem.id) {
+                    questionItem[key] = value
+                  }
+                })
+              }
+            })
+          }
+        })
+        // 更新缓存
+        uni.setStorageSync('subjects', subjects)
+      }
     }
   },
   watch: {
@@ -267,6 +290,7 @@ export default {
     // this.updateProgress();
     // this.updateTranslate();
     this.cate_id = option.cate_id
+    this.subject_id = option.subject_id
     // 取缓存数据
     const questions = uni.getStorageSync('questions');
     if (questions) {

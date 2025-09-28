@@ -236,10 +236,10 @@ export default {
       
       
       // 初始化危险感知图表
-      this.drawLineChart('hazardPerceptionChart', {
-        labels: ['09/05', '10/05', '11/05', '12/05', '13/05', '14/05', '15/05', '16/05', '17/05', '18/05'],
-        data: [20, 95, 30, 20, 25, 10, 40, 48, 8, 50]
-      });
+      // this.drawLineChart('hazardPerceptionChart', {
+      //   labels: ['09/05', '10/05', '11/05', '12/05', '13/05', '14/05', '15/05', '16/05', '17/05', '18/05'],
+      //   data: [20, 95, 30, 20, 25, 10, 40, 48, 8, 50]
+      // });
     },
     
     // 绘制折线图（简化版本，实际项目中应使用u-charts或其他图表库）
@@ -383,6 +383,10 @@ export default {
             this.drawLineChart('multipleChoiceChart', {
               labels: this.info.labels,
               data: this.info.data
+            });
+            this.drawLineChart('hazardPerceptionChart', {
+              labels: ['09/05', '10/05', '11/05', '12/05', '13/05', '14/05', '15/05', '16/05', '17/05', '18/05'],
+              data: [20, 95, 30, 20, 25, 10, 40, 48, 8, 50]
             });
           });
         }

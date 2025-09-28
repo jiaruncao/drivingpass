@@ -13,9 +13,12 @@
             <text class="arrow">←</text>
             <text>Previous</text>
           </view>
-          <view class="control-button next" @click="nextQuestion">
+          <view class="control-button previous" @click="nextQuestion">
             <text>Next</text>
             <text class="arrow">→</text>
+          </view>
+          <view class="control-button next" @click="endTest">
+            <text>End Test</text>
           </view>
         </view>
       </view>
@@ -58,10 +61,7 @@
           </view>
         </view>
       </view>
-      
-      
-      
-      
+
       <!-- 底部控制栏 -->
       <!-- <view class="bottom-controls">
         <view class="control-buttons">
@@ -285,6 +285,7 @@ export default {
     
     // 下一题
     nextQuestion() {
+      clearInterval(this.playInterval);
       console.log(this.questionStates)
       if (this.currentQuestion < this.questionsData.length) {
         this.goToQuestion(this.currentQuestion + 1)
@@ -299,6 +300,7 @@ export default {
     
     // 上一题
     previousQuestion() {
+      clearInterval(this.playInterval);
       if (this.currentQuestion > 1) {
         this.goToQuestion(this.currentQuestion - 1)
       } else {
@@ -334,6 +336,10 @@ export default {
       if (this.questionsData[questionNumber]) {
         this.questionsData[questionNumber].selectedOption = state.selectedOption
       }
+      this.progress = 0
+      this.currentTime = 0
+      this.duration = this.currentQuestionData.total_time
+      this.startAutoPlay()
     },
     
     // 从Review面板跳转到题目
@@ -350,22 +356,34 @@ export default {
           duration: 2000
         })
         this.closeReview()
-        // 这里可以添加跳转到结果页面的逻辑
-        submitExamQuestion({
-          paper_id: this.paper_id,
-          questions: this.questionStates.map(q => ({
-            id: q.id,
-            answer: q.selectedOption
-          }))
-        }).then(res => {
-          console.log(res)
-        })
+        // this.cacheCurrentVideoScore()
+        this.submitScore()
       } else if (this.modalType === 'Finished') {
-        clearInterval(this.timer)
+        clearInterval(this.playInterval)
+        this.submitScore()
       }
     },
     cancel () {
       this.modalShow = false
+    },
+    // 提交成绩
+    submitScore () {
+      // 先缓存答案
+      this.cacheCurrentVideoScore()
+      // 这里获取单选成绩
+      const mockTestResult = uni.getStorageSync('mockTestResult')
+      
+      const questions = mockTestResult.questions
+      
+      console.log('this.userMarks', this.userMarks)
+      
+      // 提交
+      submitExamQuestion({
+        paper_id: this.paper_id,
+        questions: questions
+      }).then(res => {
+        console.log(res)
+      })
     },
     // 结束考试
     endTest() {
@@ -375,15 +393,15 @@ export default {
       this.showCancel = true
       this.modalTitle =  'End Test'
       this.modalType = 'EndTest'
-      this.modalContent = `Are you sure you want to end the test? You have ${unanswered} unanswered questions.`
+      this.modalContent = `Are you sure you want to end the test? You have ${unanswered} unanswered video.`
     },
     endTestAfter () {
       
       this.modalShow = true
       this.showCancel = false
-      this.modalTitle =  'Finished Multiple-Choice'
+      this.modalTitle =  'Finished HazardTest'
       this.modalType = 'Finished'
-      this.modalContent = `You have finished answering multiple-choice questions and have 3 minutes to rest. You can also choose to skip and continue answering dangerous driving questions. Do you want to skip?`
+      this.modalContent = `You have finished dangerous driving questions questions. Are you sure you want to end the test?`
     },
     // 自动播放
     startAutoPlay() {
@@ -395,8 +413,16 @@ export default {
           clearInterval(this.playInterval);
           this.currentTime = this.duration;
           this.progress = 100;
-          // 跳转到下一题
-          this.nextQuestion()
+          // 自动缓存当前视频分数
+          this.cacheCurrentVideoScore()
+          // 如果不是最后一题，跳转到下一题
+          if (this.currentQuestion != this.questionsData.length) {
+            this.nextQuestion()
+          } else {
+            // 提示答题结束
+            this.endTestAfter()
+          }
+          // this.nextQuestion()
         }
       }, 100);
     },
@@ -510,6 +536,38 @@ export default {
     showMarkInfo(mark, index) {
       console.log(`Mark ${index + 1} at ${mark.time}s with score ${mark.score}`);
     },
+    
+    // 缓存当前视频分数
+    cacheCurrentVideoScore () {
+      const mockTestResult = uni.getStorageSync('mockTestResult')
+      const bsQuestions = mockTestResult.questions // 笔试答案
+      
+      console.log('this.userMarks', this.userMarks)
+      
+      let result = this.userMarks.map(mark => mark.time).join(',')
+      
+      console.log('result', result)
+      console.log('this.currentQuestionData', this.currentQuestionData)
+      
+      // 查找是否已存在相同ID的题目
+      const existingIndex = bsQuestions.findIndex(item => item.id === this.currentQuestionData.id)
+      
+      if (existingIndex !== -1) {
+        // 如果存在相同ID，替换answer
+        bsQuestions[existingIndex].answer = result
+      } else {
+        // 如果不存在，添加新题目
+        bsQuestions.push({
+          id: this.currentQuestionData.id,
+          answer: result
+        })
+      }
+      
+      uni.setStorageSync('mockTestResult', {
+        paper_id: this.paper_id,
+        questions: bsQuestions
+      })
+    }
   },
   onLoad (option) {
     // this.paper_id = option.paper_id

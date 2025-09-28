@@ -117,7 +117,7 @@
         </view>
       </view>
     </view>
-    <u-modal :show="modalShow" width="400rpx" :title="modalTitle" :showCancelButton="showCancel" :content='modalContent' :cancelText="cancelText" :confirmText="confirmText" @cancel="cancel" @confirm="confirm"></u-modal>
+    <u-modal :show="modalShow" :title="modalTitle" :showCancelButton="showCancel" :content='modalContent' :cancelText="cancelText" :confirmText="confirmText" @cancel="cancel" @confirm="confirm" ></u-modal>
   </view>
   
 </template>
@@ -400,7 +400,7 @@ export default {
     // 结束考试
     endTest() {
       const unanswered = this.questionStates.filter(q => !q.answered).length
-
+      this.reviewVisible = false
       this.modalShow = true
       this.showCancel = true
       this.modalTitle =  'End Test'
@@ -409,7 +409,7 @@ export default {
 
     },
     endTestAfter () {
-      
+      this.reviewVisible = false
       this.modalShow = true
       this.showCancel = false
       this.modalTitle =  'Finished Multiple-Choice'

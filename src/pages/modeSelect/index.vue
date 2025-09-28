@@ -420,7 +420,7 @@ export default {
         case 'HighwayCode':
           // 跳转答题
           uni.navigateTo({
-            url: '/pages/highwayCode/highwayCode?cate_id=' + this.selectedCategory
+            url: '/pages/highwayCode/highwayCode?cate_id=' + this.selectedCategory + '&subject_id=' + this.subject_id
           })
           break;
         case 'RodeSign':

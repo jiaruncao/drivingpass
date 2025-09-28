@@ -238,6 +238,7 @@
 
 <script>
 import {getUserInfo, queryMemberInfo} from '@/http/api/login.js'
+import {getTestStatistics} from '@/http/api/testQuestions.js'
 export default {
   data() {
     return {
@@ -248,7 +249,7 @@ export default {
         // 可选: 'free', 'silver', 'gold'
       },
       // 测试进度数据
-      currentQuestionBank: 'Type 1',
+      currentQuestionBank: 'Theory Test',
       passRate: 70,
       showFeature: false,
       content: ''
@@ -352,7 +353,7 @@ export default {
     switchQuestionBank() {
       console.log('Switch question bank clicked');
       // 实际应用中显示题库选择器
-      const banks = ['Type 1', 'Type 2', 'Mock Test'];
+      const banks = ['Theory Test', 'Hazard Test', 'Highway Code', 'Rode Sign'];
       const currentIndex = banks.indexOf(this.currentQuestionBank);
       this.currentQuestionBank = banks[(currentIndex + 1) % banks.length];
     },
@@ -436,21 +437,10 @@ export default {
           break;
       }
     },
-    // 更新用户统计
-    async updateStats() {
-      try {
-        const [error, response] = await uni.request({
-          url: '/api/user/stats',
-          method: 'GET'
-        });
-        if (!error && response.statusCode === 200) {
-          this.userData.followers = response.data.followers;
-          this.userData.following = response.data.following;
-          this.userData.likes = response.data.likes;
-        }
-      } catch (error) {
-        console.error('Failed to update stats:', error);
-      }
+    getTestStatistics () {
+      getTestStatistics().then(res => {
+        console.log(res)
+      })
     }
   },
   onLoad() {
@@ -467,6 +457,7 @@ export default {
   onShow () {
     this.fetchUserData();
     this.queryMemberInfo()
+    this.getTestStatistics()
   }
 }
 </script>
