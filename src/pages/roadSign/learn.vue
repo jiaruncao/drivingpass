@@ -112,10 +112,17 @@ export default {
     },
     // 切换已读状态
     toggleReadStatus(index) {
-      this.signsList[index].is_read = !this.signsList[index].is_read;
-      this.$forceUpdate()
+      // this.signsList[index].is_read = !this.signsList[index].is_read;
+      // this.$forceUpdate()
+      // this.updateProgress();
+      // this.saveProgress();
+      
+      this.signsList[index].is_read = true;
       this.updateProgress();
       this.saveProgress();
+      
+      this.setStorageSyncSubjects(this.signsList[index].id, 'is_read', true)
+      
     },
     // 触摸开始
     onTouchStart(e) {
@@ -178,6 +185,8 @@ export default {
     updateProgress() {
       const readCount = this.signsList.filter(sign => sign.is_read).length;
       this.categoryProgress = Math.round((readCount / this.totalSigns) * 100);
+      
+      this.setStorageSyncCate(this.cate_id, 'progress', this.categoryProgress)
     },
     // 保存学习进度 - API调用示例
     async saveProgress() {
@@ -205,6 +214,42 @@ export default {
           this.updateProgress()
         }
       })
+    },
+    setStorageSyncSubjects (id, key, value) {
+      const subjects = uni.getStorageSync('subjects')
+      if (subjects && subjects.length) {
+        subjects.forEach(item => {
+          if (item.id == this.subject_id) {
+            item.cate.forEach(cate => {
+              if (cate.id == this.cate_id) {
+                cate.question.forEach(questionItem => {
+                  if (id == questionItem.id) {
+                    questionItem[key] = value
+                  }
+                })
+              }
+            })
+          }
+        })
+        // 更新缓存
+        uni.setStorageSync('subjects', subjects)
+      }
+    },
+    setStorageSyncCate (id, key, value) {
+      const subjects = uni.getStorageSync('subjects')
+      if (subjects && subjects.length) {
+        subjects.forEach(item => {
+          if (item.id == this.subject_id) {
+            item.cate.forEach(cate => {
+              if (cate.id == id) {
+                cate[key] = value
+              }
+            })
+          }
+        })
+        // 更新缓存
+        uni.setStorageSync('subjects', subjects)
+      }
     }
   },
   watch: {
@@ -215,7 +260,7 @@ export default {
   },
   onLoad(option) {
     this.cate_id = option.cate_id
-    
+    this.subject_id = option.subject_id
     // 取缓存数据
     const questions = uni.getStorageSync('questions');
     if (questions) {

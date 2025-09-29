@@ -129,16 +129,16 @@
           <view class="category-header" @tap="enterCategoryDetail(category)">
             <text class="category-title">{{ category.name }}</text>
             <view class="category-meta">
-              <text class="category-count">{{ category.total }} signs</text>
-              <text class="next-arrow">›</text>
+              <text class="category-count">{{ category.question.length }} signs</text>
+              <text class="next-arrow" style="margin-left: 10rpx;">›</text>
             </view>
           </view>
       
           <!-- 道路标志网格 -->
-          <view class="signs-grid" @tap="enterCategoryDetail(category)">
-            <view v-for="(sign, idx) in category.img_list" :key="idx" class="sign-item">
+          <view class="signs-grid">
+            <view v-for="(sign, idx) in category.question" :key="idx" class="sign-item" @tap="selectDetailSign(sign)">
               <!-- <view class="sign-icon" :class="sign.iconClass">{{ sign.symbol }}</view> -->
-              <image :src="'http://driving.asszo.com' + sign" class="sign-icon"></image>
+              <image :src="sign.title_video_url" class="sign-icon" mode="scaleToFill"></image>
             </view>
           </view>
       
@@ -163,7 +163,7 @@
         <view class="detail-signs-grid">
           <view v-for="sign in selectedSignCategory.signs" :key="sign.id" class="detail-sign-item" @tap="selectDetailSign(sign)">
             <view class="detail-sign-icon" :class="sign.iconClass">
-              <image :src="sign.title_video_url" mode=""></image>
+              <image :src="sign.title_video_url" mode="scaleToFill"></image>
             </view>
             <text class="detail-sign-name">{{ sign.title }}</text>
           </view>
@@ -262,18 +262,17 @@ export default {
         return this.roadSignCategories;
       }
 
-      return this.roadSignCategories.filter(category => category.name.includes(this.searchKeyword))
-      
-      // return this.roadSignCategories.map(category => {
-      //   console.log('263',category)
-      //   const filteredSigns = category.signs.filter(sign =>
-      //     sign.name.toLowerCase().includes(this.searchKeyword.toLowerCase())
-      //   );
-      //   return {
-      //     ...category,
-      //     signs: filteredSigns
-      //   };
-      // }).filter(category => category.signs.length > 0);
+      return this.roadSignCategories.map(category => {
+
+        const filteredSigns = category.question.filter(sign =>
+          sign.title.includes(this.searchKeyword)
+        );
+
+        return {
+          ...category,
+          question: filteredSigns
+        };
+      }).filter(category => category.question.length > 0);
     }
   },
   methods: {
@@ -436,22 +435,33 @@ export default {
     },
     // 获取分类数据
     async fetchCategories() {
-      try {
-        const response = await getThree({
-          kind: 'QUESTION',
-          subject_id: this.subject_id
-        })
-        if (response.code === 1) {
-          if (this.currentViewTitle == 'RodeSign') {
-            this.roadSignCategories = response.data;
-          } else {
+      
+      if (this.currentViewTitle == 'RodeSign') {
+        
+        // 获取本地的
+        const subjects = uni.getStorageSync('subjects')
+        
+        const roadData = subjects.filter(item => item.id == this.subject_id)[0].cate
+      
+        this.roadSignCategories = roadData
+        
+        // console.log(this.roadSignCategories)
+        
+      } else {
+        try {
+          const response = await getThree({
+            kind: 'QUESTION',
+            subject_id: this.subject_id
+          })
+          if (response.code === 1) {
             this.categories = response.data;
             this.selectedCategory = this.categories[0].id;
           }
+        } catch (error) {
+          console.error('Failed to fetch categories:', error);
         }
-      } catch (error) {
-        console.error('Failed to fetch categories:', error);
       }
+
     },
     // 获取题目
     async startTrain () {
@@ -501,13 +511,20 @@ export default {
           type: 'all'
         }
       }
-      const questions = this.selectSubjects(params)
-      uni.setStorageSync('questions', questions)
+      
       if (this.currentView == 'learn') {
+        const questions = this.selectSubjects(params)
+        uni.setStorageSync('questions', questions)
         this.startLearning()
       } else if (this.currentView == 'test') {
-        this.startTest()
+        // this.startTest()
+        startTrain(params).then(res => {
+          uni.setStorageSync('questions', res.data.data)
+          this.startTest()
+        })
       } else if (this.currentView == 'category-detail') {
+        const questions = this.selectSubjects(params)
+        uni.setStorageSync('questions', questions)
         this.selectedSignCategory.signs = questions
       }
       // startTrain(params).then(res => {
@@ -536,7 +553,7 @@ export default {
       console.log('Selected detail sign:', sign);
       // 这里可以导航到标志学习页面或显示标志详细信息
       uni.navigateTo({
-        url: `/pages/roadSign/learn?cate_id=${sign.cate_id}&categoryProgress=` +  this.selectedSignCategory.progress
+        url: `/pages/roadSign/learn?cate_id=${sign.cate_id}&categoryProgress=${this.selectedSignCategory.progress}&subject_id=${this.subject_id}`
       })
     },
     // 查询用户会员权益
@@ -1285,9 +1302,10 @@ export default {
 
 /* 道路标志网格 */
 .signs-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 15px;
+  display: flex;
+  flex-wrap: wrap;
+  // grid-template-columns: repeat(4, 1fr);
+  // gap: 15px;
   margin-bottom: 15px;
 }
 
@@ -1296,22 +1314,25 @@ export default {
 }
 
 .sign-item {
-  aspect-ratio: 1;
+  // aspect-ratio: 1;
+  width: 150rpx;
+  height: 150rpx;
+  margin-right: 20rpx;
   background: white;
   border-radius: 15px;
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-  transition: all 0.3s ease;
-  position: relative;
-  pointer-events: none; /* 阻止单个标志的点击事件 */
+  // transition: all 0.3s ease;
+  // position: relative;
+  // pointer-events: none; /* 阻止单个标志的点击事件 */
 }
 
 .sign-item image {
   width: 80%;
   height: 80%;
-  object-fit: contain;
+  // object-fit: contain;
 }
 
 /* 用CSS创建道路标志图标 */
@@ -1322,9 +1343,9 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
-  color: white;
-  font-weight: bold;
+  // font-size: 24px;
+  // color: white;
+  // font-weight: bold;
 }
 
 /* 禁止类标志 - 红色圆形 */

@@ -134,11 +134,10 @@
             <view class="options-list" v-if="mode == 'test'">
               <view v-for="(option, optIndex) in question.options_json" :key="optIndex" class="option-item" :class="optionClass(question, option)" @tap="selectOption(index, optIndex)">
                 <view class="option-label">
-                  <text
-                    v-if="!question.showAnswer || ((question.selectedOption != option.key) && (option.key != question.answer))">{{ option.key }}</text>
-                  <text v-else-if="option.key == question.answer" class="option-label-icon check">✓</text>
+                  <text>{{ option.key }}</text>
+                  <!-- <text v-else-if="option.key == question.answer" class="option-label-icon check">✓</text>
                   <text v-else-if="(question.selectedOption == option.key) && (option.key != question.answer)"
-                    class="option-label-icon cross">✗</text>
+                    class="option-label-icon cross">✗</text> -->
                 </view>
                 <text class="option-text">{{ option.value }}</text>
               </view>
@@ -577,12 +576,8 @@
         return question.selectedOption == question.answer;
       },
       optionClass (question, option) {
-        if (!question.showAnswer && question.selectedOption == option.key) {
+        if (question.showAnswer && question.selectedOption == option.key) {
           return 'selected'
-        } else if (question.showAnswer && (option.key == question.answer)) {
-          return 'correct'
-        } else if (question.showAnswer && (question.selectedOption == option.key) && (option.key != question.answer)) {
-          return 'incorrect'
         }
       },
       // 切换评论点赞

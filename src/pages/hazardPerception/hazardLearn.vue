@@ -1,78 +1,69 @@
 <template>
-  <view>
-    <view class="app">
+  <cover-view>
+    <cover-view class="app">
       <!-- 视频区域 - 点击任何地方都能添加标记 -->
-      <view class="video-container" @tap="addMarkAtCurrentTime">
-        <view class="video-content">
+      <cover-view class="video-container" @click="addMarkAtCurrentTime">
+        <cover-view class="video-content">
           <!-- <view class="road-scene">
             <view class="road-lines"></view>
           </view> -->
-          <video id="videoId" class="video" :autoplay="true" :controls="false" :show-center-play-btn="false" :src="title_video_url" muted playsinline></video>
-        </view>
-    
+          <video id="videoId" class="video" :autoplay="true" :controls="false" :show-center-play-btn="false" :src="title_video_url" muted :duration="duration" :enable-progress-gesture="false" @timeupdate="timeupdate"></video>
+        </cover-view>
+        <cover-view class="exit-button" @click.stop="exitLearnMode">
+          <cover-view>
+            exit
+          </cover-view>
+        </cover-view>
         <!-- 退出按钮 -->
-        <button class="exit-button" @tap.stop="exitLearnMode">Exit</button>
-      </view>
+        <!-- <cover-view>
+          <button class="exit-button" @tap.stop="exitLearnMode">Exit</button>
+        </cover-view> -->
+        
+      </cover-view>
     
       <!-- 底部控制区域 -->
-      <view class="bottom-controls">
+      <cover-view class="bottom-controls">
         <!-- 细进度条 -->
-        <view class="thin-progress-bar">
-          <view class="thin-progress-fill" :style="{width: progress + '%'}"></view>
-        </view>
+        <cover-view class="thin-progress-bar">
+          <cover-view class="thin-progress-fill" :style="{width: progress + '%'}"></cover-view>
+        </cover-view>
     
         <!-- 得分条 -->
-        <view class="score-bar-container">
+        <cover-view class="score-bar-container">
           <!-- 得分区间 - 分段显示，模拟两个危险区间 -->
           <!-- 第一个危险区间：15%-45% -->
           <!-- <view class="gray-zone" style="left: 0; width: 15%;"></view> -->
-          <view v-for="(item, index) in score_list" :key="index">
-            <view v-for="(jtem, idx) in item" :key="idx" class="score-zone" :class="'zone-' + jtem.score" 
+          <cover-view v-for="(item, index) in score_list" :key="index">
+            <cover-view v-for="(jtem, idx) in item" :key="idx" class="score-zone" :class="'zone-' + jtem.score" 
             :style="{
               'left': jtem.startTime / duration * 100 + '%',
               'width': (jtem.endTime - jtem.startTime) / duration * 100 + '%'
             }">
-              {{jtem.score}}
-            </view>
-          </view>
-          
-          <!-- <view class="score-zone zone-4" style="left: 20%; width: 5%;">4</view>
-          <view class="score-zone zone-3" style="left: 25%; width: 10%;">3</view>
-          <view class="score-zone zone-2" style="left: 35%; width: 10%;">2</view> -->
-          
-          <!-- 中间无分区域 -->
-          <!-- <view class="gray-zone" style="left: 45%; width: 15%;"></view> -->
-          
-          <!-- 第二个危险区间：60%-80% -->
-          <!-- <view class="score-zone zone-5" style="left: 60%; width: 5%;">5</view> -->
-          <!-- <view class="score-zone zone-4" style="left: 65%; width: 5%;">4</view>
-          <view class="score-zone zone-3" style="left: 70%; width: 5%;">3</view>
-          <view class="score-zone zone-2" style="left: 75%; width: 5%;">2</view> -->
-          
-          <!-- 结尾无分区域 -->
-          <!-- <view class="gray-zone" style="left: 80%; width: 20%;"></view> -->
-    
+              <cover-view>{{jtem.score}}</cover-view>
+            </cover-view>
+          </cover-view>
+
           <!-- 用户标记的旗子 -->
-          <view class="user-marks">
-            <view v-for="(mark, index) in userMarks" 
+          <cover-view class="user-marks">
+            <cover-view v-for="(mark, index) in userMarks" 
                   :key="mark.id"
                   class="user-mark" 
                   :style="{left: mark.position + '%'}"
                   @tap.stop="showMarkInfo(mark, index)">
-              <view class="mark-tooltip">
-                Click {{ index + 1 }} - {{ mark.time }}s ({{ mark.score }} points)
-              </view>
-              <view class="flag-container">
-                <view class="flag-pole"></view>
-                <view class="flag-banner"></view>
-              </view>
-            </view>
-          </view>
-        </view>
-      </view>
-    </view>
+              <cover-view class="mark-tooltip">
+                <cover-view>Click {{ index + 1 }} - {{ mark.time }}s ({{ mark.score }} points)</cover-view>
+              </cover-view>
+              <cover-view class="flag-container">
+                <cover-view class="flag-pole"></cover-view>
+                <cover-view class="flag-banner"></cover-view>
+              </cover-view>
+            </cover-view>
+          </cover-view>
+        </cover-view>
+      </cover-view>
+    </cover-view>
     <u-modal :show="modalShow" :title="modalTitle" :showCancelButton="showCancelButton" :content='modalContent' :cancelText="cancelText" :confirmText="confirmText" @cancel="cancel" @confirm="confirm"></u-modal>
-  </view>
+  </cover-view>
   
 </template>
 
@@ -118,9 +109,17 @@ export default {
         }
       }, 100);
     },
-    
+    // 更新视频进度
+    timeupdate (e) {
+      console.log('更新进度',e)
+      
+      this.currentTime = e.detail.currentTime; // 获取当前播放时间
+      this.progress = (this.currentTime / e.detail.duration) * 100; // 计算进度条宽度
+      // this.sliderValue = (this.currentTime / this.duration) * 100; // 设置slider的值，用于拖动时显示当前位置的时间点提示（如果需要）
+    },
     // 在当前时间添加标记
     addMarkAtCurrentTime() {
+      console.log('标记点')
       // 检查是否已被取消资格
       if (this.scoreDisqualified) {
         return;
@@ -234,6 +233,7 @@ export default {
     
     // 退出学习模式
     exitLearnMode() {
+      console.log('点击退出')
       if (this.playInterval) {
         clearInterval(this.playInterval);
       }
@@ -284,8 +284,6 @@ export default {
     recordAdd () {
       recordAdd({
         question_id: this.questionId
-      }).then(res => {
-
       })
     }
   },
@@ -297,7 +295,7 @@ export default {
     }
     console.log('Hazard Perception Learn Mode loaded');
     // 自动开始播放
-    this.startAutoPlay();
+    // this.startAutoPlay();
     // #ifdef APP-PLUS
     // APP端强制横屏
     plus.screen.lockOrientation('landscape-primary');
@@ -358,57 +356,15 @@ export default {
   .video {
     width: 100%;
     height: 100%;
-    object-fit: fill;
+    // object-fit: fill;
   }
 }
-
-/* 道路模拟 */
-.road-scene {
+.video-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
-  position: relative;
-  background: linear-gradient(to bottom, 
-    #87CEEB 0%,    /* 天空 */
-    #87CEEB 35%,   
-    #90A955 35%,   /* 地平线 */
-    #4a5f3a 45%,   /* 远山 */
-    #3d4f33 55%,   /* 近景 */
-    #2a2a2a 55%,   /* 路面 */
-    #1a1a1a 100%
-  );
-}
-
-.road-scene::before {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 200%;
-  height: 45%;
-  background: linear-gradient(to top,
-    #2a2a2a 0%,
-    #3a3a3a 50%,
-    transparent 100%
-  );
-  clip-path: polygon(45% 100%, 50% 0%, 55% 100%);
-}
-
-/* 道路中线 */
-.road-lines {
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 8rpx;
-  height: 45%;
-  background: repeating-linear-gradient(
-    to bottom,
-    #FFD700 0rpx,
-    #FFD700 40rpx,
-    transparent 40rpx,
-    transparent 80rpx
-  );
 }
 
 /* 退出按钮 */
@@ -417,13 +373,13 @@ export default {
   top: 60rpx;
   left: 60rpx;
   padding: 20rpx 50rpx;
-  background: rgba(0, 0, 0, 0.6);
-  color: white;
+  background: #fff;
+  color: #000;
   border: none;
   border-radius: 50rpx;
   font-size: 32rpx;
   font-weight: 500;
-  z-index: 100;
+  z-index: 10000;
   transition: all 0.3s ease;
 }
 

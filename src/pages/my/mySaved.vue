@@ -342,7 +342,7 @@
                   'user-selected': question.user_answer === option.key
                 }">
                 <text class="option-marker">{{ option.key }}</text>
-                <text>{{ option.value }}</text>
+                <text style="margin-left: 20rpx;">{{ option.value }}</text>
               </view>
             </view>
             
@@ -935,8 +935,23 @@ export default {
               title: 'Cleared',
               icon: 'success'
             });
+            
+            const subjects = uni.getStorageSync('subjects')
+            if (subjects && subjects.length) {
+              subjects.forEach(item => {
+                item.cate.forEach(cate => {
+                  cate.question.forEach(questionItem => {
+                    questionItem['collected'] = false
+                  })
+                })
+              })
+              // 更新缓存
+              uni.setStorageSync('subjects', subjects)
+            }
           }
         })
+        // 清除本地缓存
+        
       } else if (this.modalType == 'RemoveQuestion') {
         wrongDelete({
           question_id: this.questionId
