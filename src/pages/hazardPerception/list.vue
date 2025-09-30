@@ -158,10 +158,14 @@ export default {
         video.status = 'viewed';
       }
       
-      // 导航到视频播放页面
+      // // 导航到视频播放页面
+      // uni.navigateTo({
+      //   url: `/pages/hazardPerception/hazardLearn?id=${video.id}`
+      // });
+      
       uni.navigateTo({
         url: `/pages/hazardPerception/hazardLearn?id=${video.id}`
-      });
+      })
     },
     // 关闭模态框
     closeModal() {

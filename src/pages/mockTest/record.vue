@@ -134,7 +134,11 @@ import {getTestStatistics} from '@/http/api/testQuestions.js'
 export default {
   data() {
     return {
-      info: {},
+      info: {
+        days_left: {
+          days: 0
+        }
+      },
       // 学员信息
       traineeInfo: {
         name: 'StormChaser',

@@ -1,74 +1,98 @@
 <template>
-  <cover-view>
-    <cover-view class="app">
+  <view>
+    <view class="app">
       <!-- 视频区域 - 点击任何地方都能添加标记 -->
-      <cover-view class="video-container" @click="addMarkAtCurrentTime">
-        <cover-view class="video-content">
+      <view class="video-container">
+        <view class="video-content">
           <!-- <view class="road-scene">
             <view class="road-lines"></view>
           </view> -->
-          <video id="videoId" class="video" :autoplay="true" :controls="false" :show-center-play-btn="false" :src="title_video_url" muted :duration="duration" :enable-progress-gesture="false" @timeupdate="timeupdate"></video>
-        </cover-view>
-        <cover-view class="exit-button" @click.stop="exitLearnMode">
-          <cover-view>
-            exit
-          </cover-view>
-        </cover-view>
-        <!-- 退出按钮 -->
-        <!-- <cover-view>
-          <button class="exit-button" @tap.stop="exitLearnMode">Exit</button>
-        </cover-view> -->
-        
-      </cover-view>
+          <!-- <video id="videoId" class="video" :autoplay="true" :controls="false" :show-center-play-btn="false" :src="title_video_url" muted :enable-progress-gesture="false" @timeupdate="timeupdate">
+          </video> -->
+          
+          <DomVideoPlayer
+            ref="domVideoPlayer"
+            :src="title_video_url"
+            :autoplay="true"
+            loop
+            controls
+            muted
+          />
+          
+          <view class="video-overlay" @tap.stop="addMarkAtCurrentTime">
+            <view class="exit-button">
+              <view class="exit-button-text" @tap.stop="exitLearnMode">
+                exit
+              </view>
+            </view>
+          </view>
+          
+          <!-- <cover-view class="modal" v-if="modalShow">
+            <cover-view class="modal-content">
+              <cover-view class="modal-title">提示</cover-view>
+              <cover-view class="modal-text">这是一个覆盖在视频上的模态框</cover-view>
+              <cover-view class="modal-buttons">
+                <cover-view class="modal-btn" @tap="closeModal">取消</cover-view>
+                <cover-view class="modal-btn confirm" @tap="confirmAction">确认</cover-view>
+              </cover-view>
+            </cover-view>
+          </cover-view> -->
+        </view>
+      </view>
     
       <!-- 底部控制区域 -->
-      <cover-view class="bottom-controls">
+      <view class="bottom-controls">
         <!-- 细进度条 -->
-        <cover-view class="thin-progress-bar">
-          <cover-view class="thin-progress-fill" :style="{width: progress + '%'}"></cover-view>
-        </cover-view>
+        <view class="thin-progress-bar">
+          <view class="thin-progress-fill" :style="{width: progress + '%'}"></view>
+        </view>
     
         <!-- 得分条 -->
-        <cover-view class="score-bar-container">
+        <view class="score-bar-container">
           <!-- 得分区间 - 分段显示，模拟两个危险区间 -->
           <!-- 第一个危险区间：15%-45% -->
           <!-- <view class="gray-zone" style="left: 0; width: 15%;"></view> -->
-          <cover-view v-for="(item, index) in score_list" :key="index">
-            <cover-view v-for="(jtem, idx) in item" :key="idx" class="score-zone" :class="'zone-' + jtem.score" 
+          <view v-for="(item, index) in score_list" :key="index">
+            <view v-for="(jtem, idx) in item" :key="idx" class="score-zone" :class="'zone-' + jtem.score" 
             :style="{
               'left': jtem.startTime / duration * 100 + '%',
               'width': (jtem.endTime - jtem.startTime) / duration * 100 + '%'
             }">
-              <cover-view>{{jtem.score}}</cover-view>
-            </cover-view>
-          </cover-view>
+              <view>{{jtem.score}}</view>
+            </view>
+          </view>
 
           <!-- 用户标记的旗子 -->
-          <cover-view class="user-marks">
-            <cover-view v-for="(mark, index) in userMarks" 
+          <view class="user-marks">
+            <view v-for="(mark, index) in userMarks" 
                   :key="mark.id"
                   class="user-mark" 
                   :style="{left: mark.position + '%'}"
                   @tap.stop="showMarkInfo(mark, index)">
-              <cover-view class="mark-tooltip">
-                <cover-view>Click {{ index + 1 }} - {{ mark.time }}s ({{ mark.score }} points)</cover-view>
-              </cover-view>
-              <cover-view class="flag-container">
-                <cover-view class="flag-pole"></cover-view>
-                <cover-view class="flag-banner"></cover-view>
-              </cover-view>
-            </cover-view>
-          </cover-view>
-        </cover-view>
-      </cover-view>
-    </cover-view>
-    <u-modal :show="modalShow" :title="modalTitle" :showCancelButton="showCancelButton" :content='modalContent' :cancelText="cancelText" :confirmText="confirmText" @cancel="cancel" @confirm="confirm"></u-modal>
-  </cover-view>
+              <view class="mark-tooltip">
+                <view>Click {{ index + 1 }} - {{ mark.time }}s ({{ mark.score }} points)</view>
+              </view>
+              <view class="flag-container">
+                <view class="flag-pole"></view>
+                <view class="flag-banner"></view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </view>
+    </view>
+    
+    
+    <view>
+      <u-modal :show="modalShow" :title="modalTitle" width="400rpx" :showCancelButton="showCancelButton" :content='modalContent' :cancelText="cancelText" :confirmText="confirmText" @cancel="cancel" @confirm="confirm"></u-modal>
+    </view>
+  </view>
   
 </template>
 
 <script>
 import {getQuestionDetail, recordAdd} from '@/http/api/testQuestions.js'
+import DomVideoPlayer from 'uniapp-video-player'
 export default {
   data() {
     return {
@@ -111,7 +135,7 @@ export default {
     },
     // 更新视频进度
     timeupdate (e) {
-      console.log('更新进度',e)
+      // console.log('更新进度',e)
       
       this.currentTime = e.detail.currentTime; // 获取当前播放时间
       this.progress = (this.currentTime / e.detail.duration) * 100; // 计算进度条宽度
@@ -356,7 +380,7 @@ export default {
   .video {
     width: 100%;
     height: 100%;
-    // object-fit: fill;
+    /* object-fit: fill; */
   }
 }
 .video-overlay {
@@ -365,22 +389,32 @@ export default {
   left: 0;
   width: 100%;
   height: 100%;
+  z-index: 100;
 }
 
 /* 退出按钮 */
 .exit-button {
   position: absolute;
-  top: 60rpx;
-  left: 60rpx;
-  padding: 20rpx 50rpx;
-  background: #fff;
-  color: #000;
+  top: 1.5rem;
+  left: 1.5rem;
+  /* padding: 0.5rem 1.25rem; */
+  background: rgba(255,255,255,0.3);
+  color: #fff;
   border: none;
-  border-radius: 50rpx;
-  font-size: 32rpx;
+  border-radius: 1.25rem;
+  font-size: 1.2rem;
   font-weight: 500;
   z-index: 10000;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
+  width: 3.5rem;
+  height: 2rem;
+  line-height: 2rem;
+  text-align:center;
+  .exit-button-text {
+    width: 3.5rem;
+    height: 2rem;
+    line-height: 2rem;
+  }
 }
 
 .exit-button:hover {
@@ -389,29 +423,29 @@ export default {
 
 /* 底部控制区域 */
 .bottom-controls {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 56rpx;
+  /* position: absolute; */
+  /* bottom: 0; */
+  /* left: 0; */
+  /* right: 0; */
+  height: 2rem;
   background: transparent;
 }
 
 /* 细进度条 */
 .thin-progress-bar {
   position: absolute;
-  bottom: 50rpx;
+  bottom: 1.85rem;
   left: 0;
   right: 0;
-  height: 6rpx;
+  height: 0.15rem;
   background: rgba(255, 255, 255, 0.2);
 }
 
 .thin-progress-fill {
-  height: 6rpx;
+  height: 0.15rem;
   background: rgba(255, 0, 0, 0.8);
   width: 0%;
-  transition: width 0.1s linear;
+  transition: width 0.25s linear;
 }
 
 /* 得分条容器 */
@@ -420,7 +454,7 @@ export default {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 50rpx;
+  height: 1.85rem;
   display: flex;
   align-items: stretch;
   background: #f5f5f5;
@@ -440,9 +474,9 @@ export default {
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 24rpx;
+  font-size: 1rem;
   font-weight: bold;
-  text-shadow: 0 2rpx 4rpx rgba(0,0,0,0.5);
+  text-shadow: 0 0.05rem 0.1rem rgba(0,0,0,0.5);
   height: 100%;
 }
 
@@ -470,7 +504,7 @@ export default {
   right: 0;
   top: 20%;
   bottom: 20%;
-  width: 2rpx;
+  width: 0.05rem;
   background: rgba(255,255,255,0.3);
 }
 
@@ -491,7 +525,7 @@ export default {
 .user-mark {
   position: absolute;
   top: 0;
-  // transform: translate(-50%, -50%);
+  /* transform: translate(-50%, -50%); */
   pointer-events: auto;
   z-index: 10;
   transition: transform 0.2s ease;
@@ -505,29 +539,29 @@ export default {
 /* 旗子样式 */
 .flag-container {
   position: relative;
-  width: 24rpx;
-  height: 50rpx;
+  width: 1rem;
+  height: 1.85rem;
 }
 
 .flag-pole {
   position: absolute;
   left: 0;
   top: 0;
-  width: 4rpx;
-  height: 50rpx;
+  width: 0.15rem;
+  height: 1.85rem;
   background: #333;
 }
 
 .flag-banner {
   position: absolute;
-  left: 4rpx;
+  left: 0.1rem;
   top: 0;
   width: 0;
   height: 0;
   border-style: solid;
-  border-width: 12rpx 0 12rpx 24rpx;
+  border-width: 0.5rem 0 0.5rem 1rem;
   border-color: transparent transparent transparent #FF0000;
-  filter: drop-shadow(0 2rpx 6rpx rgba(0,0,0,0.3));
+  filter: drop-shadow(0 0.05rem 0.15rem rgba(0,0,0,0.3));
 }
 
 /* 悬停提示 */
@@ -536,12 +570,12 @@ export default {
   bottom: 100%;
   left: 50%;
   transform: translateX(-50%);
-  margin-bottom: 20rpx;
-  padding: 12rpx 24rpx;
+  margin-bottom: 0.5rem;
+  padding: 0.3rem 0.6rem;
   background: rgba(0, 0, 0, 0.9);
   color: white;
-  font-size: 24rpx;
-  border-radius: 12rpx;
+  font-size: 0.6rem;
+  border-radius: 0.3rem;
   white-space: nowrap;
   opacity: 0;
   pointer-events: none;
@@ -552,29 +586,106 @@ export default {
   opacity: 1;
 }
 
+.modal {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 101;
+  .modal-content {
+    width: 400rpx;
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+  }
+  
+  .modal-title {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 15px;
+  }
+  
+  .modal-text {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 20px;
+  }
+  
+  .modal-buttons {
+    display: flex;
+    justify-content: space-around;
+  }
+  
+  .modal-btn {
+    flex: 1;
+    padding: 10px 0;
+    text-align: center;
+    border-right: 1px solid #eee;
+  }
+  
+  .modal-btn:last-child {
+    border-right: none;
+  }
+  
+  .modal-btn.confirm {
+    color: #007AFF;
+  }
+  
+  .custom-controls {
+    position: absolute;
+    bottom: 50px;
+    right: 20px;
+    z-index: 100;
+  }
+  
+  .control-btn {
+    width: 40px;
+    height: 40px;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .control-icon {
+    width: 24px;
+    height: 24px;
+  }
+}
+
 /* 响应式调整 - 小屏幕适配 */
 @media screen and (max-width: 375px) {
   .exit-button {
-    top: 40rpx;
-    left: 40rpx;
-    padding: 16rpx 40rpx;
-    font-size: 28rpx;
+    top: 1rem;
+    left: 1rem;
+    padding: 0.4rem 1rem;
+    font-size: 0.7rem;
   }
 
   .score-zone {
-    font-size: 20rpx;
+    font-size: 0.5rem;
   }
 
   .bottom-controls {
-    height: 46rpx;
+    height: 1.15rem;
   }
 
   .thin-progress-bar {
-    bottom: 46rpx;
+    bottom: 1.15rem;
   }
 
   .score-bar-container {
-    height: 46rpx;
+    height: 1.15rem;
   }
 }
+
+/* 转换说明：
+   基于小程序rpx到px的转换逻辑：在750px设计稿中，1rpx = 0.5px
+   然后按照 font-size: 16px 进行rem转换：rem = px / 16
+   例如：60rpx = 60 * 0.5px = 30px = 30 / 16 = 1.875rem
+   但考虑到实际视觉效果，这里采用更合理的转换比例
+*/
 </style>
