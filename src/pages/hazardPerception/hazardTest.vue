@@ -2,16 +2,45 @@
   <view>
     <view class="app">
       <!-- 视频区域 - 点击任何地方都能添加标记 -->
-      <view class="video-container" @tap="addMarkAtCurrentTime">
+      <view class="video-container">
         <view class="video-content">
           <!-- <view class="road-scene">
             <view class="road-lines"></view>
           </view> -->
-          <video id="videoId" class="video" :autoplay="true" :controls="false" :show-center-play-btn="false" :src="title_video_url" muted playsinline></video>
+          <!-- <video id="videoId" class="video" :autoplay="true" :controls="false" :show-center-play-btn="false" :src="title_video_url" muted :enable-progress-gesture="false" @timeupdate="timeupdate">
+          </video> -->
+          
+          <DomVideoPlayer
+            style="width:100%;height: 100%;"
+            ref="domVideoPlayer"
+            :src="title_video_url"
+            :autoplay="autoplay"
+            :loop="loop"
+            :controls="controls"
+            :muted="muted"
+            :isLoading="true"
+            @timeupdate="timeupdate"
+          />
+          
+          <view class="video-overlay" @tap.stop="addMarkAtCurrentTime">
+            <view class="exit-button">
+              <view class="exit-button-text" @tap.stop="exitLearnMode">
+                exit
+              </view>
+            </view>
+          </view>
+          
+          <!-- <cover-view class="modal" v-if="modalShow">
+            <cover-view class="modal-content">
+              <cover-view class="modal-title">提示</cover-view>
+              <cover-view class="modal-text">这是一个覆盖在视频上的模态框</cover-view>
+              <cover-view class="modal-buttons">
+                <cover-view class="modal-btn" @tap="closeModal">取消</cover-view>
+                <cover-view class="modal-btn confirm" @tap="confirmAction">确认</cover-view>
+              </cover-view>
+            </cover-view>
+          </cover-view> -->
         </view>
-    
-        <!-- 退出按钮 -->
-        <button class="exit-button" @tap.stop="exitTestMode">Exit</button>
       </view>
     
       <!-- 底部控制区域 -->
@@ -21,11 +50,21 @@
           <view class="thin-progress-fill" :style="{width: progress + '%'}"></view>
         </view>
     
-        <!-- 测试模式得分条 - 不显示得分区间，只显示灰色背景 -->
+        <!-- 得分条 -->
         <view class="score-bar-container">
-          <!-- 全灰色背景，不显示得分 -->
-          <view class="test-mode-bar"></view>
-    
+          <!-- 得分区间 - 分段显示，模拟两个危险区间 -->
+          <!-- 第一个危险区间：15%-45% -->
+          <!-- <view class="gray-zone" style="left: 0; width: 15%;"></view> -->
+          <view v-for="(item, index) in score_list" :key="index">
+            <view v-for="(jtem, idx) in item" :key="idx" class="score-zone" :class="'zone-' + jtem.score" 
+            :style="{
+              'left': jtem.startTime / duration * 100 + '%',
+              'width': (jtem.endTime - jtem.startTime) / duration * 100 + '%'
+            }">
+              <view>{{jtem.score}}</view>
+            </view>
+          </view>
+
           <!-- 用户标记的旗子 -->
           <view class="user-marks">
             <view v-for="(mark, index) in userMarks" 
@@ -33,6 +72,9 @@
                   class="user-mark" 
                   :style="{left: mark.position + '%'}"
                   @tap.stop="showMarkInfo(mark, index)">
+              <view class="mark-tooltip">
+                <view>Click {{ index + 1 }} - {{ mark.time }}s ({{ mark.score }} points)</view>
+              </view>
               <view class="flag-container">
                 <view class="flag-pole"></view>
                 <view class="flag-banner"></view>
@@ -41,96 +83,110 @@
           </view>
         </view>
       </view>
+    </view>
     
-      <!-- 结果弹窗 -->
-      <view v-if="showResult" class="result-modal">
-        <view class="result-backdrop" @tap.stop></view>
-        <view class="result-content">
-          <view class="result-header">
-            <text class="result-title">Test Complete</text>
+    <!-- 结果弹窗 -->
+    <view v-if="showResult" class="result-modal">
+      <view class="result-backdrop" @tap.stop></view>
+      <view class="result-content">
+        <view class="result-header">
+          <text class="result-title">Test Complete</text>
+        </view>
+        
+        <view class="result-score">
+          <text class="score-label">Your Score</text>
+          <view class="score-display">
+            <text class="score-number">{{ totalScore }}</text>
+            <text class="score-divider">/</text>
+            <text class="score-total">10</text>
           </view>
           
-          <view class="result-score">
-            <text class="score-label">Your Score</text>
-            <view class="score-display">
-              <text class="score-number">{{ totalScore }}</text>
-              <text class="score-divider">/</text>
-              <text class="score-total">10</text>
-            </view>
-            
-            <!-- 得分状态 -->
-            <view class="score-status" :class="scoreStatusClass">
-              <text class="status-text">{{ scoreStatusText }}</text>
-            </view>
-          </view>
-    
-          <!-- 标记统计 -->
-          <view class="result-stats">
-            <view class="stat-item">
-              <text class="stat-label">Total Clicks</text>
-              <text class="stat-value">{{ clickCount }}</text>
-            </view>
-            <view class="stat-item">
-              <text class="stat-label">Valid Marks</text>
-              <text class="stat-value">{{ validMarksCount }}</text>
-            </view>
-          </view>
-    
-          <!-- 操作按钮 -->
-          <view class="result-actions">
-            <button class="result-button exit-btn" @tap="handleExit">
-              Exit
-            </button>
-            <button class="result-button review-btn" @tap="handleReview">
-              Review
-            </button>
-          </view>
-        </view>
-      </view>
-    
-      <!-- Review模式遮罩 -->
-      <view v-if="reviewMode" class="review-overlay">
-        <view class="review-bar">
-          <view v-for="(item, index) in score_list" :key="index">
-            <view v-for="(jtem, idx) in item" :key="idx" class="score-zone" :class="'zone-' + jtem.score" 
-            :style="{
-              'left': jtem.startTime / duration * 100 + '%',
-              'width': (jtem.endTime - jtem.startTime) / duration * 100 + '%'
-            }">
-              {{jtem.score}}
-            </view>
+          <!-- 得分状态 -->
+          <view class="score-status" :class="scoreStatusClass">
+            <text class="status-text">{{ scoreStatusText }}</text>
           </view>
         </view>
         
-        <button class="close-review-btn" @tap="closeReview">
-          Close Review
-        </button>
+        <!-- 标记统计 -->
+        <view class="result-stats">
+          <view class="stat-item">
+            <text class="stat-label">Total Clicks</text>
+            <text class="stat-value">{{ clickCount }}</text>
+          </view>
+          <view class="stat-item">
+            <text class="stat-label">Valid Marks</text>
+            <text class="stat-value">{{ validMarksCount }}</text>
+          </view>
+        </view>
+        
+        <!-- 操作按钮 -->
+        <view class="result-actions">
+          <button class="result-button exit-btn" @tap="handleExit">
+            Exit
+          </button>
+          <button class="result-button review-btn" @tap="handleReview">
+            Review
+          </button>
+        </view>
       </view>
     </view>
+        
+    <!-- Review模式遮罩 -->
+    <view v-if="reviewMode" class="review-overlay">
+      <view class="review-bar">
+        <view v-for="(item, index) in score_list" :key="index">
+          <view v-for="(jtem, idx) in item" :key="idx" class="score-zone" :class="'zone-' + jtem.score" 
+          :style="{
+            'left': jtem.startTime / duration * 100 + '%',
+            'width': (jtem.endTime - jtem.startTime) / duration * 100 + '%'
+          }">
+            {{jtem.score}}
+          </view>
+        </view>
+      </view>
+      
+      <button class="close-review-btn" @tap="closeReview">
+        Close Review
+      </button>
+    </view>
     
-    <u-modal :show="modalShow" :title="modalTitle" :showCancelButton="true" :content='modalContent' :cancelText="cancelText" :confirmText="confirmText" @cancel="cancel" @confirm="confirm"></u-modal>
+    
+    <view>
+      <u-modal :show="modalShow" :title="modalTitle" :showCancelButton="showCancelButton" :content='modalContent' :cancelText="cancelText" :confirmText="confirmText" @cancel="cancel" @confirm="confirm"></u-modal>
+    </view>
   </view>
   
 </template>
 
 <script>
+import {getQuestionDetail, recordAdd} from '@/http/api/testQuestions.js'
+import DomVideoPlayer from 'uniapp-video-player'
 export default {
+  components: {
+    DomVideoPlayer
+  },
   data() {
     return {
       questionId: null,
       title_video_url: null,
+      autoplay: true, // 是否自动播放
+      loop: false, // 是否循环播放
+      controls: false, // 是否显示控制栏
+      muted: false, // 是否静音
+      isLoading: false, // Android系统加载时显示loading(为了遮挡安卓的黑色按钮)
+      objectFit: 'contain', // 视频尺寸与video区域的适应模式
       score_list: [],
       currentTime: 0, // 当前时间（秒）
-      duration: 70, // 视频总时长（秒）
+      duration: 20, // 视频总时长（秒）
       progress: 0, // 进度百分比
       userMarks: [], // 用户标记的危险点
       playInterval: null, // 播放定时器
       clickCount: 0, // 点击计数
       recentClicks: [], // 最近的点击时间记录
-      scoreDisqualified: false, // 分数是否被取消
+      scoreDisqualified: false ,// 分数是否被取消
       showResult: false, // 是否显示结果弹窗
       totalScore: 0, // 总得分
-      reviewMode: false, // 是否处于review模式
+      reviewMode: true, // 是否处于review模式
       testCompleted: false ,// 测试是否已完成
       modalShow: false,
       modalTitle: '',
@@ -141,81 +197,42 @@ export default {
       confirmText: 'Confirm'
     }
   },
-  
-  computed: {
-    // 计算有效标记数量
-    validMarksCount() {
-      return this.userMarks.filter(mark => mark.score > 0).length;
-    },
-    
-    // 得分状态样式类
-    scoreStatusClass() {
-      if (this.totalScore >= 8) return 'excellent';
-      if (this.totalScore >= 5) return 'good';
-      if (this.totalScore >= 3) return 'pass';
-      return 'fail';
-    },
-    
-    // 得分状态文字
-    scoreStatusText() {
-      if (this.totalScore >= 8) return 'Excellent!';
-      if (this.totalScore >= 5) return 'Good Job!';
-      if (this.totalScore >= 3) return 'Pass';
-      return 'Need Practice';
-    }
-  },
-  
   methods: {
     // 自动播放
     startAutoPlay() {
       this.playInterval = setInterval(() => {
         if (this.currentTime < this.duration) {
-          this.currentTime += 0.1;
+          this.currentTime += 1;
           this.progress = (this.currentTime / this.duration) * 100;
         } else {
-          // 视频播放完成
           clearInterval(this.playInterval);
           this.currentTime = this.duration;
           this.progress = 100;
-          this.onTestComplete();
+          // 记录题目
+          this.recordAdd()
+          // 计算分数
         }
       }, 100);
     },
-    
-    // 测试完成
-    onTestComplete() {
-      this.testCompleted = true;
-      this.calculateTotalScore();
-      // 延迟显示结果，给用户一个缓冲
-      setTimeout(() => {
-        this.showResult = true;
-      }, 500);
-    },
-    
-    // 计算总分
-    calculateTotalScore() {
-      // 取最高的两个得分
-      const sortedMarks = [...this.userMarks]
-        .filter(mark => mark.score > 0)
-        .sort((a, b) => b.score - a.score);
+    // durationchange (e) {
+    //   this.duration = e
+    //   console.log('总时长', e)
+    // },
+    // 更新视频进度
+    timeupdate (e) {
+      console.log('更新进度',e)
       
-      // 计算总分（最多10分 = 5+5）
-      if (sortedMarks.length >= 2) {
-        this.totalScore = sortedMarks[0].score + sortedMarks[1].score;
-      } else if (sortedMarks.length === 1) {
-        this.totalScore = sortedMarks[0].score;
-      } else {
-        this.totalScore = 0;
+      this.currentTime = e; // 获取当前播放时间
+      this.progress = (this.currentTime / 20.04) * 100; // 计算进度条宽度
+      
+      if (this.progress == 100) {
+        this.recordAdd()
       }
+      // this.sliderValue = (this.currentTime / this.duration) * 100; // 设置slider的值，用于拖动时显示当前位置的时间点提示（如果需要）
     },
-    
     // 在当前时间添加标记
     addMarkAtCurrentTime() {
-      // 如果测试已完成，不再允许点击
-      if (this.testCompleted) {
-        return;
-      }
-      
+      console.log('标记点')
       // 检查是否已被取消资格
       if (this.scoreDisqualified) {
         return;
@@ -226,9 +243,11 @@ export default {
         return;
       }
 
-      // 计算当前进度对应的得分（内部计算，不显示给用户）
+      // 计算当前进度对应的得分
+      // 得分区间设置（只在危险区间内有分数）
       let score = 0;
       
+      // 判断得分
       this.score_list.forEach((item) => {
         item.forEach(jtem => {
           if (this.progress >= jtem.startTime && this.progress <= jtem.endTime) {
@@ -236,33 +255,7 @@ export default {
           }
         })
       })
-      
-      
-      // 第一个危险区间：15%-45%
-      // if (this.progress >= 15 && this.progress < 20) {
-      //   score = 5;
-      // } else if (this.progress >= 20 && this.progress < 25) {
-      //   score = 4;
-      // } else if (this.progress >= 25 && this.progress < 35) {
-      //   score = 3;
-      // } else if (this.progress >= 35 && this.progress < 45) {
-      //   score = 2;
-      // }
-      // // 第二个危险区间：60%-80%
-      // else if (this.progress >= 60 && this.progress < 65) {
-      //   score = 5;
-      // } else if (this.progress >= 65 && this.progress < 70) {
-      //   score = 4;
-      // } else if (this.progress >= 70 && this.progress < 75) {
-      //   score = 3;
-      // } else if (this.progress >= 75 && this.progress < 80) {
-      //   score = 2;
-      // }
-      // // 其他区域不得分
-      // else {
-      //   score = 0;
-      // }
-      
+      console.log('this.progress', this.progress)
       // 添加标记
       this.addMark(this.progress, score);
     },
@@ -271,11 +264,11 @@ export default {
     checkForCheating() {
       const now = Date.now();
       
-      // 规则1: 两次点击之间至少要间隔0.5秒
+      // 规则1: 两次点击之间至少要间隔0.5秒（500ms）
       if (this.recentClicks.length > 0) {
         const lastClick = this.recentClicks[this.recentClicks.length - 1];
         if (now - lastClick < 500) {
-          this.handleCheating('Clicks too fast');
+          this.handleCheating('Clicks too fast (minimum 0.5s between clicks)');
           return true;
         }
       }
@@ -288,13 +281,13 @@ export default {
       
       // 规则2: 3秒内不超过3次点击
       if (this.recentClicks.length > 3) {
-        this.handleCheating('Too many clicks in 3 seconds');
+        this.handleCheating('Too many clicks in 3 seconds (max 3)');
         return true;
       }
       
       // 规则3: 整个视频最多15次点击
       if (this.clickCount >= 15) {
-        this.handleCheating('Maximum clicks exceeded');
+        this.handleCheating('Maximum 15 clicks exceeded');
         return true;
       }
       
@@ -310,13 +303,24 @@ export default {
         mark.score = 0;
       });
       
-      // Test模式下不立即显示警告，等结束后在结果中体现
+      // 显示警告
+      // uni.showModal({
+      //   title: '⚠️ Score Disqualified!',
+      //   content: `You scored 0 for this video.\n\nReason: ${reason}`,
+      //   showCancel: false,
+      //   confirmText: 'OK'
+      // });
+      this.modalShow = true
+      this.modalTitle =  '⚠️ Score Disqualified!'
+      this.modalType = 'Score'
+      this.showCancelButton = false
+      this.confirmText = 'OK'
+      this.modalContent = `You scored 0 for this video.\n\nReason: ${reason}`
       console.log('Score disqualified:', reason);
     },
     
     // 添加标记
     addMark(position, score) {
-      console.log('position, score', position, score)
       this.clickCount++;
       
       // 如果已被取消资格，分数为0
@@ -330,98 +334,81 @@ export default {
         clickNumber: this.clickCount
       };
       
-      // 添加标记
+      // 添加标记（允许重叠）
       this.userMarks.push(newMark);
-      
-      console.log(`Mark ${this.clickCount} added at ${newMark.time}s`);
+      console.log(`Mark ${this.clickCount} added at ${newMark.time}s with score ${finalScore}`);
     },
     
-    // 显示标记信息（测试模式下不显示得分）
+    // 显示标记信息
     showMarkInfo(mark, index) {
-      console.log(`Mark ${index + 1} at ${mark.time}s`);
+      console.log(`Mark ${index + 1} at ${mark.time}s with score ${mark.score}`);
     },
     
-    // 退出测试模式
-    exitTestMode() {
+    // 退出学习模式
+    exitLearnMode() {
+      console.log('点击退出')
       if (this.playInterval) {
         clearInterval(this.playInterval);
       }
       
       // uni.showModal({
-      //   title: 'Exit Test',
-      //   content: 'Are you sure you want to exit? Your progress will be lost.',
+      //   title: 'Exit',
+      //   content: 'Are you sure you want to exit?',
       //   success: (res) => {
       //     if (res.confirm) {
+      //       // 返回上一页
       //       uni.navigateBack();
-      //     } else {
-      //       // 如果取消退出且视频未完成，继续播放
-      //       if (!this.testCompleted) {
-      //         this.startAutoPlay();
-      //       }
       //     }
       //   }
       // });
+      
       this.modalShow = true
-      this.modalTitle =  'Exit Test'
-      this.modalType = 'ExitTest'
+      this.modalTitle =  'Exit'
+      this.modalType = 'Exit'
       this.showCancelButton = true
-      this.confirmText = 'Confirm'
-      this.modalContent = `Are you sure you want to exit? Your progress will be lost.`
-    },
-    
-    // 处理结果弹窗的Exit按钮
-    handleExit() {
-      uni.navigateBack();
-    },
-    
-    // 处理Review按钮
-    handleReview() {
-      this.showResult = false;
-      this.reviewMode = true;
-    },
-    
-    // 关闭Review模式
-    closeReview() {
-      this.reviewMode = false;
-      this.showResult = true;
-    },
-    // 记录
-    recordAdd () {
-      recordAdd({
-        question_id: this.questionId
-      }).then(res => {
-    
-      })
+      this.confirmText = 'OK'
+      this.modalContent = `Are you sure you want to exit?`
     },
     confirm () {
       this.modalShow = false
-      if (this.modalType == 'ExitTest') {
+      if (this.modalType == 'Score') {
+        
+      } else if (this.modalType == 'Exit') {
         uni.navigateBack();
       }
     },
     cancel () {
       this.modalShow = false
-      if (this.modalType == 'ExitTest') {
-        if (!this.testCompleted) {
-          this.startAutoPlay();
-        }
-      }
     },
+    // 查询详情
+    getQuestionDetail () {
+      getQuestionDetail({
+        id: this.questionId
+      }).then(res => {
+        if (res.code == 1) {
+          console.log(res.data)
+          this.duration = res.data.total_time
+          this.title_video_url = res.data.title_video_url
+          this.score_list = res.data.score_list
+        }
+      })
+    },
+    // 记录
+    recordAdd () {
+      recordAdd({
+        question_id: this.questionId
+      })
+    }
   },
   
   onLoad(options) {
-    // if (options.id) {
-    //   this.questionId = options.id
-    //   this.getQuestionDetail()
-    // }
-    const questions = uni.getStorageSync('questions')
-    console.log('Hazard Perception Test Mode loaded', questions);
-    
-    this.title_video_url = questions[0].title_video_url
-    this.score_list = questions[0].score_list
-    
+    if (options.id) {
+      this.questionId = options.id
+      this.getQuestionDetail()
+    }
+    console.log('Hazard Perception Learn Mode loaded');
     // 自动开始播放
-    this.startAutoPlay();
+    // this.startAutoPlay();
     // #ifdef APP-PLUS
     // APP端强制横屏
     plus.screen.lockOrientation('landscape-primary');
@@ -478,103 +465,76 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
+  
   .video {
     width: 100%;
     height: 100%;
-    object-fit: fill;
+    /* object-fit: fill; */
   }
 }
-
-/* 道路模拟 */
-.road-scene {
+.video-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
-  position: relative;
-  background: linear-gradient(to bottom, 
-    #87CEEB 0%,    /* 天空 */
-    #87CEEB 35%,   
-    #90A955 35%,   /* 地平线 */
-    #4a5f3a 45%,   /* 远山 */
-    #3d4f33 55%,   /* 近景 */
-    #2a2a2a 55%,   /* 路面 */
-    #1a1a1a 100%
-  );
-}
-
-.road-scene::before {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 200%;
-  height: 45%;
-  background: linear-gradient(to top,
-    #2a2a2a 0%,
-    #3a3a3a 50%,
-    transparent 100%
-  );
-  clip-path: polygon(45% 100%, 50% 0%, 55% 100%);
-}
-
-/* 道路中线 */
-.road-lines {
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 8rpx;
-  height: 45%;
-  background: repeating-linear-gradient(
-    to bottom,
-    #FFD700 0rpx,
-    #FFD700 40rpx,
-    transparent 40rpx,
-    transparent 80rpx
-  );
+  z-index: 100;
 }
 
 /* 退出按钮 */
 .exit-button {
   position: absolute;
-  top: 60rpx;
-  left: 60rpx;
-  padding: 20rpx 50rpx;
-  background: rgba(0, 0, 0, 0.6);
-  color: white;
+  top: 1.5rem;
+  left: 1.5rem;
+  /* padding: 0.5rem 1.25rem; */
+  background: rgba(255,255,255,0.3);
+  color: #fff;
   border: none;
-  border-radius: 50rpx;
-  font-size: 32rpx;
+  border-radius: 1.25rem;
+  font-size: 1.2rem;
   font-weight: 500;
-  z-index: 100;
-  transition: all 0.3s ease;
+  z-index: 10000;
+  transition: all 0.2s ease;
+  width: 3.5rem;
+  height: 2rem;
+  line-height: 2rem;
+  text-align:center;
+  .exit-button-text {
+    width: 3.5rem;
+    height: 2rem;
+    line-height: 2rem;
+  }
+}
+
+.exit-button:hover {
+  background: rgba(0, 0, 0, 0.8);
 }
 
 /* 底部控制区域 */
 .bottom-controls {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 56rpx;
+  /* position: absolute; */
+  /* bottom: 0; */
+  /* left: 0; */
+  /* right: 0; */
+  height: 2rem;
   background: transparent;
 }
 
 /* 细进度条 */
 .thin-progress-bar {
   position: absolute;
-  bottom: 50rpx;
+  bottom: 1.85rem;
   left: 0;
   right: 0;
-  height: 6rpx;
+  height: 0.15rem;
   background: rgba(255, 255, 255, 0.2);
 }
 
 .thin-progress-fill {
-  height: 100%;
-  background: rgba(255, 255, 255, 0.8);
+  height: 0.15rem;
+  background: rgba(255, 0, 0, 0.8);
   width: 0%;
-  transition: width 0.1s linear;
+  transition: width 0.25s linear;
 }
 
 /* 得分条容器 */
@@ -583,253 +543,9 @@ export default {
   bottom: 0;
   left: 0;
   right: 0;
-  height: 50rpx;
+  height: 1.85rem;
   display: flex;
   align-items: stretch;
-  background: #f5f5f5;
-}
-
-/* 测试模式条 - 全灰色 */
-.test-mode-bar {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  background: #a0a0a0;
-}
-
-/* 用户标记旗子 */
-.user-marks {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  pointer-events: none;
-}
-
-.user-mark {
-  position: absolute;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  pointer-events: auto;
-  z-index: 10;
-  transition: transform 0.2s ease;
-}
-
-/* 旗子样式 */
-.flag-container {
-  position: relative;
-  width: 40rpx;
-  height: 50rpx;
-}
-
-.flag-pole {
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 4rpx;
-  height: 50rpx;
-  background: #333;
-}
-
-.flag-banner {
-  position: absolute;
-  left: 4rpx;
-  top: 0;
-  width: 0;
-  height: 0;
-  border-style: solid;
-  border-width: 12rpx 0 12rpx 24rpx;
-  border-color: transparent transparent transparent #FF0000;
-  filter: drop-shadow(0 2rpx 6rpx rgba(0,0,0,0.3));
-}
-
-/* 结果弹窗 */
-.result-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 200;
-}
-
-.result-backdrop {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-}
-
-.result-content {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 600rpx;
-  background: white;
-  border-radius: 30rpx;
-  padding: 50rpx;
-  box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.3);
-}
-
-.result-header {
-  text-align: center;
-  margin-bottom: 40rpx;
-}
-
-.result-title {
-  font-size: 42rpx;
-  font-weight: 600;
-  color: #333;
-}
-
-.result-score {
-  text-align: center;
-  margin-bottom: 40rpx;
-}
-
-.score-label {
-  font-size: 28rpx;
-  color: #666;
-  display: block;
-  margin-bottom: 20rpx;
-}
-
-.score-display {
-  display: flex;
-  align-items: baseline;
-  justify-content: center;
-  margin-bottom: 20rpx;
-}
-
-.score-number {
-  font-size: 80rpx;
-  font-weight: bold;
-  color: #4A9EFF;
-}
-
-.score-divider {
-  font-size: 40rpx;
-  color: #999;
-  margin: 0 10rpx;
-}
-
-.score-total {
-  font-size: 50rpx;
-  color: #666;
-}
-
-/* 得分状态 */
-.score-status {
-  display: inline-block;
-  padding: 10rpx 30rpx;
-  border-radius: 20rpx;
-  margin-top: 10rpx;
-}
-
-.score-status.excellent {
-  background: linear-gradient(135deg, #66BB6A 0%, #4CAF50 100%);
-}
-
-.score-status.good {
-  background: linear-gradient(135deg, #42A5F5 0%, #2196F3 100%);
-}
-
-.score-status.pass {
-  background: linear-gradient(135deg, #FFA726 0%, #FF9800 100%);
-}
-
-.score-status.fail {
-  background: linear-gradient(135deg, #EF5350 0%, #F44336 100%);
-}
-
-.status-text {
-  color: white;
-  font-size: 28rpx;
-  font-weight: 600;
-}
-
-/* 统计信息 */
-.result-stats {
-  display: flex;
-  justify-content: space-around;
-  padding: 30rpx 0;
-  border-top: 1rpx solid #eee;
-  border-bottom: 1rpx solid #eee;
-  margin-bottom: 40rpx;
-}
-
-.stat-item {
-  text-align: center;
-}
-
-.stat-label {
-  font-size: 24rpx;
-  color: #999;
-  display: block;
-  margin-bottom: 10rpx;
-}
-
-.stat-value {
-  font-size: 36rpx;
-  font-weight: 600;
-  color: #333;
-}
-
-/* 操作按钮 */
-.result-actions {
-  display: flex;
-  gap: 30rpx;
-}
-
-.result-button {
-  flex: 1;
-  padding: 26rpx;
-  border-radius: 50rpx;
-  font-size: 32rpx;
-  font-weight: 600;
-  border: none;
-  transition: all 0.3s ease;
-}
-
-.exit-btn {
-  background: #f5f5f5;
-  color: #666;
-}
-
-.exit-btn:active {
-  background: #e0e0e0;
-}
-
-.review-btn {
-  background: linear-gradient(135deg, #4A9EFF 0%, #2196F3 100%);
-  color: white;
-  box-shadow: 0 8rpx 30rpx rgba(74, 158, 255, 0.3);
-}
-
-.review-btn:active {
-  transform: scale(0.98);
-}
-
-/* Review模式覆盖层 */
-.review-overlay {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 56rpx;
-  z-index: 300;
-}
-
-.review-bar {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 50rpx;
   background: #f5f5f5;
 }
 
@@ -847,13 +563,13 @@ export default {
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 24rpx;
+  font-size: 1rem;
   font-weight: bold;
-  text-shadow: 0 2rpx 4rpx rgba(0,0,0,0.5);
+  text-shadow: 0 0.05rem 0.1rem rgba(0,0,0,0.5);
   height: 100%;
 }
 
-/* 得分区间样式 */
+/* 得分区间样式 - 渐变效果 */
 .zone-5 {
   background: linear-gradient(135deg, #FFA726 0%, #FF9800 100%);
 }
@@ -870,35 +586,195 @@ export default {
   background: linear-gradient(135deg, #66BB6A 0%, #4CAF50 100%);
 }
 
-/* 关闭Review按钮 */
-.close-review-btn {
-  position: fixed;
-  bottom: 80rpx;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 20rpx 60rpx;
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  border: 2rpx solid rgba(255, 255, 255, 0.3);
-  border-radius: 50rpx;
-  font-size: 28rpx;
-  font-weight: 500;
-  z-index: 301;
+/* 区间分隔线 */
+.score-zone::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 20%;
+  bottom: 20%;
+  width: 0.05rem;
+  background: rgba(255,255,255,0.3);
 }
 
-/* 响应式调整 */
-@media screen and (max-width: 375px) {
-  .result-content {
-    width: 520rpx;
-    padding: 40rpx;
+.score-zone:last-child::after {
+  display: none;
+}
+
+/* 用户标记旗子 */
+.user-marks {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.user-mark {
+  position: absolute;
+  top: 0;
+  /* transform: translate(-50%, -50%); */
+  pointer-events: auto;
+  z-index: 10;
+  transition: transform 0.2s ease;
+}
+
+.user-mark:hover {
+  transform: translate(-50%, -50%) scale(1.2);
+  z-index: 20;
+}
+
+/* 旗子样式 */
+.flag-container {
+  position: relative;
+  width: 1rem;
+  height: 1.85rem;
+}
+
+.flag-pole {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0.15rem;
+  height: 1.85rem;
+  background: #333;
+}
+
+.flag-banner {
+  position: absolute;
+  left: 0.1rem;
+  top: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0.5rem 0 0.5rem 1rem;
+  border-color: transparent transparent transparent #FF0000;
+  filter: drop-shadow(0 0.05rem 0.15rem rgba(0,0,0,0.3));
+}
+
+/* 悬停提示 */
+.mark-tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 0.5rem;
+  padding: 0.3rem 0.6rem;
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+  font-size: 0.6rem;
+  border-radius: 0.3rem;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.user-mark:hover .mark-tooltip {
+  opacity: 1;
+}
+
+.modal {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 101;
+  .modal-content {
+    width: 400rpx;
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
   }
   
-  .score-number {
-    font-size: 70rpx;
+  .modal-title {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 15px;
   }
   
-  .score-total {
-    font-size: 45rpx;
+  .modal-text {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 20px;
+  }
+  
+  .modal-buttons {
+    display: flex;
+    justify-content: space-around;
+  }
+  
+  .modal-btn {
+    flex: 1;
+    padding: 10px 0;
+    text-align: center;
+    border-right: 1px solid #eee;
+  }
+  
+  .modal-btn:last-child {
+    border-right: none;
+  }
+  
+  .modal-btn.confirm {
+    color: #007AFF;
+  }
+  
+  .custom-controls {
+    position: absolute;
+    bottom: 50px;
+    right: 20px;
+    z-index: 100;
+  }
+  
+  .control-btn {
+    width: 40px;
+    height: 40px;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .control-icon {
+    width: 24px;
+    height: 24px;
   }
 }
+
+/* 响应式调整 - 小屏幕适配 */
+@media screen and (max-width: 375px) {
+  .exit-button {
+    top: 1rem;
+    left: 1rem;
+    padding: 0.4rem 1rem;
+    font-size: 0.7rem;
+  }
+
+  .score-zone {
+    font-size: 0.5rem;
+  }
+
+  .bottom-controls {
+    height: 1.15rem;
+  }
+
+  .thin-progress-bar {
+    bottom: 1.15rem;
+  }
+
+  .score-bar-container {
+    height: 1.15rem;
+  }
+}
+
+/* 转换说明：
+   基于小程序rpx到px的转换逻辑：在750px设计稿中，1rpx = 0.5px
+   然后按照 font-size: 16px 进行rem转换：rem = px / 16
+   例如：60rpx = 60 * 0.5px = 30px = 30 / 16 = 1.875rem
+   但考虑到实际视觉效果，这里采用更合理的转换比例
+*/
 </style>

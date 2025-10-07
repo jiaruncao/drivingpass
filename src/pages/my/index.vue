@@ -249,7 +249,8 @@ export default {
         // 可选: 'free', 'silver', 'gold'
       },
       // 测试进度数据
-      currentQuestionBank: 'Theory Test',
+      // ['Car', 'Motorcycle', 'ADI', 'LGV', 'PCV']
+      currentQuestionBank: 'Car',
       passRate: 70,
       showFeature: false,
       content: ''
@@ -353,7 +354,7 @@ export default {
     switchQuestionBank() {
       console.log('Switch question bank clicked');
       // 实际应用中显示题库选择器
-      const banks = ['Theory Test', 'Hazard Test', 'Highway Code', 'Rode Sign'];
+      const banks = ['Car', 'Motorcycle', 'ADI', 'LGV', 'PCV'];
       const currentIndex = banks.indexOf(this.currentQuestionBank);
       this.currentQuestionBank = banks[(currentIndex + 1) % banks.length];
     },

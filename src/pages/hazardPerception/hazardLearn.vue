@@ -85,7 +85,6 @@
       </view>
     </view>
     
-    
     <view>
       <u-modal :show="modalShow" :title="modalTitle" :showCancelButton="showCancelButton" :content='modalContent' :cancelText="cancelText" :confirmText="confirmText" @cancel="cancel" @confirm="confirm"></u-modal>
     </view>

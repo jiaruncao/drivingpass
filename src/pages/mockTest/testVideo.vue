@@ -30,7 +30,18 @@
             <!-- <view class="road-scene">
               <view class="road-lines"></view>
             </view> -->
-            <video id="videoId" class="video" :autoplay="true" :controls="false" :show-center-play-btn="false" :src="currentQuestionData.title_video_url" muted playsinline></video>
+            <!-- <video id="videoId" class="video" :autoplay="true" :controls="false" :show-center-play-btn="false" :src="currentQuestionData.title_video_url" muted playsinline></video>  -->
+            <DomVideoPlayer
+              style="width:100%;height: 100%;"
+              ref="domVideoPlayer"
+              :src="currentQuestionData.title_video_url"
+              :autoplay="autoplay"
+              :loop="loop"
+              :controls="controls"
+              :muted="muted"
+              :isLoading="true"
+              @timeupdate="timeupdate"
+            />
           </view>
         </view>
         
@@ -47,7 +58,7 @@
         
             <!-- 用户标记的旗子 -->
             <view class="user-marks">
-              <view v-for="(mark, index) in userMarks" 
+              <view v-for="(mark, index) in currentQuestionData.userMarks" 
                     :key="mark.id"
                     class="user-mark" 
                     :style="{left: mark.position + '%'}"
@@ -145,7 +156,11 @@
 
 <script>
 import {getExamQuestion, submitExamQuestion} from '@/http/api/testQuestions.js'
+import DomVideoPlayer from 'uniapp-video-player'
 export default {
+  components: {
+    DomVideoPlayer
+  },
   data() {
     return {
       paper_id: null,
@@ -181,6 +196,12 @@ export default {
       currentTime: 0, // 当前时间（秒）
       duration: 0, // 视频总时长（秒）
       progress: 0, // 进度百分比
+      autoplay: true, // 是否自动播放
+      loop: false, // 是否循环播放
+      controls: false, // 是否显示控制栏
+      muted: false, // 是否静音
+      isLoading: false, // Android系统加载时显示loading(为了遮挡安卓的黑色按钮)
+      objectFit: 'contain', // 视频尺寸与video区域的适应模式
       userMarks: [], // 用户标记的危险点
       playInterval: null, // 播放定时器
       clickCount: 0, // 点击计数
@@ -253,14 +274,18 @@ export default {
       //   videoData: this.videoData
       // }
       this.paper_id = videoMockTest.paper_id
+      // 点击置空
+      videoMockTest.videoData.forEach(item => {
+        item['userMarks'] = []
+      })
       
       this.questionsData = videoMockTest.videoData
-      
+      console.log(this.questionsData)
       this.duration = this.currentQuestionData.total_time
       
-      this.startAutoPlay()
+      // this.startAutoPlay()
       
-      this.initQuestionStates()
+      // this.initQuestionStates()
     },
     // 初始化题目状态
     initQuestionStates() {
@@ -329,6 +354,7 @@ export default {
     
     // 跳转到指定题目
     goToQuestion(questionNumber) {
+      
       this.currentQuestion = questionNumber
       
       // 恢复该题目的选择状态
@@ -339,7 +365,7 @@ export default {
       this.progress = 0
       this.currentTime = 0
       this.duration = this.currentQuestionData.total_time
-      this.startAutoPlay()
+      // this.startAutoPlay()
     },
     
     // 从Review面板跳转到题目
@@ -359,7 +385,7 @@ export default {
         // this.cacheCurrentVideoScore()
         this.submitScore()
       } else if (this.modalType === 'Finished') {
-        clearInterval(this.playInterval)
+        // clearInterval(this.playInterval)
         this.submitScore()
       }
     },
@@ -382,12 +408,14 @@ export default {
         paper_id: this.paper_id,
         questions: questions
       }).then(res => {
-        console.log(res)
+        // 弹出得分
       })
     },
     // 结束考试
     endTest() {
-      const unanswered = this.questionStates.filter(q => !q.answered).length
+      // const unanswered = this.questionStates.filter(q => !q.answered).length
+      
+      const unanswered = this.questionsData.filter(item => item.userMarks.length === 0).length
 
       this.modalShow = true
       this.showCancel = true
@@ -402,6 +430,24 @@ export default {
       this.modalTitle =  'Finished HazardTest'
       this.modalType = 'Finished'
       this.modalContent = `You have finished dangerous driving questions questions. Are you sure you want to end the test?`
+    },
+    timeupdate (e) {
+      // console.log('更新进度',e)
+      
+      this.currentTime = e; // 获取当前播放时间
+      this.progress = (this.currentTime / 20.04) * 100; // 计算进度条宽度
+      
+      if (this.progress == 100) {
+        // this.recordAdd()
+        // 判断最后一题
+        if (this.currentQuestion != this.questionsData.length) {
+          this.nextQuestion()
+        } else {
+          // 提示答题结束
+          this.endTestAfter()
+        }
+      }
+      // this.sliderValue = (this.currentTime / this.duration) * 100; // 设置slider的值，用于拖动时显示当前位置的时间点提示（如果需要）
     },
     // 自动播放
     startAutoPlay() {
@@ -493,7 +539,7 @@ export default {
       this.scoreDisqualified = true;
       
       // 清除所有标记的分数
-      this.userMarks.forEach(mark => {
+      this.questionsData[this.currentQuestion - 1].userMarks.forEach(mark => {
         mark.score = 0;
       });
       
@@ -528,7 +574,10 @@ export default {
       };
       
       // 添加标记（允许重叠）
-      this.userMarks.push(newMark);
+      this.questionsData[this.currentQuestion - 1].userMarks.push(newMark);
+      
+      console.log('点击', this.questionsData[this.currentQuestion - 1])
+      
       console.log(`Mark ${this.clickCount} added at ${newMark.time}s with score ${finalScore}`);
     },
     
@@ -541,28 +590,25 @@ export default {
     cacheCurrentVideoScore () {
       const mockTestResult = uni.getStorageSync('mockTestResult')
       const bsQuestions = mockTestResult.questions // 笔试答案
-      
-      console.log('this.userMarks', this.userMarks)
-      
-      let result = this.userMarks.map(mark => mark.time).join(',')
-      
-      console.log('result', result)
-      console.log('this.currentQuestionData', this.currentQuestionData)
-      
-      // 查找是否已存在相同ID的题目
-      const existingIndex = bsQuestions.findIndex(item => item.id === this.currentQuestionData.id)
-      
-      if (existingIndex !== -1) {
-        // 如果存在相同ID，替换answer
-        bsQuestions[existingIndex].answer = result
-      } else {
-        // 如果不存在，添加新题目
-        bsQuestions.push({
-          id: this.currentQuestionData.id,
-          answer: result
-        })
-      }
-      
+
+      this.questionsData.forEach((qs, index) => {
+        let result = qs.userMarks.map(mark => mark.time).join(',')
+        // 查找是否已存在相同ID的题目
+        const existingIndex = bsQuestions.findIndex(item => item.id === qs.id)
+        
+        if (existingIndex !== -1) {
+          // 如果存在相同ID，替换answer
+          bsQuestions[existingIndex].answer = result
+        } else {
+          // 如果不存在，添加新题目
+          bsQuestions.push({
+            id: qs.id,
+            answer: result
+          })
+        }
+        
+      })
+
       uni.setStorageSync('mockTestResult', {
         paper_id: this.paper_id,
         questions: bsQuestions
@@ -629,7 +675,7 @@ export default {
 .main-content {
   flex: 1;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   /* padding: 0.625rem 0.9375rem; */
   background: #FFFFFF;
   min-height: 0;
@@ -1213,11 +1259,13 @@ export default {
 
 /* 底部控制区域 */
 .bottom-controls-video {
-  position: absolute;
+  /* position: absolute;
   bottom: 0;
   left: 0;
   right: 0;
-  height: 1.9375rem; /* 56rpx → 3.5rem */
+  height: 1.9375rem;
+  background: transparent; */
+  height: 2rem;
   background: transparent;
 }
 
@@ -1233,9 +1281,9 @@ export default {
 
 .thin-progress-fill {
   height: 100%;
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 0, 0, 0.8);
   width: 0%;
-  transition: width 0.1s linear;
+  transition: width 0.25s linear;
 }
 
 /* 得分条容器 */
