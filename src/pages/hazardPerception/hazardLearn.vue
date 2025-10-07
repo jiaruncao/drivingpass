@@ -11,12 +11,15 @@
           </video> -->
           
           <DomVideoPlayer
+            style="width:100%;height: 100%;"
             ref="domVideoPlayer"
             :src="title_video_url"
-            :autoplay="true"
-            loop
-            controls
-            muted
+            :autoplay="autoplay"
+            :loop="loop"
+            :controls="controls"
+            :muted="muted"
+            :isLoading="true"
+            @timeupdate="timeupdate"
           />
           
           <view class="video-overlay" @tap.stop="addMarkAtCurrentTime">
@@ -84,7 +87,7 @@
     
     
     <view>
-      <u-modal :show="modalShow" :title="modalTitle" width="400rpx" :showCancelButton="showCancelButton" :content='modalContent' :cancelText="cancelText" :confirmText="confirmText" @cancel="cancel" @confirm="confirm"></u-modal>
+      <u-modal :show="modalShow" :title="modalTitle" :showCancelButton="showCancelButton" :content='modalContent' :cancelText="cancelText" :confirmText="confirmText" @cancel="cancel" @confirm="confirm"></u-modal>
     </view>
   </view>
   
@@ -94,13 +97,22 @@
 import {getQuestionDetail, recordAdd} from '@/http/api/testQuestions.js'
 import DomVideoPlayer from 'uniapp-video-player'
 export default {
+  components: {
+    DomVideoPlayer
+  },
   data() {
     return {
       questionId: null,
       title_video_url: null,
+      autoplay: true, // 是否自动播放
+      loop: false, // 是否循环播放
+      controls: false, // 是否显示控制栏
+      muted: false, // 是否静音
+      isLoading: false, // Android系统加载时显示loading(为了遮挡安卓的黑色按钮)
+      objectFit: 'contain', // 视频尺寸与video区域的适应模式
       score_list: [],
       currentTime: 0, // 当前时间（秒）
-      duration: 0, // 视频总时长（秒）
+      duration: 20, // 视频总时长（秒）
       progress: 0, // 进度百分比
       userMarks: [], // 用户标记的危险点
       playInterval: null, // 播放定时器
@@ -133,12 +145,20 @@ export default {
         }
       }, 100);
     },
+    // durationchange (e) {
+    //   this.duration = e
+    //   console.log('总时长', e)
+    // },
     // 更新视频进度
     timeupdate (e) {
-      // console.log('更新进度',e)
+      console.log('更新进度',e)
       
-      this.currentTime = e.detail.currentTime; // 获取当前播放时间
-      this.progress = (this.currentTime / e.detail.duration) * 100; // 计算进度条宽度
+      this.currentTime = e; // 获取当前播放时间
+      this.progress = (this.currentTime / 20.04) * 100; // 计算进度条宽度
+      
+      if (this.progress == 100) {
+        this.recordAdd()
+      }
       // this.sliderValue = (this.currentTime / this.duration) * 100; // 设置slider的值，用于拖动时显示当前位置的时间点提示（如果需要）
     },
     // 在当前时间添加标记

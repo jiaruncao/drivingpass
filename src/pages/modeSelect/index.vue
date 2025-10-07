@@ -104,8 +104,8 @@
             <text class="category-progress">{{ category.progress }}%</text>
           </view>
           <view class="category-stats">
-            <text>Total: {{ category.total }}</text>
-            <text>Wrong: {{ category.wrong }}</text>
+            <view>Total: {{ category.total }}</view>
+            <view style="margin-left: 20rpx;">Wrong: {{ category.wrong }}</view>
           </view>
           <view class="progress-bar">
             <view class="progress-fill" :style="{width: category.progress + '%'}"></view>
@@ -981,7 +981,7 @@ export default {
 .category-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  // gap: 12px;
 }
 
 .radio-button {
@@ -1008,6 +1008,7 @@ export default {
   font-size: 16px;
   font-weight: 600;
   color: #333;
+  margin-left: 20rpx;
 }
 
 // .category-progress {
@@ -1032,7 +1033,7 @@ export default {
 
 .category-stats {
   display: flex;
-  gap: 25px;
+  // gap: 25px;
   font-size: 14px;
   color: #666;
   margin-bottom: 12px;
