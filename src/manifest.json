@@ -18,7 +18,8 @@
             "delay" : 0
         },
         "modules" : {
-            "VideoPlayer" : {}
+            "VideoPlayer" : {},
+            "Payment" : {}
         },
         /* 模块配置 */
         "distribute" : {
@@ -52,7 +53,12 @@
             },
             "ios" : {},
             /* ios打包配置 */
-            "sdkConfigs" : {}
+            "sdkConfigs" : {
+                "payment" : {
+                    "appleiap" : {},
+                    "google" : {}
+                }
+            }
         }
     },
     /* SDK配置 */

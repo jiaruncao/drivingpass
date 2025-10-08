@@ -55,7 +55,7 @@
           <!-- 得分区间 - 分段显示，模拟两个危险区间 -->
           <!-- 第一个危险区间：15%-45% -->
           <!-- <view class="gray-zone" style="left: 0; width: 15%;"></view> -->
-          <view v-for="(item, index) in score_list" :key="index">
+          <!-- <view v-for="(item, index) in score_list" :key="index">
             <view v-for="(jtem, idx) in item" :key="idx" class="score-zone" :class="'zone-' + jtem.score" 
             :style="{
               'left': jtem.startTime / duration * 100 + '%',
@@ -63,7 +63,7 @@
             }">
               <view>{{jtem.score}}</view>
             </view>
-          </view>
+          </view> -->
 
           <!-- 用户标记的旗子 -->
           <view class="user-marks">
@@ -121,26 +121,35 @@
         
         <!-- 操作按钮 -->
         <view class="result-actions">
-          <button class="result-button exit-btn" @tap="handleExit">
+          <view class="result-button exit-btn" @tap="handleExit">
             Exit
-          </button>
-          <button class="result-button review-btn" @tap="handleReview">
+          </view>
+          <view class="result-button review-btn" @tap="handleReview">
             Review
-          </button>
+          </view>
         </view>
       </view>
     </view>
         
     <!-- Review模式遮罩 -->
     <view v-if="reviewMode" class="review-overlay">
-      <view class="review-bar">
-        <view v-for="(item, index) in score_list" :key="index">
+      <view class="score-bar-container">
+       <!-- <view v-for="(item, index) in score_list" :key="index">
           <view v-for="(jtem, idx) in item" :key="idx" class="score-zone" :class="'zone-' + jtem.score" 
           :style="{
             'left': jtem.startTime / duration * 100 + '%',
             'width': (jtem.endTime - jtem.startTime) / duration * 100 + '%'
           }">
             {{jtem.score}}
+          </view>
+        </view> -->
+        <view v-for="(item, index) in score_list" :key="index">
+          <view v-for="(jtem, idx) in item" :key="idx" class="score-zone" :class="'zone-' + jtem.score" 
+          :style="{
+            'left': jtem.startTime / duration * 100 + '%',
+            'width': (jtem.endTime - jtem.startTime) / duration * 100 + '%'
+          }">
+            <view>{{jtem.score}}</view>
           </view>
         </view>
       </view>
@@ -152,7 +161,7 @@
     
     
     <view>
-      <u-modal :show="modalShow" :title="modalTitle" :showCancelButton="showCancelButton" :content='modalContent' :cancelText="cancelText" :confirmText="confirmText" @cancel="cancel" @confirm="confirm"></u-modal>
+      <u-modal width="400rpx" :show="modalShow" :title="modalTitle" :showCancelButton="showCancelButton" :content='modalContent' :cancelText="cancelText" :confirmText="confirmText" @cancel="cancel" @confirm="confirm"></u-modal>
     </view>
   </view>
   
@@ -186,7 +195,7 @@ export default {
       scoreDisqualified: false ,// 分数是否被取消
       showResult: false, // 是否显示结果弹窗
       totalScore: 0, // 总得分
-      reviewMode: true, // 是否处于review模式
+      reviewMode: false, // 是否处于review模式
       testCompleted: false ,// 测试是否已完成
       modalShow: false,
       modalTitle: '',
@@ -197,38 +206,76 @@ export default {
       confirmText: 'Confirm'
     }
   },
-  methods: {
-    // 自动播放
-    startAutoPlay() {
-      this.playInterval = setInterval(() => {
-        if (this.currentTime < this.duration) {
-          this.currentTime += 1;
-          this.progress = (this.currentTime / this.duration) * 100;
-        } else {
-          clearInterval(this.playInterval);
-          this.currentTime = this.duration;
-          this.progress = 100;
-          // 记录题目
-          this.recordAdd()
-          // 计算分数
-        }
-      }, 100);
+  computed: {
+    // 得分状态样式类
+    scoreStatusClass() {
+      if (this.totalScore >= 8) return 'excellent';
+      if (this.totalScore >= 5) return 'good';
+      if (this.totalScore >= 3) return 'pass';
+      return 'fail';
     },
+    
+    // 得分状态文字
+    scoreStatusText() {
+      if (this.totalScore >= 8) return 'Excellent!';
+      if (this.totalScore >= 5) return 'Good Job!';
+      if (this.totalScore >= 3) return 'Pass';
+      return 'Need Practice';
+    },
+    // 有效点击，是有得分的
+    validMarksCount () {
+      let clickCount = 0
+      this.userMarks.forEach(item => {
+        if (item.score > 0) {
+          clickCount++
+        }
+      })
+      return clickCount
+    }
+  },
+  methods: {
     // durationchange (e) {
     //   this.duration = e
     //   console.log('总时长', e)
     // },
     // 更新视频进度
     timeupdate (e) {
-      console.log('更新进度',e)
-      
+
       this.currentTime = e; // 获取当前播放时间
       this.progress = (this.currentTime / 20.04) * 100; // 计算进度条宽度
       
       if (this.progress == 100) {
         this.recordAdd()
+        this.onTestComplete()
+        // 计算分数
       }
       // this.sliderValue = (this.currentTime / this.duration) * 100; // 设置slider的值，用于拖动时显示当前位置的时间点提示（如果需要）
+    },
+    // 测试完成
+    onTestComplete() {
+      this.testCompleted = true;
+      this.calculateTotalScore();
+      // 延迟显示结果，给用户一个缓冲
+      setTimeout(() => {
+        this.showResult = true;
+      }, 500);
+    },
+    
+    // 计算总分
+    calculateTotalScore() {
+      // 取最高的两个得分
+      const sortedMarks = [...this.userMarks]
+        .filter(mark => mark.score > 0)
+        .sort((a, b) => b.score - a.score);
+      
+      // 计算总分（最多10分 = 5+5）
+      if (sortedMarks.length >= 2) {
+        this.totalScore = sortedMarks[0].score + sortedMarks[1].score;
+      } else if (sortedMarks.length === 1) {
+        this.totalScore = sortedMarks[0].score;
+      } else {
+        this.totalScore = 0;
+      }
     },
     // 在当前时间添加标记
     addMarkAtCurrentTime() {
@@ -337,6 +384,7 @@ export default {
       // 添加标记（允许重叠）
       this.userMarks.push(newMark);
       console.log(`Mark ${this.clickCount} added at ${newMark.time}s with score ${finalScore}`);
+      console.log(this.userMarks)
     },
     
     // 显示标记信息
@@ -350,18 +398,7 @@ export default {
       if (this.playInterval) {
         clearInterval(this.playInterval);
       }
-      
-      // uni.showModal({
-      //   title: 'Exit',
-      //   content: 'Are you sure you want to exit?',
-      //   success: (res) => {
-      //     if (res.confirm) {
-      //       // 返回上一页
-      //       uni.navigateBack();
-      //     }
-      //   }
-      // });
-      
+
       this.modalShow = true
       this.modalTitle =  'Exit'
       this.modalType = 'Exit'
@@ -398,7 +435,22 @@ export default {
       recordAdd({
         question_id: this.questionId
       })
-    }
+    },
+    // 处理结果弹窗的Exit按钮
+    handleExit() {
+      uni.navigateBack();
+    },
+    
+    // 处理Review按钮
+    handleReview() {
+      this.showResult = false;
+      this.reviewMode = true;
+    },
+    // 关闭Review模式
+    closeReview() {
+      this.reviewMode = false;
+      this.showResult = true;
+    },
   },
   
   onLoad(options) {
@@ -407,8 +459,7 @@ export default {
       this.getQuestionDetail()
     }
     console.log('Hazard Perception Learn Mode loaded');
-    // 自动开始播放
-    // this.startAutoPlay();
+
     // #ifdef APP-PLUS
     // APP端强制横屏
     plus.screen.lockOrientation('landscape-primary');
@@ -777,4 +828,260 @@ export default {
    例如：60rpx = 60 * 0.5px = 30px = 30 / 16 = 1.875rem
    但考虑到实际视觉效果，这里采用更合理的转换比例
 */
+
+/* 结果弹窗 */
+.result-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 200;
+}
+
+.result-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.result-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 37.5rem; /* 600rpx = 300px = 37.5rem */
+  height: 80%;
+  background: white;
+  border-radius: 0.875rem; /* 30rpx = 15px = 1.875rem */
+  padding: 1.125rem; /* 50rpx = 25px = 3.125rem */
+  box-shadow: 0 1.25rem 3.75rem rgba(0, 0, 0, 0.3); /* 20rpx 60rpx = 10px 30px */
+}
+
+.result-header {
+  text-align: center;
+  margin-bottom: 0.5rem; /* 40rpx = 20px = 2.5rem */
+}
+
+.result-title {
+  font-size: 1.625rem; /* 42rpx = 21px = 2.625rem */
+  font-weight: 600;
+  color: #333;
+}
+
+.result-score {
+  /* display: flex;
+  text-align: center;
+  justify-content: space-between; */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 0.5rem; /* 40rpx = 20px = 2.5rem */
+}
+
+.score-label {
+  font-size: 1.25rem; /* 28rpx = 14px = 1.75rem */
+  color: #666;
+  display: block;
+  margin-bottom: 0.25rem; /* 20rpx = 10px = 1.25rem */
+}
+
+.score-display {
+  /* display: flex;
+  align-items: baseline;
+  justify-content: center; */
+  margin-bottom: 0.5rem; /* 20rpx = 10px = 1.25rem */
+}
+
+.score-number {
+  font-size: 2rem; /* 80rpx = 40px = 5rem */
+  font-weight: bold;
+  color: #4A9EFF;
+}
+
+.score-divider {
+  font-size: 2rem; /* 40rpx = 20px = 2.5rem */
+  color: #999;
+  margin: 0 0.625rem; /* 10rpx = 5px = 0.625rem */
+}
+
+.score-total {
+  font-size: 2.125rem; /* 50rpx = 25px = 3.125rem */
+  color: #666;
+}
+
+/* 得分状态 */
+.score-status {
+  
+  display: inline-block;
+  justify-content: center;
+  align-items: center;
+  /* height: 2rem; */
+  padding: 0.425rem 0.875rem; /* 10rpx 30rpx = 5px 15px */
+  border-radius: 0.55rem; /* 20rpx = 10px = 1.25rem */
+  /* margin-top: 0.425rem; */ /* 10rpx = 5px = 0.625rem */
+}
+
+.score-status.excellent {
+  background: linear-gradient(135deg, #66BB6A 0%, #4CAF50 100%);
+}
+
+.score-status.good {
+  background: linear-gradient(135deg, #42A5F5 0%, #2196F3 100%);
+}
+
+.score-status.pass {
+  background: linear-gradient(135deg, #FFA726 0%, #FF9800 100%);
+}
+
+.score-status.fail {
+  background: linear-gradient(135deg, #EF5350 0%, #F44336 100%);
+}
+
+.status-text {
+  color: white;
+  font-size: 1.05rem; /* 28rpx = 14px = 1.75rem */
+  font-weight: 600;
+  
+}
+
+/* 统计信息 */
+.result-stats {
+  display: flex;
+  justify-content: space-around;
+  padding: 0.875rem 0; /* 30rpx = 15px = 1.875rem */
+  border-top: 0.0625rem solid #eee; /* 1rpx = 0.5px = 0.0625rem */
+  border-bottom: 0.0625rem solid #eee; /* 1rpx = 0.5px = 0.0625rem */
+  margin-bottom: 0.5rem; /* 40rpx = 20px = 2.5rem */
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-label {
+  font-size: 1.05rem; /* 24rpx = 12px = 1.5rem */
+  color: #999;
+  display: block;
+  /* margin-bottom: 0.425rem; *//* 10rpx = 5px = 0.625rem */
+}
+
+.stat-value {
+  font-size: 1.25rem; /* 36rpx = 18px = 2.25rem */
+  font-weight: 600;
+  color: #333;
+  margin-left: 1rem;
+}
+
+/* 操作按钮 */
+.result-actions {
+  display: flex;
+  /* gap: 1.875rem; /* 30rpx = 15px = 1.875rem */
+}
+
+.result-button {
+  flex: 1;
+  padding: 0.625rem; /* 26rpx = 13px = 1.625rem */
+  border-radius: 3.125rem; /* 50rpx = 25px = 3.125rem */
+  font-size: 1rem; /* 32rpx = 16px = 2rem */
+  font-weight: 600;
+  text-align: center;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.exit-btn {
+  background: #f5f5f5;
+  color: #666;
+  margin-right: 0.625rem;
+}
+
+.exit-btn:active {
+  background: #e0e0e0;
+}
+
+.review-btn {
+  background: linear-gradient(135deg, #4A9EFF 0%, #2196F3 100%);
+  color: white;
+  box-shadow: 0 0.5rem 1.875rem rgba(74, 158, 255, 0.3); /* 8rpx 30rpx = 4px 15px */
+}
+
+.review-btn:active {
+  transform: scale(0.98);
+}
+
+/* Review模式覆盖层 */
+.review-overlay {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1.5rem; /* 56rpx = 28px = 3.5rem */
+  z-index: 300;
+}
+
+.review-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3.125rem; /* 50rpx = 25px = 3.125rem */
+  background: #f5f5f5;
+}
+
+/* 灰色无分区域 */
+.gray-zone {
+  position: absolute;
+  height: 100%;
+  background: #e0e0e0;
+}
+
+/* 得分区间 */
+.score-zone {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.5rem; /* 24rpx = 12px = 1.5rem */
+  font-weight: bold;
+  text-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.5); /* 2rpx 4rpx = 1px 2px */
+  height: 100%;
+}
+
+/* 得分区间样式 */
+.zone-5 {
+  background: linear-gradient(135deg, #FFA726 0%, #FF9800 100%);
+}
+
+.zone-4 {
+  background: linear-gradient(135deg, #EF5350 0%, #F44336 100%);
+}
+
+.zone-3 {
+  background: linear-gradient(135deg, #42A5F5 0%, #2196F3 100%);
+}
+
+.zone-2 {
+  background: linear-gradient(135deg, #66BB6A 0%, #4CAF50 100%);
+}
+
+/* 关闭Review按钮 */
+.close-review-btn {
+  position: fixed;
+  bottom: 3rem; /* 80rpx = 40px = 5rem */
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1.05rem 2.75rem; /* 20rpx 60rpx = 10px 30px */
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  border: 0.125rem solid rgba(255, 255, 255, 0.3); /* 2rpx = 1px = 0.125rem */
+  border-radius: 3.125rem; /* 50rpx = 25px = 3.125rem */
+  font-size: 1.25rem; /* 28rpx = 14px = 1.75rem */
+  font-weight: 500;
+  z-index: 301;
+}
 </style>

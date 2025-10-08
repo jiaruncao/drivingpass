@@ -232,7 +232,7 @@ export default {
           // this.paperInfo = res.data.paper
           this.paper_id = res.data.paper.paper_id
           // this.timeRemaining = res.data.paper.limit_time * 60
-          this.timeRemaining = 1 * 60
+          this.timeRemaining = 57 * 60
           this.questionsData = res.data.questions.filter(item => item.kind == 'SINGLE') // 单选题
           this.videoData = res.data.questions.filter(item => item.kind == 'VIDEO') // 视频题
           

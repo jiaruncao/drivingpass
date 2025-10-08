@@ -370,6 +370,22 @@
       }
     },
     {
+      "path" : "pages/hazardPerception/testList",
+      "style" : 
+      {
+        "navigationBarTitleText" : "",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path" : "pages/hazardPerception/testVideo",
+      "style" : 
+      {
+        "navigationBarTitleText" : "",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path" : "pages/hazardPerception/list",
       "style" : 
       {

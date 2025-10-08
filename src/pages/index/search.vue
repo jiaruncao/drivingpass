@@ -12,7 +12,7 @@
         <view class="back-button" @tap="goBack">←</view>
         <view class="search-input-wrapper">
           <view class="search-icon">
-            <view class="icon-search"></view>
+            <u-icon name="search" size="40rpx"></u-icon>
           </view>
           <input 
             type="text" 

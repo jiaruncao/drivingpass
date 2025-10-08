@@ -150,6 +150,7 @@
   export default {
     data() {
       return {
+        userInfo: {},
         planList: {},
         // 当前用户的订阅计划
         currentPlan: 'Free',
@@ -304,6 +305,8 @@
       getUserInfo() {
         queryMemberInfo().then(res => {
           console.log(res)
+          this.currentPlan = res.data.type
+          this.currentPlanExpiry = res.data.expire_time
         })
       },
       // 获取会员开通配置
@@ -342,6 +345,42 @@
           member_config_id: member_config_id
         }).then(res => {
           console.log(res)
+          // 拉起支付
+          // #ifdef APP
+          // 安卓
+          if  (uni.getSystemInfoSync().platform == 'android') {
+            uni.requestPayment({
+              provider: 'google-pay',
+              orderInfo: res.data, //微信、支付宝订单数据
+              success: (res) => {
+                console.log('success:' + JSON.stringify(res));
+                // 支付成功后，更新用户状态
+                this.getUserInfo()
+              },
+              fail: (err) => {
+                console.log('fail:' + JSON.stringify(err));
+              }
+            });
+          } else {
+            // 苹果
+            uni.requestPayment({
+              provider: 'appleiap',
+              orderInfo: {
+                productid: member_config_id,
+                username: '',
+                quantity: 1
+              }, //苹果订单数据
+              success: (res) => {
+                console.log('success:' + JSON.stringify(res));
+                // 支付成功后，更新用户状态
+                this.getUserInfo()
+              },
+              fail: (err) => {
+                console.log('fail:' + JSON.stringify(err));
+              }
+            });
+          }
+          // #endif
         })
       },
       transformFeatures(arrays) {

@@ -388,7 +388,7 @@ export default {
         case 'HazardTest':
           // 跳转答题
           uni.navigateTo({
-            url: '/pages/hazardPerception/hazardTest?subject_id=' + this.subject_id + '&mode=test'
+            url: '/pages/hazardPerception/testList?subject_id=' + this.subject_id + '&mode=test'
           })
           break;
       }
@@ -676,6 +676,10 @@ export default {
   onLoad(options) {
     this.subject_id = options.id
     this.currentViewTitle = options.title
+    // this.fetchCategories();
+    // this.queryMemberInfo()
+  },
+  onShow () {
     this.fetchCategories();
     this.queryMemberInfo()
   }

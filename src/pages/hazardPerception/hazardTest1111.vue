@@ -161,7 +161,7 @@ export default {
       scoreDisqualified: false, // 分数是否被取消
       showResult: false, // 是否显示结果弹窗
       totalScore: 0, // 总得分
-      reviewMode: true, // 是否处于review模式
+      reviewMode: false, // 是否处于review模式
       testCompleted: false ,// 测试是否已完成
       modalShow: false,
       modalTitle: '',
@@ -267,33 +267,7 @@ export default {
           }
         })
       })
-      
-      
-      // 第一个危险区间：15%-45%
-      // if (this.progress >= 15 && this.progress < 20) {
-      //   score = 5;
-      // } else if (this.progress >= 20 && this.progress < 25) {
-      //   score = 4;
-      // } else if (this.progress >= 25 && this.progress < 35) {
-      //   score = 3;
-      // } else if (this.progress >= 35 && this.progress < 45) {
-      //   score = 2;
-      // }
-      // // 第二个危险区间：60%-80%
-      // else if (this.progress >= 60 && this.progress < 65) {
-      //   score = 5;
-      // } else if (this.progress >= 65 && this.progress < 70) {
-      //   score = 4;
-      // } else if (this.progress >= 70 && this.progress < 75) {
-      //   score = 3;
-      // } else if (this.progress >= 75 && this.progress < 80) {
-      //   score = 2;
-      // }
-      // // 其他区域不得分
-      // else {
-      //   score = 0;
-      // }
-      
+
       // 添加标记
       this.addMark(this.progress, score);
     },
@@ -377,21 +351,7 @@ export default {
       if (this.playInterval) {
         clearInterval(this.playInterval);
       }
-      
-      // uni.showModal({
-      //   title: 'Exit Test',
-      //   content: 'Are you sure you want to exit? Your progress will be lost.',
-      //   success: (res) => {
-      //     if (res.confirm) {
-      //       uni.navigateBack();
-      //     } else {
-      //       // 如果取消退出且视频未完成，继续播放
-      //       if (!this.testCompleted) {
-      //         this.startAutoPlay();
-      //       }
-      //     }
-      //   }
-      // });
+
       this.modalShow = true
       this.modalTitle =  'Exit Test'
       this.modalType = 'ExitTest'
