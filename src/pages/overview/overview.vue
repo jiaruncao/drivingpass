@@ -161,6 +161,15 @@ export default {
       console.log('Review incorrect questions');
       const incorrectQuestions = this.questions.filter(q => q.status === 'incorrect');
       console.log('Incorrect questions:', incorrectQuestions);
+      
+      if (!incorrectQuestions.length) {
+        uni.showToast({
+          title: 'No incorrect questions',
+          icon: 'none'
+        });
+        return false
+      }
+      
       // 跳转到错题复习页面
       uni.navigateTo({
         url: '/pages/learnQuestion/wrong',

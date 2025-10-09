@@ -1,342 +1,343 @@
 <template>
-  <view class="app" :class="fontSizeClass">
-    <!-- 极简头部 -->
-    <view class="header">
-      <view class="back-button" @tap="goBack">
-        ←
+  <view>
+    <view class="app" :class="fontSizeClass">
+      <!-- 极简头部 -->
+      <view class="header">
+        <view class="back-button" @tap="goBack">
+          ←
+        </view>
+        <view style="flex: 1;"></view>
+        <view class="settings-button" @tap="openSettings">Settings</view>
       </view>
-      <view style="flex: 1;"></view>
-      <view class="settings-button" @tap="openSettings">Settings</view>
-    </view>
-
-    <!-- Settings 弹窗 -->
-    <view class="settings-overlay" :class="{ active: showSettings }" @tap="closeSettings">
-      <view class="settings-panel" @tap.stop>
-        <view class="settings-header">
-          <text class="settings-title">Settings</text>
-          <view class="close-settings" @tap="closeSettings">
-            <view class="close-icon">×</view>
-          </view>
-        </view>
-
-        <!-- 设置选项 -->
-        <view class="setting-item">
-          <view class="setting-row">
-            <text class="setting-label">Auto-advance to Next Question</text>
-            <view class="toggle-switch" :class="{ active: settings.autoAdvance }" @tap="toggleAutoAdvance"></view>
-          </view>
-          <text class="setting-description">
-            Automatically move to the next question after answering correctly
-          </text>
-        </view>
-
-        <view class="setting-item">
-          <view class="setting-row">
-            <text class="setting-label">Voice Auto-read Questions</text>
-            <view class="toggle-switch" :class="{ active: settings.voiceAutoRead }" @tap="toggleVoiceAutoRead"></view>
-          </view>
-          <text class="setting-description">
-            Automatically read questions aloud when you navigate to them
-          </text>
-        </view>
-
-        <view class="setting-item">
-          <view class="setting-row">
-            <text class="setting-label">Streak Celebration</text>
-            <view class="toggle-switch" :class="{ active: settings.streakCelebration }" @tap="toggleStreakCelebration">
+    
+      <!-- Settings 弹窗 -->
+      <view class="settings-overlay" :class="{ active: showSettings }" @tap="closeSettings">
+        <view class="settings-panel" @tap.stop>
+          <view class="settings-header">
+            <text class="settings-title">Settings</text>
+            <view class="close-settings" @tap="closeSettings">
+              <view class="close-icon">×</view>
             </view>
           </view>
-          <text class="setting-description">
-            Show celebration animation when you get multiple correct answers in a row
-          </text>
-        </view>
-
-        <view class="setting-item">
-          <text class="setting-label">Font Size</text>
-          <view class="font-size-slider">
-            <view class="slider-container">
-              <slider class="range-slider" :value="settings.fontSize * 25" :min="25" :max="100" :step="25"
-                @change="onFontSizeChange" activeColor="#667eea" backgroundColor="#e5e7eb" block-color="#ffffff"
-                block-size="28" />
+    
+          <!-- 设置选项 -->
+          <view class="setting-item">
+            <view class="setting-row">
+              <text class="setting-label">Auto-advance to Next Question</text>
+              <view class="toggle-switch" :class="{ active: settings.autoAdvance }" @tap="toggleAutoAdvance"></view>
             </view>
-            <view class="slider-labels">
-              <text class="slider-label">Small</text>
-              <text class="slider-label">Medium</text>
-              <text class="slider-label">Large</text>
-              <text class="slider-label">Extra Large</text>
+            <text class="setting-description">
+              Automatically move to the next question after answering correctly
+            </text>
+          </view>
+    
+          <view class="setting-item">
+            <view class="setting-row">
+              <text class="setting-label">Voice Auto-read Questions</text>
+              <view class="toggle-switch" :class="{ active: settings.voiceAutoRead }" @tap="toggleVoiceAutoRead"></view>
+            </view>
+            <text class="setting-description">
+              Automatically read questions aloud when you navigate to them
+            </text>
+          </view>
+    
+          <view class="setting-item">
+            <view class="setting-row">
+              <text class="setting-label">Streak Celebration</text>
+              <view class="toggle-switch" :class="{ active: settings.streakCelebration }" @tap="toggleStreakCelebration">
+              </view>
+            </view>
+            <text class="setting-description">
+              Show celebration animation when you get multiple correct answers in a row
+            </text>
+          </view>
+    
+          <view class="setting-item">
+            <text class="setting-label">Font Size</text>
+            <view class="font-size-slider">
+              <view class="slider-container">
+                <slider class="range-slider" :value="settings.fontSize * 25" :min="25" :max="100" :step="25"
+                  @change="onFontSizeChange" activeColor="#667eea" backgroundColor="#e5e7eb" block-color="#ffffff"
+                  block-size="28" />
+              </view>
+              <view class="slider-labels">
+                <text class="slider-label">Small</text>
+                <text class="slider-label">Medium</text>
+                <text class="slider-label">Large</text>
+                <text class="slider-label">Extra Large</text>
+              </view>
             </view>
           </view>
-        </view>
-
-        <view class="setting-item">
-          <text class="setting-label">Theme</text>
-          <view class="theme-options">
-            <view class="theme-option" :class="{ active: settings.theme === 'light' }" @tap="setTheme('light')">
-              <text class="theme-icon">☀️</text>
-              <text class="theme-label">Light</text>
-            </view>
-            <view class="theme-option" :class="{ active: settings.theme === 'dark' }" @tap="setTheme('dark')">
-              <text class="theme-icon">🌙</text>
-              <text class="theme-label">Dark</text>
-            </view>
-            <view class="theme-option" :class="{ active: settings.theme === 'system' }" @tap="setTheme('system')">
-              <text class="theme-icon">⚙️</text>
-              <text class="theme-label">System</text>
+    
+          <view class="setting-item">
+            <text class="setting-label">Theme</text>
+            <view class="theme-options">
+              <view class="theme-option" :class="{ active: settings.theme === 'light' }" @tap="setTheme('light')">
+                <text class="theme-icon">☀️</text>
+                <text class="theme-label">Light</text>
+              </view>
+              <view class="theme-option" :class="{ active: settings.theme === 'dark' }" @tap="setTheme('dark')">
+                <text class="theme-icon">🌙</text>
+                <text class="theme-label">Dark</text>
+              </view>
+              <view class="theme-option" :class="{ active: settings.theme === 'system' }" @tap="setTheme('system')">
+                <text class="theme-icon">⚙️</text>
+                <text class="theme-label">System</text>
+              </view>
             </view>
           </view>
         </view>
       </view>
-    </view>
-
-    <!-- 连续答对庆祝动画 -->
-    <view v-if="showStreakCelebration" class="streak-celebration">🎉</view>
-
-    <!-- 滑动容器 -->
-    <swiper class="swipe-container" :current="currentQuestionIndex" @change="onSwiperChange" :duration="300">
-      <!-- 每道题一个滑动页 -->
-      <swiper-item v-for="(question, index) in questions" :key="index">
-        <scroll-view scroll-y class="slide" @scroll="onScroll"
-    :scroll-with-animation="true">
-          <view class="question-page">
-            <!-- 题目区域 -->
-            <view class="question-section">
-              <!-- 题目头部 -->
-              <view class="question-header">
-                <!-- 音频播放按钮 -->
-                <button class="audio-button" :class="{ playing: playingIndex === index }" @tap="playAudio(index)">
-                  <text class="audio-icon">🔊</text>
-                </button>
-                <!-- 题目文本 -->
-                <text class="question-text">{{ question.title }}</text>
-              </view>
-
-              <!-- 题目图片 -->
-              <view class="question-image" v-if="question.title_video_url">
-                <image :src="question.title_video_url" mode=""></image>
-              </view>
-            </view>
-
-            <!-- 选项列表 -->
-            <view class="options-list">
-              <view v-for="(option, optIndex) in question.options_json" :key="optIndex" class="option-item" :class="optionClass(question, option)" @tap="selectOption(index, optIndex)">
-                <view class="option-label">
-                  <text
-                    v-if="!question.showAnswer || ((question.selectedOption != option.key) && (option.key != question.answer))">{{ option.key }}</text>
-                  <text v-else-if="option.key == question.answer" class="option-label-icon check">✓</text>
-                  <text v-else-if="(question.selectedOption == option.key) && (option.key != question.answer)"
-                    class="option-label-icon cross">✗</text>
+    
+      <!-- 连续答对庆祝动画 -->
+      <view v-if="showStreakCelebration" class="streak-celebration">🎉</view>
+    
+      <!-- 滑动容器 -->
+      <swiper class="swipe-container" :current="currentQuestionIndex" @change="onSwiperChange" :duration="300">
+        <!-- 每道题一个滑动页 -->
+        <swiper-item v-for="(question, index) in questions" :key="index">
+          <scroll-view scroll-y class="slide" @scroll="onScroll"
+      :scroll-with-animation="true">
+            <view class="question-page">
+              <!-- 题目区域 -->
+              <view class="question-section">
+                <!-- 题目头部 -->
+                <view class="question-header">
+                  <!-- 音频播放按钮 -->
+                  <button class="audio-button" :class="{ playing: playingIndex === index }" @tap="playAudio(index)">
+                    <text class="audio-icon">🔊</text>
+                  </button>
+                  <!-- 题目文本 -->
+                  <text class="question-text">{{ question.title }}</text>
                 </view>
-                <text class="option-text">{{ option.value }}</text>
-              </view>
-            </view>
-
-            <!-- Key Point - 极简设计，直接跟在选项后面 -->
-            <view v-if="question.showAnswer && !isCorrectAnswer(question) && mode == 'learn'" class="key-point-section">
-              <text class="key-point-text">💡 {{ question.key_point }}</text>
-            </view>
-
-            <!-- AI解释 - 只在答错时显示 -->
-            <view v-if="question.showAnswer && !isCorrectAnswer(question) && mode == 'learn'" class="ai-explanation">
-              <view class="ai-header">
-                <view class="ai-avatar">
-                  <text class="ai-avatar-icon">🤖</text>
+    
+                <!-- 题目图片 -->
+                <view class="question-image" v-if="question.title_video_url">
+                  <image :src="question.title_video_url" mode=""></image>
                 </view>
-                <text class="ai-title">AI Explanation</text>
               </view>
-              <view class="ai-content">
-                <text>{{ question.explain }}</text>
-                <text class="remember-tip">
-                  <text class="strong" style="margin-right: 20rpx;">Remember:</text>
-                  {{ question.rememberTip || 'Always check your mirrors and follow the Highway Code.' }}
-                </text>
-              </view>
-            </view>
-
-            <!-- 统计信息 - 只在答错时显示 -->
-            <view v-if="question.showAnswer && !isCorrectAnswer(question) && mode == 'learn'" class="stats-container">
-              <view class="stat-card">
-                <text class="stat-label">Difficulty Level</text>
-                <view class="difficulty-visual">
-                  <view v-for="i in 5" :key="i" class="difficulty-bar" :class="{ active: i <= question.difficulty }">
+    
+              <!-- 选项列表 -->
+              <view class="options-list">
+                <view v-for="(option, optIndex) in question.options_json" :key="optIndex" class="option-item" :class="optionClass(question, option)" @tap="selectOption(index, optIndex)">
+                  <view class="option-label">
+                    <text
+                      v-if="!question.showAnswer || ((question.selectedOption != option.key) && (option.key != question.answer))">{{ option.key }}</text>
+                    <text v-else-if="option.key == question.answer" class="option-label-icon check">✓</text>
+                    <text v-else-if="(question.selectedOption == option.key) && (option.key != question.answer)"
+                      class="option-label-icon cross">✗</text>
                   </view>
+                  <text class="option-text">{{ option.value }}</text>
                 </view>
               </view>
-              <view class="stat-card">
-                <text class="stat-label">Pass Rate</text>
-                <view class="accuracy-visual">
-                  <view class="accuracy-circle" :style="{ '--accuracy': Number(question.accuracy) }">
-                    <text class="accuracy-value">{{ question.accuracy }}%</text>
+    
+              <!-- Key Point - 极简设计，直接跟在选项后面 -->
+              <view v-if="question.showAnswer && !isCorrectAnswer(question) && mode == 'learn'" class="key-point-section">
+                <text class="key-point-text">💡 {{ question.key_point }}</text>
+              </view>
+    
+              <!-- AI解释 - 只在答错时显示 -->
+              <view v-if="question.showAnswer && !isCorrectAnswer(question) && mode == 'learn'" class="ai-explanation">
+                <view class="ai-header">
+                  <view class="ai-avatar">
+                    <text class="ai-avatar-icon">🤖</text>
                   </view>
+                  <text class="ai-title">AI Explanation</text>
+                </view>
+                <view class="ai-content">
+                  <text>{{ question.explain }}</text>
+                  <text class="remember-tip">
+                    <text class="strong" style="margin-right: 20rpx;">Remember:</text>
+                    {{ question.rememberTip || 'Always check your mirrors and follow the Highway Code.' }}
+                  </text>
                 </view>
               </view>
-            </view>
-
-            <!-- 社区评论区 - 只在答错时显示 -->
-            <view v-if="question.showAnswer && !isCorrectAnswer(question) && mode == 'learn'" class="comments-section">
-              <view class="comments-header">
-                <text>Community Discussion</text>
-                <text class="comments-count">{{ question.comments ? question.comments.length : 0 }} comments</text>
-              </view>
-
-              <!-- 评论列表 -->
-              <view v-for="(comment, cIndex) in question.displayedComments" :key="comment.id" class="comment-item">
-                <!-- 精选标签 -->
-                <view v-if="comment.featured" class="featured-badge">
-                  <text>🌟 Featured</text>
-                </view>
-
-                <view class="comment-header">
-                  <view class="comment-avatar">
-                    <!-- <text>{{ comment.avatar }}</text> -->
-                    <image v-if="comment.avatar" :src="comment.avatar" mode=""></image>
-                    <view v-if="!comment.avatar">
-                      {{getInitial(comment.nickname)}}
+    
+              <!-- 统计信息 - 只在答错时显示 -->
+              <view v-if="question.showAnswer && !isCorrectAnswer(question) && mode == 'learn'" class="stats-container">
+                <view class="stat-card">
+                  <text class="stat-label">Difficulty Level</text>
+                  <view class="difficulty-visual">
+                    <view v-for="i in 5" :key="i" class="difficulty-bar" :class="{ active: i <= question.difficulty }">
                     </view>
                   </view>
-                  <view class="comment-info">
-                    <text class="comment-username">{{ comment.nickname }}</text>
-                    <text class="comment-meta">{{ comment.test_center }}</text>
-                  </view>
-                  <view class="comment-actions">
-                    <button class="comment-like-button" :class="{ liked: comment.is_support }"
-                      @tap="toggleCommentLike(comment)">
-                      <u-icon v-if="!comment.is_support" name="heart" size="40rpx" color="#999"></u-icon>
-                      <u-icon v-if="comment.is_support" name="heart-fill" size="40rpx" color="#FF6B6B"></u-icon>
-                      <!-- <text class="comment-like-icon">{{ comment.is_support ? '❤️' : '🤍' }}</text> -->
-                      <text class="comment-like-count">{{ comment.support_count }}</text>
-                    </button>
-                    <button class="comment-reply-button" @tap="replyToComment(comment)">
-                      <!-- <text class="comment-reply-icon">💬</text> -->
-                      <u-icon name="chat" size="40rpx"></u-icon>
-                      <text class="comment-reply-label">Reply</text>
-                    </button>
+                </view>
+                <view class="stat-card">
+                  <text class="stat-label">Pass Rate</text>
+                  <view class="accuracy-visual">
+                    <view class="accuracy-circle" :style="{ '--accuracy': Number(question.accuracy) }">
+                      <text class="accuracy-value">{{ question.accuracy }}%</text>
+                    </view>
                   </view>
                 </view>
-                <text class="comment-text">{{ comment.content }}</text>
-
-                <!-- 回复列表 - 只显示前2条 -->
-                <!-- <view v-if="comment.first_reply" class="replies-container">
-                  <view v-for="(reply, replyIndex) in comment.first_reply" :key="reply.id" class="reply-item">
-                    <view class="reply-header">
-                      <view class="reply-avatar">
-                        <text>{{ reply.avatar }}</text>
-                      </view>
-                      <view class="reply-info">
-                        <text class="reply-username">{{ reply.nickname }}</text>
-                        <text class="reply-meta">{{ reply.test_center || 'Birmingham' }}</text>
-                      </view>
-                      <view class="reply-actions">
-                        <button class="reply-like-button" :class="{ liked: reply.is_support }"
-                          @tap="toggleReplyLike(comment, reply)">
-                          <text class="reply-like-icon">{{ reply.is_support ? '❤️' : '🤍' }}</text>
-                          <text class="reply-like-count">{{ reply.support_count || 0 }}</text>
-                        </button>
-                        <button class="comment-reply-button" @tap="replyToReply(comment, reply)">
-                          <text class="comment-reply-label">Reply</text>
-                        </button>
+              </view>
+    
+              <!-- 社区评论区 - 只在答错时显示 -->
+              <view v-if="question.showAnswer && !isCorrectAnswer(question) && mode == 'learn'" class="comments-section">
+                <view class="comments-header">
+                  <text>Community Discussion</text>
+                  <text class="comments-count">{{ question.comments ? question.comments.length : 0 }} comments</text>
+                </view>
+    
+                <!-- 评论列表 -->
+                <view v-for="(comment, cIndex) in question.displayedComments" :key="comment.id" class="comment-item">
+                  <!-- 精选标签 -->
+                  <view v-if="comment.featured" class="featured-badge">
+                    <text>🌟 Featured</text>
+                  </view>
+    
+                  <view class="comment-header">
+                    <view class="comment-avatar">
+                      <!-- <text>{{ comment.avatar }}</text> -->
+                      <image v-if="comment.avatar" :src="comment.avatar" mode=""></image>
+                      <view v-if="!comment.avatar">
+                        {{getInitial(comment.nickname)}}
                       </view>
                     </view>
-                    <text class="reply-text">{{ reply.content }}</text>
+                    <view class="comment-info">
+                      <text class="comment-username">{{ comment.nickname }}</text>
+                      <text class="comment-meta">{{ comment.test_center }}</text>
+                    </view>
+                    <view class="comment-actions">
+                      <button class="comment-like-button" :class="{ liked: comment.is_support }"
+                        @tap="toggleCommentLike(comment)">
+                        <u-icon v-if="!comment.is_support" name="heart" size="40rpx" color="#999"></u-icon>
+                        <u-icon v-if="comment.is_support" name="heart-fill" size="40rpx" color="#FF6B6B"></u-icon>
+                        <!-- <text class="comment-like-icon">{{ comment.is_support ? '❤️' : '🤍' }}</text> -->
+                        <text class="comment-like-count">{{ comment.support_count }}</text>
+                      </button>
+                      <button class="comment-reply-button" @tap="replyToComment(comment)">
+                        <!-- <text class="comment-reply-icon">💬</text> -->
+                        <u-icon name="chat" size="40rpx"></u-icon>
+                        <text class="comment-reply-label">Reply</text>
+                      </button>
+                    </view>
                   </view>
-
-                  Load more replies - 超过2条时显示
-                  <view v-if="comment.replies.length > 2 && !comment.showAllReplies" class="load-more-replies">
-                    <text class="load-more-replies-text" @tap="loadMoreReplies(comment)">
-                      View more replies ({{ comment.replies.length - 2 }} more)
-                    </text>
-                  </view>
+                  <text class="comment-text">{{ comment.content }}</text>
+    
+                  <!-- 回复列表 - 只显示前2条 -->
+                  <!-- <view v-if="comment.first_reply" class="replies-container">
+                    <view v-for="(reply, replyIndex) in comment.first_reply" :key="reply.id" class="reply-item">
+                      <view class="reply-header">
+                        <view class="reply-avatar">
+                          <text>{{ reply.avatar }}</text>
+                        </view>
+                        <view class="reply-info">
+                          <text class="reply-username">{{ reply.nickname }}</text>
+                          <text class="reply-meta">{{ reply.test_center || 'Birmingham' }}</text>
+                        </view>
+                        <view class="reply-actions">
+                          <button class="reply-like-button" :class="{ liked: reply.is_support }"
+                            @tap="toggleReplyLike(comment, reply)">
+                            <text class="reply-like-icon">{{ reply.is_support ? '❤️' : '🤍' }}</text>
+                            <text class="reply-like-count">{{ reply.support_count || 0 }}</text>
+                          </button>
+                          <button class="comment-reply-button" @tap="replyToReply(comment, reply)">
+                            <text class="comment-reply-label">Reply</text>
+                          </button>
+                        </view>
+                      </view>
+                      <text class="reply-text">{{ reply.content }}</text>
+                    </view>
+    
+                    Load more replies - 超过2条时显示
+                    <view v-if="comment.replies.length > 2 && !comment.showAllReplies" class="load-more-replies">
+                      <text class="load-more-replies-text" @tap="loadMoreReplies(comment)">
+                        View more replies ({{ comment.replies.length - 2 }} more)
+                      </text>
+                    </view>
+                  </view> -->
+                </view>
+    
+                <!-- 加载更多评论 -->
+                <!-- <view v-if="!question.showAllComments">
+                  <button v-if="question.comments.length > 3" class="view-more-button" @tap="showMoreComments(question)">
+                    View More Comments ({{ question.comments.length - 3 }} more)
+                  </button>
                 </view> -->
-              </view>
-
-              <!-- 加载更多评论 -->
-              <!-- <view v-if="!question.showAllComments">
-                <button v-if="question.comments.length > 3" class="view-more-button" @tap="showMoreComments(question)">
-                  View More Comments ({{ question.comments.length - 3 }} more)
-                </button>
-              </view> -->
-
-              <!-- 加载中提示 -->
-              <view v-if="question.isLoadingComments" class="load-more-container">
-                <view class="loading-spinner"></view>
+    
+                <!-- 加载中提示 -->
+                <view v-if="question.isLoadingComments" class="load-more-container">
+                  <view class="loading-spinner"></view>
+                </view>
               </view>
             </view>
+          </scroll-view>
+        </swiper-item>
+      </swiper>
+    
+      <!-- 底部操作栏 -->
+      <view class="bottom-bar" :class="{ 'comment-mode': showCommentInput }">
+        <!-- 普通模式：显示Save和题号 -->
+        <view v-if="!showCommentInput" class="save-section">
+          <view class="save-button" :class="{ saved: currentQuestion && currentQuestion.collected }" @tap="toggleSave">
+            <!-- <text class="save-icon">{{ currentQuestion && currentQuestion.collected ? '⭐' : '☆' }}</text> -->
+            <u-icon name="star-fill" color="#6b7280" size="40rpx" v-if="currentQuestion && currentQuestion.collected"></u-icon>
+            <u-icon name="star" color="#6b7280" size="40rpx" v-if="currentQuestion && !currentQuestion.collected"></u-icon>
+            <text style="margin-left: 16rpx;">{{ currentQuestion && currentQuestion.collected ? 'Saved' : 'Save' }}</text>
           </view>
-        </scroll-view>
-      </swiper-item>
-    </swiper>
-
-    <!-- 底部操作栏 -->
-    <view class="bottom-bar" :class="{ 'comment-mode': showCommentInput }">
-      <!-- 普通模式：显示Save和题号 -->
-      <view v-if="!showCommentInput" class="save-section">
-        <view class="save-button" :class="{ saved: currentQuestion && currentQuestion.collected }" @tap="toggleSave">
-          <!-- <text class="save-icon">{{ currentQuestion && currentQuestion.collected ? '⭐' : '☆' }}</text> -->
-          <u-icon name="star-fill" color="#6b7280" size="40rpx" v-if="currentQuestion && currentQuestion.collected"></u-icon>
-          <u-icon name="star" color="#6b7280" size="40rpx" v-if="currentQuestion && !currentQuestion.collected"></u-icon>
-          <text style="margin-left: 16rpx;">{{ currentQuestion && currentQuestion.collected ? 'Saved' : 'Save' }}</text>
+          <view class="question-counter">
+            {{ currentQuestionIndex + 1 }}/{{ totalQuestions }}
+          </view>
         </view>
-        <view class="question-counter">
-          {{ currentQuestionIndex + 1 }}/{{ totalQuestions }}
+    
+        <!-- 评论模式：显示评论输入框 -->
+        <view v-else class="comment-input-bottom">
+          <input type="text" class="comment-input-field" v-model="commentText" placeholder="Leave your comment..."
+            @confirm="sendComment">
+          <view class="send-button" @tap="sendComment">
+            <text>➤</text>
+          </view>
         </view>
       </view>
-
-      <!-- 评论模式：显示评论输入框 -->
-      <view v-else class="comment-input-bottom">
-        <input type="text" class="comment-input-field" v-model="commentText" placeholder="Leave your comment..."
-          @confirm="sendComment">
-        <view class="send-button" @tap="sendComment">
-          <text>➤</text>
+    
+      <!-- 滑动提示 -->
+      <view class="swipe-hint" v-if="showSwipeHint">Swipe left or right to navigate</view>
+      
+      
+      <view v-if="showResult" class="result-modal">
+        <view class="result-backdrop" @tap.stop></view>
+        <view class="result-content">
+          <view class="result-header">
+            <view class="result-title">Accuracy</view>
+            <view>Test Complete</view>
+          </view>
+          
+          <view class="result-score">
+            <view>
+              <text style="font-size: 70rpx;font-weight: 500;">{{accuracyCount}}</text> <text style="font-size: 50rpx;margin-left: 10rpx;">%</text>
+            </view>
+            <!-- <view style="font-size: 20rpx;">
+              Accuracy
+            </view> -->
+          </view>
+      
+          <!-- 标记统计 -->
+          <view class="result-stats">
+            <view class="stat-item">
+              <text class="stat-value" style="color:#F44336 !important;">{{ wrongCount }}</text>
+              <text class="stat-label" style="color:#F44336 !important;">Incorrect</text>
+            </view>
+            <view class="stat-item">
+              
+              <text class="stat-value">{{ questions.length }}</text>
+              <text class="stat-label">Total</text>
+            </view>
+          </view>
+      
+          <!-- 操作按钮 -->
+          <view class="result-actions">
+            <button class="result-button exit-btn" @tap="goBack">
+              Exit
+            </button>
+            <button class="result-button review-btn" @tap="showQuestionList">
+              View Details
+            </button>
+          </view>
         </view>
       </view>
     </view>
-
-    <!-- 滑动提示 -->
-    <view class="swipe-hint" v-if="showSwipeHint">Swipe left or right to navigate</view>
-    
-    
-    <view v-if="showResult" class="result-modal">
-      <view class="result-backdrop" @tap.stop></view>
-      <view class="result-content">
-        <view class="result-header">
-          <view class="result-title">Accuracy</view>
-          <view>Test Complete</view>
-        </view>
-        
-        <view class="result-score">
-          <view>
-            <text style="font-size: 70rpx;font-weight: 500;">{{accuracyCount}}</text> <text style="font-size: 50rpx;margin-left: 10rpx;">%</text>
-          </view>
-          <!-- <view style="font-size: 20rpx;">
-            Accuracy
-          </view> -->
-        </view>
-    
-        <!-- 标记统计 -->
-        <view class="result-stats">
-          <view class="stat-item">
-            <text class="stat-value" style="color:#F44336 !important;">{{ wrongCount }}</text>
-            <text class="stat-label" style="color:#F44336 !important;">Incorrect</text>
-          </view>
-          <view class="stat-item">
-            
-            <text class="stat-value">{{ questions.length }}</text>
-            <text class="stat-label">Total</text>
-          </view>
-        </view>
-    
-        <!-- 操作按钮 -->
-        <view class="result-actions">
-          <button class="result-button exit-btn" @tap="goBack">
-            Exit
-          </button>
-          <button class="result-button review-btn" @tap="showQuestionList">
-            View Details
-          </button>
-        </view>
-      </view>
-    </view>
-    
-    
+    <u-modal :show="modalShow" :title="modalTitle" :showCancelButton="showCancelButton" :content='modalContent' :cancelText="cancelText" :confirmText="confirmText" @cancel="cancel" @confirm="confirm"></u-modal>
   </view>
 </template>
 
@@ -369,7 +370,14 @@
         // 题目数据数组
         questions: [],
         pid: null,
-        showResult: false
+        showResult: false,
+        modalShow: false,
+        modalTitle: '',
+        modalType: '',
+        modalContent: '',
+        showCancelButton: false,
+        cancelText: 'Cancel',
+        confirmText: 'Confirm'
       }
     },
     computed: {
@@ -414,7 +422,24 @@
       },
       // 返回
       goBack() {
-        uni.navigateBack();
+        // 弹窗提示
+        this.modalShow = true
+        this.modalTitle =  'Exit'
+        this.modalType = 'Exit'
+        this.showCancelButton = true
+        this.confirmText = 'OK'
+        this.modalContent = `Are you sure you want to exit?`
+      },
+      confirm () {
+        this.modalShow = false
+        if (this.modalType == 'Exit') {
+          // uni.navigateBack({
+          //   delta: 2
+          // })
+        }
+      },
+      cancel () {
+        this.modalShow = false
       },
       // 打开设置
       openSettings() {

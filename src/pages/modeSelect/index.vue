@@ -265,7 +265,7 @@ export default {
       return this.roadSignCategories.map(category => {
 
         const filteredSigns = category.question.filter(sign =>
-          sign.title.includes(this.searchKeyword)
+          sign.title.toLowerCase().includes(this.searchKeyword.toLowerCase())
         );
 
         return {
@@ -397,29 +397,33 @@ export default {
     startLearning() {
       const category = this.categories.find(c => c.id === this.selectedCategory);
       console.log('Starting learning for category:', category);
-      // 这里可以调用API开始学习
-      // uni.showToast({
-      //   title: '开始学习',
-      //   icon: 'success'
-      // });
+      
+      // 如果没题目，提示没题目
+      if (category.question && !category.question.length) {
+        uni.showToast({
+          title: 'has no data',
+          icon: 'none'
+        });
+        return
+      }
       // 区别什么类型的科目
       switch (this.currentViewTitle){
         case 'TheoryTest':
           // 跳转答题
           uni.navigateTo({
-            url: '/pages/learnQuestion/index?cate_id=' + this.selectedCategory + '&subject_id=' + this.subject_id
+            url: '/pages/learnQuestion/index?cate_id=' + this.selectedCategory + '&subject_id=' + this.subject_id + '&mode=learn'
           })
           break;
         case 'HazardTest':
           // 跳转答题
           uni.navigateTo({
-            url: '/pages/hazardPerception/list?cate_id=' + this.selectedCategory + '&title=' + category.name
+            url: '/pages/hazardPerception/list?cate_id=' + this.selectedCategory + '&title=' + category.name + '&mode=learn'
           })
           break;
         case 'HighwayCode':
           // 跳转答题
           uni.navigateTo({
-            url: '/pages/highwayCode/highwayCode?cate_id=' + this.selectedCategory + '&subject_id=' + this.subject_id
+            url: '/pages/highwayCode/highwayCode?cate_id=' + this.selectedCategory + '&subject_id=' + this.subject_id + '&mode=learn'
           })
           break;
         case 'RodeSign':
@@ -435,7 +439,7 @@ export default {
     },
     // 获取分类数据
     async fetchCategories() {
-      
+
       if (this.currentViewTitle == 'RodeSign') {
         
         // 获取本地的
@@ -449,14 +453,24 @@ export default {
         
       } else {
         try {
-          const response = await getThree({
-            kind: 'QUESTION',
-            subject_id: this.subject_id
+          const subjects = uni.getStorageSync('subjects')
+          let categories = subjects.filter(item => item.id == this.subject_id)[0].cate
+          // 处理总数
+          categories.forEach(item => {
+            item.total = item.question ? item.question.length : 0
+            item.wrong = item.wrongQuestions ? item.wrongQuestions.length : 0
+            item.progress = item.answerQuestions ? (item.answerQuestions.length / item.total * 100).toFixed(2) : 0
           })
-          if (response.code === 1) {
-            this.categories = response.data;
-            this.selectedCategory = this.categories[0].id;
-          }
+          this.categories = categories
+          this.selectedCategory = this.categories[0].id
+          // const response = await getThree({
+          //   kind: 'QUESTION',
+          //   subject_id: this.subject_id
+          // })
+          // if (response.code === 1) {
+          //   this.categories = response.data;
+          //   this.selectedCategory = this.categories[0].id;
+          // }
         } catch (error) {
           console.error('Failed to fetch categories:', error);
         }

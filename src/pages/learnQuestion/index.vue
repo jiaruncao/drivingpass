@@ -126,7 +126,7 @@
                   <text v-else-if="(question.selectedOption == option.key) && (option.key != question.answer)"
                     class="option-label-icon cross">✗</text>
                 </view>
-                <text class="option-text">{{ option.value }}</text>
+                <text class="option-text">{{ option.value }}  111</text>
               </view>
             </view>
             
@@ -470,6 +470,15 @@
       // Swiper切换
       onSwiperChange(e) {
         this.currentQuestionIndex = e.detail.current;
+        
+        // 记录当前题目
+        this.$utils.updateSubjectStorage('subjects', {
+          subjectId: this.subject_id,
+          cateId: this.cate_id
+        }, {
+          'current_question_index': this.currentQuestionIndex
+        });
+        
         if (this.settings.voiceAutoRead) {
           this.readCurrentQuestion();
         }
@@ -518,6 +527,10 @@
         if (isCorrect) {
           // 答对了
           this.correctStreak++;
+          
+          // 移除本地错题
+          this.removeWrong()
+          
           this.$forceUpdate()
           // 显示连续答对庆祝
           if (this.settings.streakCelebration && this.correctStreak >= 3) {
@@ -557,6 +570,8 @@
           this.$forceUpdate()
         }
         
+        this.recordAdd()
+        
         // 如果答题答完
         const hasAllAnswered = this.questions.every(question => {
           return question.showAnswer
@@ -576,8 +591,18 @@
         return question.selectedOption == question.answer;
       },
       optionClass (question, option) {
-        if (question.showAnswer && question.selectedOption == option.key) {
-          return 'selected'
+        if (this.mode == 'learn') {
+          if (!question.showAnswer && question.selectedOption == option.key) {
+            return 'selected'
+          } else if (question.showAnswer && (option.key == question.answer)) {
+            return 'correct'
+          } else if (question.showAnswer && (question.selectedOption == option.key) && (option.key != question.answer)) {
+            return 'incorrect'
+          }
+        } else if (this.mode == 'test') {
+          if (question.showAnswer && question.selectedOption == option.key) {
+            return 'selected'
+          }
         }
       },
       // 切换评论点赞
@@ -660,11 +685,15 @@
           }).then(res => {
             console.log(res)
             this.currentQuestion.collected = true;
-            // 缓存
-            this.setStorageSyncSubjects(this.currentQuestion.id, 'collected', true)
-            console.log(this.currentQuestion)
-            console.log("this.startLearnQuestion", this.startLearnQuestion);
-            // this.$utils.toast("Collected questions successfully！");
+            // 缓存收藏
+            this.$utils.updateSubjectStorage('subjects', {
+              subjectId: this.subject_id,
+              cateId: this.cate_id,
+              questionId: this.currentQuestion.id
+            }, {
+              'collected': true
+            });
+
             this.$forceUpdate()
           })
         } else {
@@ -673,8 +702,13 @@
           }).then(res => {
             console.log(res)
             this.currentQuestion.collected = false;
-            this.setStorageSyncSubjects(this.currentQuestion.id, 'collected', false)
-            // this.$utils.toast("Cancel collection successfully！");
+            this.$utils.updateSubjectStorage('subjects', {
+              subjectId: this.subject_id,
+              cateId: this.cate_id,
+              questionId: this.currentQuestion.id
+            }, {
+              'collected': false
+            });
             this.$forceUpdate()
           })
         }
@@ -706,50 +740,118 @@
           this.questions[this.currentQuestionIndex].displayedComments = this.showAllComments ? this.questions[this.currentQuestionIndex].comments : this.questions[this.currentQuestionIndex].comments.slice(0, 3)
         })
       },
+      // 移除错题
+      removeWrong () {
+        // 获取错题数组
+        const subjects = uni.getStorageSync('subjects');
+        if (!subjects) return;
+        
+        // 获取当前错题列表
+        let wrongList = this.$utils.getWrongList(subjects, this.subject_id, this.cate_id);
+        
+        // 检查并添加错题
+        const removed = this.$utils.removeWrongQuestionIfExists(
+          subjects, 
+          this.subject_id, 
+          this.cate_id, 
+          this.currentQuestion.id
+        );
+        
+        if (removed) {
+          // 更新缓存
+          uni.setStorageSync('subjects', subjects);
+        
+          console.log('错题移除成功，当前错题数:', wrongList.length);
+        }
+      },
+      // 新增错题
+      addWrong () {
+        // 获取错题数组
+        const subjects = uni.getStorageSync('subjects');
+        if (!subjects) return;
+        
+        // 获取当前错题列表
+        let wrongList = this.$utils.getWrongList(subjects, this.subject_id, this.cate_id);
+        
+        // 检查并添加错题
+        const added = this.$utils.addWrongQuestionIfNotExists(
+          subjects,
+          this.subject_id,
+          this.cate_id,
+          this.currentQuestion.id
+        );
+        
+        if (added) {
+          // 更新缓存
+          uni.setStorageSync('subjects', subjects);
+        
+          console.log('错题添加成功，当前错题数:', wrongList.length);
+        }
+      },
       // 设置错题记录
       wrongAdd () {
         wrongAdd({
           question_id: this.currentQuestion.id,
           source: 'TRAINING',
           user_answer: this.currentQuestion.selectedOption
+        }).then(res => {
+          this.addWrong()
         })
+      },
+      addRecord () {
+        // 获取记录数组
+        const subjects = uni.getStorageSync('subjects');
+        if (!subjects) return;
+
+        // 检查并添加
+        const added = this.$utils.addQuestionIfNotExists(
+          subjects, 
+          this.subject_id, 
+          this.cate_id, 
+          this.currentQuestion.id
+        );
+        
+        if (added) {
+          // 更新缓存
+          uni.setStorageSync('subjects', subjects);
+        }
       },
       recordAdd () {
         recordAdd({
           question_id: this.currentQuestion.id,
           result: this.currentQuestion.isCorrect
+        }).then(res => {
+          // 记录答题
+          this.addRecord()
+          // 记录当前题目
+          this.$utils.updateSubjectStorage('subjects', {
+            subjectId: this.subject_id,
+            cateId: this.cate_id
+          }, {
+            'current_question_index': this.currentQuestionIndex
+          });
         })
-      },
-      // setStorageSyncSubjects
-      setStorageSyncSubjects (id, key, value) {
-        const subjects = uni.getStorageSync('subjects')
-        if (subjects && subjects.length) {
-          subjects.forEach(item => {
-            if (item.id == this.subject_id) {
-              item.cate.forEach(cate => {
-                if (cate.id == this.cate_id) {
-                  cate.question.forEach(questionItem => {
-                    if (id == questionItem.id) {
-                      questionItem[key] = value
-                    }
-                  })
-                }
-              })
-            }
-          })
-          // 更新缓存
-          uni.setStorageSync('subjects', subjects)
-        }
       }
     },
     onLoad(option) {
+      // 判断模式
       this.mode = option.mode ? option.mode : 'learn'
       if (option.mode == 'test') {
         this.subject_id = option.subject_id
       } else {
         this.subject_id = option.subject_id
         this.cate_id = option.cate_id
+        
+        // 自动跳转到当前题目
+        const subjects = uni.getStorageSync('subjects');
+        
+        if (!subjects) return;
+        
+        this.currentQuestionIndex = this.$utils.getCurrentQuestionIndex(subjects, this.subject_id, this.cate_id)
+        
+        console.log('this.currentQuestionIndex', this.currentQuestionIndex)
       }
+      
       // 初始化题目数据
       this.initQuestions();
 

@@ -218,13 +218,27 @@ export default {
         // 向左滑动，前往下一个
         this.currentIndex++;
       }
-      
+      this.$utils.updateSubjectStorage('subjects', {
+        subjectId: this.subject_id,
+        cateId: this.cate_id
+      }, {
+        'current_question_index': this.currentIndex
+      });
       this.updateTranslate();
       this.isDragging = false;
     },
     // 直接跳转到指定滑块
     goToSlide(index) {
       this.currentIndex = index;
+      
+      // 记录当前题目
+      this.$utils.updateSubjectStorage('subjects', {
+        subjectId: this.subject_id,
+        cateId: this.cate_id
+      }, {
+        'current_question_index': this.currentIndex
+      });
+      
       this.updateTranslate();
     },
     // 更新滑动位置
@@ -291,6 +305,16 @@ export default {
     // this.updateTranslate();
     this.cate_id = option.cate_id
     this.subject_id = option.subject_id
+    
+    // 自动跳转到当前题目
+    const subjects = uni.getStorageSync('subjects');
+    
+    if (!subjects) return;
+    
+    this.currentIndex = this.$utils.getCurrentQuestionIndex(subjects, this.subject_id, this.cate_id)
+    
+    console.log('this.currentQuestionIndex', this.currentIndex)
+    
     // 取缓存数据
     const questions = uni.getStorageSync('questions');
     if (questions) {

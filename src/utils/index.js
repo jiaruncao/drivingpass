@@ -87,6 +87,299 @@ function clearStore() {
   }
 }
 
+
+/**
+ * 更新题目缓存数据
+ * @param {String} storageKey 缓存键名
+ * @param {Object} targetConditions 目标定位条件
+ * @param {Object} updates 要更新的属性
+ * @returns {Boolean} 是否更新成功
+ */
+function updateSubjectStorage(storageKey, targetConditions, updates) {
+  try {
+    const data = uni.getStorageSync(storageKey);
+    if (!data || !Array.isArray(data)) {
+      console.warn(`未找到缓存数据或数据格式错误: ${storageKey}`);
+      return false;
+    }
+    
+    const updatedData = deepUpdateSubjects(data, targetConditions, updates);
+    
+    console.log('updatedData', updatedData)
+    
+    uni.setStorageSync(storageKey, updatedData);
+    return true;
+  } catch (error) {
+    console.error('更新缓存失败:', error);
+    return false;
+  }
+}
+
+/**
+ * 专门处理题目数据的深度更新
+ * @param {Array} subjects 题目数据
+ * @param {Object} conditions 定位条件 {subjectId, cateId, questionId}
+ * @param {Object} updates 要更新的属性
+ * @returns {Array} 更新后的数据
+ */
+function deepUpdateSubjects(subjects, conditions, updates) {
+  const { subjectId, cateId, questionId } = conditions;
+  
+  console.log('更新条件:', conditions);
+  console.log('更新数据:', updates);
+  console.log('原始数据:', JSON.stringify(subjects, null, 2));
+  
+  const result = subjects.map(subject => {
+    console.log('处理科目:', subject.id);
+    
+    // 检查科目匹配
+    if (subjectId && subject.id != subjectId) {
+      console.log('科目不匹配，跳过');
+      return subject;
+    }
+    
+    console.log('科目匹配，继续处理');
+    let updatedSubject = { ...subject };
+    
+    // 如果需要处理分类
+    if (cateId && subject.cate) {
+      console.log('需要处理分类');
+      updatedSubject.cate = subject.cate.map(cate => {
+        console.log('处理分类:', cate.id);
+        
+        // 检查分类匹配
+        if (cateId && cate.id != cateId) {
+          console.log('分类不匹配，跳过');
+          return cate;
+        }
+        
+        console.log('分类匹配，更新分类');
+        // 分类匹配，更新分类本身
+        return { ...cate, ...updates };
+      });
+    } else if (!cateId && !questionId) {
+      // 只更新科目本身
+      console.log('更新科目本身');
+      updatedSubject = { ...subject, ...updates };
+    }
+    
+    return updatedSubject;
+  });
+  
+  console.log('更新结果:', JSON.stringify(result, null, 2));
+  return result;
+}
+
+/**
+ * 添加错题到错题集（如果不存在则添加）
+ * @param {Array} subjects 科目数据
+ * @param {String|Number} subjectId 科目ID
+ * @param {String|Number} cateId 分类ID
+ * @param {String|Number} questionId 题目ID
+ * @returns {Boolean} 是否成功添加
+ */
+function addWrongQuestionIfNotExists(subjects, subjectId, cateId, questionId) {
+  try {
+    const subject = subjects.find(item => item.id == subjectId);
+    if (!subject) return false;
+    
+    const cate = subject.cate.find(cate => cate.id == cateId);
+    if (!cate) return false;
+    
+    // 初始化 wrongQuestions 数组
+    if (!cate.wrongQuestions) {
+      cate.wrongQuestions = [];
+    }
+    
+    // 检查是否已存在，不存在则添加
+    if (!cate.wrongQuestions.includes(questionId)) {
+      cate.wrongQuestions.push(questionId);
+      return true;
+    }
+    
+    return false; // 已存在，未添加
+  } catch (error) {
+    console.error('添加错题失败:', error);
+    return false;
+  }
+}
+
+/**
+ * 从错题集中移除题目（如果存在则移除）
+ * @param {Array} subjects 科目数据
+ * @param {String|Number} subjectId 科目ID
+ * @param {String|Number} cateId 分类ID
+ * @param {String|Number} questionId 题目ID
+ * @returns {Boolean} 是否成功移除
+ */
+function removeWrongQuestionIfExists(subjects, subjectId, cateId, questionId) {
+  try {
+    const subject = subjects.find(item => item.id == subjectId);
+    if (!subject) return false;
+    
+    const cate = subject.cate.find(cate => cate.id == cateId);
+    if (!cate) return false;
+    
+    // 检查错题集是否存在
+    if (!cate.wrongQuestions || !Array.isArray(cate.wrongQuestions)) {
+      return false;
+    }
+    
+    // 检查是否存在于错题集中
+    const index = cate.wrongQuestions.findIndex(id => id == questionId);
+    if (index !== -1) {
+      // 存在则移除
+      cate.wrongQuestions.splice(index, 1);
+      return true;
+    }
+    
+    return false; // 不存在，未移除
+  } catch (error) {
+    console.error('移除错题失败:', error);
+    return false;
+  }
+}
+
+/**
+ * 安全的获取错题列表方法
+ * @param {Array} subjects 科目数据
+ * @param {String|Number} subjectId 科目ID
+ * @param {String|Number} cateId 分类ID
+ * @returns {Array} 错题列表
+ */
+function getWrongList(subjects, subjectId, cateId) {
+  try {
+    const subject = subjects.find(item => item.id == subjectId);
+    if (!subject) return [];
+    
+    const cate = subject.cate.find(cate => cate.id == cateId);
+    if (!cate) return [];
+    
+    return cate.wrongQuestions || [];
+  } catch (error) {
+    console.error('获取错题列表失败:', error);
+    return [];
+  }
+}
+
+/**
+ * 添加答题到答题记录（如果不存在则添加）
+ * @param {Array} subjects 科目数据
+ * @param {String|Number} subjectId 科目ID
+ * @param {String|Number} cateId 分类ID
+ * @param {String|Number} questionId 题目ID
+ * @returns {Boolean} 是否成功添加
+ */
+function addQuestionIfNotExists(subjects, subjectId, cateId, questionId) {
+  try {
+    const subject = subjects.find(item => item.id == subjectId);
+    if (!subject) return false;
+    
+    const cate = subject.cate.find(cate => cate.id == cateId);
+    if (!cate) return false;
+    
+    // 初始化 answerQuestions 数组
+    if (!cate.answerQuestions) {
+      cate.answerQuestions = [];
+    }
+    
+    // 检查是否已存在，不存在则添加
+    if (!cate.answerQuestions.includes(questionId)) {
+      cate.answerQuestions.push(questionId);
+      return true;
+    }
+    
+    return false; // 已存在，未添加
+  } catch (error) {
+    console.error('添加错题失败:', error);
+    return false;
+  }
+}
+
+/**
+ * 从答题记录中移除题目（如果存在则移除）
+ * @param {Array} subjects 科目数据
+ * @param {String|Number} subjectId 科目ID
+ * @param {String|Number} cateId 分类ID
+ * @param {String|Number} questionId 题目ID
+ * @returns {Boolean} 是否成功移除
+ */
+function removeQuestionIfExists(subjects, subjectId, cateId, questionId) {
+  try {
+    const subject = subjects.find(item => item.id == subjectId);
+    if (!subject) return false;
+    
+    const cate = subject.cate.find(cate => cate.id == cateId);
+    if (!cate) return false;
+    
+    // 检查错题集是否存在
+    if (!cate.answerQuestions || !Array.isArray(cate.answerQuestions)) {
+      return false;
+    }
+    
+    // 检查是否存在于错题集中
+    const index = cate.answerQuestions.findIndex(id => id == questionId);
+    if (index !== -1) {
+      // 存在则移除
+      cate.answerQuestions.splice(index, 1);
+      return true;
+    }
+    
+    return false; // 不存在，未移除
+  } catch (error) {
+    console.error('移除错题失败:', error);
+    return false;
+  }
+}
+
+/**
+ * 获取当前题目在分类中的下标
+ * @param {Array} subjects 科目数据
+ * @param {String|Number} subjectId 科目ID
+ * @param {String|Number} cateId 分类ID
+ * @returns {Number} 题目下标，找不到返回-1
+ */
+function getCurrentQuestionIndex(subjects, subjectId, cateId) {
+  try {
+    const subject = subjects.find(item => item.id == subjectId);
+    if (!subject) return -1;
+    
+    const cate = subject.cate.find(cate => cate.id == cateId);
+    if (!cate || !cate.question || !Array.isArray(cate.question)) return -1;
+    
+    const currentQuestionIndex = cate.current_question_index;
+    if (!currentQuestionIndex) return 0; // 如果没有设置当前题目，默认返回第一题下标
+    
+    return currentQuestionIndex;
+  } catch (error) {
+    console.error('获取当前题目下标失败:', error);
+    return -1;
+  }
+}
+
+/**
+ * 通过题目ID获取题目下标
+ * @param {Array} subjects 科目数据
+ * @param {String|Number} subjectId 科目ID
+ * @param {String|Number} cateId 分类ID
+ * @param {String|Number} questionId 题目ID
+ * @returns {Number} 题目下标，找不到返回-1
+ */
+function getQuestionIndexById(subjects, subjectId, cateId, questionId) {
+  try {
+    const subject = subjects.find(item => item.id == subjectId);
+    if (!subject) return -1;
+    
+    const cate = subject.cate.find(cate => cate.id == cateId);
+    if (!cate || !cate.question || !Array.isArray(cate.question)) return -1;
+    
+    return cate.question.findIndex(question => question.id == questionId);
+  } catch (error) {
+    console.error('通过ID获取题目下标失败:', error);
+    return -1;
+  }
+}
+
 const utils = {
   clearStore,
   getStore,
@@ -96,6 +389,12 @@ const utils = {
   toast,
   upload,
   handleLanguage,
+  updateSubjectStorage,
+  addWrongQuestionIfNotExists,
+  removeWrongQuestionIfExists,
+  addQuestionIfNotExists,
+  getCurrentQuestionIndex,
+  getWrongList
 };
 
 export default utils;
