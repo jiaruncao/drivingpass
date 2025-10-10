@@ -70,7 +70,7 @@
         </view>
         
         <view class="stat-card">
-          <text class="stat-number">{{ info.multiple_choice_score }}</text>
+          <text class="stat-number">{{ info.multiple_choice_score ? info.multiple_choice_score.toFixed(2) : 0 }}</text>
           <text class="stat-label">Avg Score</text>
           <text class="stat-sublabel">Multiple Choice</text>
         </view>
@@ -347,42 +347,17 @@ export default {
       // 执行绘制
       ctx.draw();
     },
-    
-    // 获取用户数据 - API调用示例
-    async fetchUserData() {
-      try {
-        const response = await uni.request({
-          url: '/api/user/records',
-          method: 'GET'
-        });
-        
-        if (response[1].statusCode === 200) {
-          const data = response[1].data;
-          this.traineeInfo = data.traineeInfo;
-          this.testDate = data.testDate;
-          this.daysLeft = data.daysLeft;
-          this.passRate = data.passRate;
-          this.stats = data.stats;
-          
-          // 重新绘制图表
-          this.$nextTick(() => {
-            this.initCharts();
-          });
-        }
-      } catch (error) {
-        console.error('Failed to fetch user data:', error);
-        uni.showToast({
-          title: 'Failed to load data',
-          icon: 'none'
-        });
-      }
-    },
     getTestStatistics () {
       getTestStatistics().then(res => {
         console.log(res)
         if (res.code == 1) {
           this.info = res.data.list
           // 初始化多选题图表
+          this.info.labels = this.info.labels.map(data => {
+            return data.split('-').reverse().join('/')
+          })
+          
+          
           this.$nextTick(() => {
             this.drawLineChart('multipleChoiceChart', {
               labels: this.info.labels,
@@ -395,7 +370,8 @@ export default {
           });
         }
       })
-    }
+    },
+    
   }
 }
 </script>

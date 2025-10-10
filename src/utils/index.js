@@ -127,7 +127,7 @@ function deepUpdateSubjects(subjects, conditions, updates) {
   
   console.log('更新条件:', conditions);
   console.log('更新数据:', updates);
-  console.log('原始数据:', JSON.stringify(subjects, null, 2));
+  // console.log('原始数据:', JSON.stringify(subjects, null, 2));
   
   const result = subjects.map(subject => {
     console.log('处理科目:', subject.id);
@@ -142,8 +142,8 @@ function deepUpdateSubjects(subjects, conditions, updates) {
     let updatedSubject = { ...subject };
     
     // 如果需要处理分类
-    if (cateId && subject.cate) {
-      console.log('需要处理分类');
+    if (subject.cate && (cateId || questionId)) {
+      console.log('需要处理分类或题目');
       updatedSubject.cate = subject.cate.map(cate => {
         console.log('处理分类:', cate.id);
         
@@ -153,9 +153,32 @@ function deepUpdateSubjects(subjects, conditions, updates) {
           return cate;
         }
         
-        console.log('分类匹配，更新分类');
-        // 分类匹配，更新分类本身
-        return { ...cate, ...updates };
+        console.log('分类匹配，继续处理');
+        let updatedCate = { ...cate };
+        
+        // 如果需要处理题目
+        if (questionId && cate.question) {
+          console.log('需要处理题目');
+          updatedCate.question = cate.question.map(question => {
+            console.log('处理题目:', question.id);
+            
+            // 检查题目匹配
+            if (questionId && question.id != questionId) {
+              console.log('题目不匹配，跳过');
+              return question;
+            }
+            
+            console.log('题目匹配，更新题目');
+            // 题目匹配，更新题目
+            return { ...question, ...updates };
+          });
+        } else if (!questionId) {
+          // 只更新分类本身
+          console.log('更新分类本身');
+          updatedCate = { ...cate, ...updates };
+        }
+        
+        return updatedCate;
       });
     } else if (!cateId && !questionId) {
       // 只更新科目本身
@@ -166,7 +189,7 @@ function deepUpdateSubjects(subjects, conditions, updates) {
     return updatedSubject;
   });
   
-  console.log('更新结果:', JSON.stringify(result, null, 2));
+  // console.log('更新结果:', JSON.stringify(result, null, 2));
   return result;
 }
 

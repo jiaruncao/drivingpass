@@ -4,12 +4,12 @@
     <view class="header">
       <view class="back-button" @tap="goBack">←</view>
       <view class="header-content">
-        <text class="page-title">{{ currentSign.title }}</text>
+        <text class="page-title">{{ currentSign.title || '' }}</text>
         <view class="header-right">
           <view class="share-button" @tap="shareSign">
             <u-icon name="share" size="40rpx"></u-icon>
           </view>
-          <view class="progress-circle">
+          <view class="progress-circle" :style="{ '--accuracy': Number(categoryProgress) }">
             <text class="progress-text">{{ categoryProgress }}%</text>
           </view>
         </view>
@@ -57,7 +57,7 @@
 </template>
 
 <script>
-import {getThree, startTrain, recordAdd} from '@/http/api/testQuestions.js'
+import {getThree, recordAdd} from '@/http/api/testQuestions.js'
 export default {
   data() {
     return {
@@ -112,16 +112,11 @@ export default {
     },
     // 切换已读状态
     toggleReadStatus(index) {
-      // this.signsList[index].is_read = !this.signsList[index].is_read;
-      // this.$forceUpdate()
-      // this.updateProgress();
-      // this.saveProgress();
+      //this.signsList[index].is_read = true;
+      //this.updateProgress();
+      this.saveProgress(index);
       
-      this.signsList[index].is_read = true;
-      this.updateProgress();
-      this.saveProgress();
-      
-      this.setStorageSyncSubjects(this.signsList[index].id, 'is_read', true)
+      // this.setStorageSyncSubjects(this.signsList[index].id, 'is_read', true)
       
     },
     // 触摸开始
@@ -185,70 +180,49 @@ export default {
     updateProgress() {
       const readCount = this.signsList.filter(sign => sign.is_read).length;
       this.categoryProgress = Math.round((readCount / this.totalSigns) * 100);
+    },
+    addRecord () {
+      // 获取记录数组
+      const subjects = uni.getStorageSync('subjects');
+      if (!subjects) return;
+    
+      // 检查并添加
+      const added = this.$utils.addQuestionIfNotExists(
+        subjects, 
+        this.subject_id, 
+        this.cate_id, 
+        this.currentSign.id
+      );
       
-      this.setStorageSyncCate(this.cate_id, 'progress', this.categoryProgress)
+      if (added) {
+        // 更新缓存
+        uni.setStorageSync('subjects', subjects);
+      }
     },
     // 保存学习进度 - API调用示例
-    async saveProgress() {
+    async saveProgress(index) {
       
       try {
         const response = await recordAdd({
           question_id: this.currentSign.id
         })
         
-        if (response.code === 1) {
-          console.log('Progress saved successfully');
+        if (response.code == 1) {
+          this.addRecord()
+          this.$utils.updateSubjectStorage('subjects', {
+            subjectId: this.subject_id,
+            cateId: this.cate_id,
+            questionId: this.currentSign.id
+          }, {
+            'is_read': true
+          });
+          
+          this.signsList[index].is_read = true;
+          
+          this.updateProgress()
         }
       } catch (error) {
         console.error('Failed to save progress:', error);
-      }
-    },
-    // 开始练习
-    startTrain () {
-      startTrain({
-        cate_id: this.cate_id
-      }).then(res => {
-        if (res.code == 1) {
-          this.signsList = res.data.data
-          console.log(this.signsList)
-          this.updateProgress()
-        }
-      })
-    },
-    setStorageSyncSubjects (id, key, value) {
-      const subjects = uni.getStorageSync('subjects')
-      if (subjects && subjects.length) {
-        subjects.forEach(item => {
-          if (item.id == this.subject_id) {
-            item.cate.forEach(cate => {
-              if (cate.id == this.cate_id) {
-                cate.question.forEach(questionItem => {
-                  if (id == questionItem.id) {
-                    questionItem[key] = value
-                  }
-                })
-              }
-            })
-          }
-        })
-        // 更新缓存
-        uni.setStorageSync('subjects', subjects)
-      }
-    },
-    setStorageSyncCate (id, key, value) {
-      const subjects = uni.getStorageSync('subjects')
-      if (subjects && subjects.length) {
-        subjects.forEach(item => {
-          if (item.id == this.subject_id) {
-            item.cate.forEach(cate => {
-              if (cate.id == id) {
-                cate[key] = value
-              }
-            })
-          }
-        })
-        // 更新缓存
-        uni.setStorageSync('subjects', subjects)
       }
     }
   },
@@ -261,15 +235,27 @@ export default {
   onLoad(option) {
     this.cate_id = option.cate_id
     this.subject_id = option.subject_id
+    this.question_id = option.question_id
     // 取缓存数据
     const questions = uni.getStorageSync('questions');
     if (questions) {
       this.signsList = questions;
       this.updateProgress()
-      // this.categoryProgress = option.categoryProgress
     }
     
-    // this.startTrain()
+    if (this.question_id) {
+      // 获取下标
+      // 自动跳转到当前题目
+
+      this.currentIndex = this.signsList.findIndex(item => {
+        return item.id == this.question_id
+      })
+      
+      this.$nextTick(function() {
+        this.updateTranslate();
+      })
+    }
+
     // 页面加载后初始化数据
     // this.updateProgress();
     // this.updateTranslate();
@@ -354,7 +340,7 @@ export default {
   width: 90rpx;
   height: 90rpx;
   border-radius: 50%;
-  background: conic-gradient(#FFA500 0deg, #FFA500 216deg, #E0E0E0 216deg);
+  background: conic-gradient(from 0deg, #FFA500 0deg, #FFA500 calc(var(--accuracy) * 3.6deg), #E0E0E0 calc(var(--accuracy) * 3.6deg));
   display: flex;
   align-items: center;
   justify-content: center;

@@ -7,9 +7,9 @@
         <text class="page-title">{{ currentCode.title }}</text>
         <view class="header-right">
           <view class="share-button" @tap="shareCode">
-            <text class="share-icon">⋯</text>
+            <u-icon name="share" size="40rpx"></u-icon>
           </view>
-          <view class="progress-circle">
+          <view class="progress-circle" :style="{ '--accuracy': Number(categoryProgress) }">
             <text class="progress-text">{{ categoryProgress }}%</text>
           </view>
         </view>
@@ -162,11 +162,11 @@ export default {
     },
     // 切换已读状态
     toggleReadStatus(index) {
-      this.codesList[index].is_read = true;
-      this.updateProgress();
-      this.saveProgress();
-
-      this.setStorageSyncSubjects(this.codesList[index].id, 'is_read', true)
+      // this.codesList[index].is_read = true;
+      // this.updateProgress();
+      this.saveProgress(index);
+      
+      // this.setStorageSyncSubjects(this.codesList[index].id, 'is_read', true)
     },
     // 前往上一个
     goToPrevious() {
@@ -258,45 +258,57 @@ export default {
       const readCount = this.codesList.filter(code => code.is_read).length;
       this.categoryProgress = Math.round((readCount / this.totalCodes) * 100);
     },
+    addRecord () {
+      // 获取记录数组
+      const subjects = uni.getStorageSync('subjects');
+      if (!subjects) return;
+    
+      // 检查并添加
+      const added = this.$utils.addQuestionIfNotExists(
+        subjects, 
+        this.subject_id, 
+        this.cate_id, 
+        this.currentCode.id
+      );
+      
+      if (added) {
+        // 更新缓存
+        uni.setStorageSync('subjects', subjects);
+      }
+    },
     // 保存学习进度 
-    async saveProgress() {
+    async saveProgress(index) {
       try {
         const response = await recordAdd({
           question_id: this.currentCode.id
         })
         
-        if (response.code === 1) {
+        if (response.code == 1) {
+          
+          this.addRecord()
+          
+          this.$utils.updateSubjectStorage('subjects', {
+            subjectId: this.subject_id,
+            cateId: this.cate_id,
+            questionId: this.currentCode.id
+          }, {
+            'is_read': true
+          });
+          
+          this.codesList[index].is_read = true;
+          
+          this.updateProgress()
           console.log('Progress saved successfully');
         }
       } catch (error) {
         console.error('Failed to save progress:', error);
-      }
-    },
-    setStorageSyncSubjects (id, key, value) {
-      const subjects = uni.getStorageSync('subjects')
-      if (subjects && subjects.length) {
-        subjects.forEach(item => {
-          if (item.id == this.subject_id) {
-            item.cate.forEach(cate => {
-              if (cate.id == this.cate_id) {
-                cate.question.forEach(questionItem => {
-                  if (id == questionItem.id) {
-                    questionItem[key] = value
-                  }
-                })
-              }
-            })
-          }
-        })
-        // 更新缓存
-        uni.setStorageSync('subjects', subjects)
       }
     }
   },
   watch: {
     // 监听当前索引变化，自动保存进度
     currentIndex() {
-      // this.saveProgress();
+      
     }
   },
   onLoad(option) {
@@ -306,6 +318,13 @@ export default {
     this.cate_id = option.cate_id
     this.subject_id = option.subject_id
     
+    // 取缓存数据
+    const questions = uni.getStorageSync('questions');
+    if (questions) {
+      this.codesList = questions;
+      this.updateProgress()
+    }
+    
     // 自动跳转到当前题目
     const subjects = uni.getStorageSync('subjects');
     
@@ -313,14 +332,13 @@ export default {
     
     this.currentIndex = this.$utils.getCurrentQuestionIndex(subjects, this.subject_id, this.cate_id)
     
+    this.$nextTick(function() {
+      this.updateTranslate();
+    })
+    // this.updateTranslate();
     console.log('this.currentQuestionIndex', this.currentIndex)
     
-    // 取缓存数据
-    const questions = uni.getStorageSync('questions');
-    if (questions) {
-      this.codesList = questions;
-      this.updateProgress()
-    }
+    
     // this.startTrain()
   }
 }
@@ -407,7 +425,11 @@ export default {
   width: 90rpx;
   height: 90rpx;
   border-radius: 50%;
-  background: conic-gradient(#FFA500 0deg, #FFA500 216deg, #E0E0E0 216deg);
+  // background: conic-gradient(from 0deg,
+  //     #667eea 0deg,
+  //     #764ba2 calc(var(--accuracy) * 3.6deg),
+  //     #e5e7eb calc(var(--accuracy) * 3.6deg));
+  background: conic-gradient(from 0deg, #FFA500 0deg, #FFA500 calc(var(--accuracy) * 3.6deg), #E0E0E0 calc(var(--accuracy) * 3.6deg));
   display: flex;
   align-items: center;
   justify-content: center;

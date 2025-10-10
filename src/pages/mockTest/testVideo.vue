@@ -149,7 +149,34 @@
         </view>
       </view>
     </view>
-    <u-modal width="400rpx" :show="modalShow" :title="modalTitle" :showCancelButton="showCancel" :content='modalContent' :cancelText="cancelText" :confirmText="confirmText" @cancel="cancel" @confirm="confirm"></u-modal>
+    <u-modal width="400px" :show="modalShow" :title="modalTitle" :showCancelButton="showCancel" :content='modalContent' :cancelText="cancelText" :confirmText="confirmText" @cancel="cancel" @confirm="confirm"></u-modal>
+    
+    <view v-if="showPopup" class="result-modal">
+      <view class="result-backdrop" @tap.stop></view>
+      <view class="result-content">
+        <view class="result-header">
+          <view class="result-title">Test Completed</view>
+          <view class="result-min-title" style="margin-top: 10px;">Your Score</view>
+        </view>
+        
+        <view class="result-score">
+          <view>
+            <text style="font-size: 40px;font-weight: 500;">{{score}}</text>
+          </view>
+        </view>
+    
+        <!-- 操作按钮 -->
+        <view class="result-actions">
+          <button class="result-button exit-btn" @tap="doExit">
+            Exit
+          </button>
+          <button class="result-button review-btn" @tap="toRecords">
+            To Records
+          </button>
+        </view>
+      </view>
+    </view>
+    
   </view>
   
 </template>
@@ -207,6 +234,8 @@ export default {
       clickCount: 0, // 点击计数
       recentClicks: [], // 最近的点击时间记录
       scoreDisqualified: false ,// 分数是否被取消
+      showPopup: false,
+      score: 0
     }
   },
   
@@ -408,7 +437,10 @@ export default {
         paper_id: this.paper_id,
         questions: questions
       }).then(res => {
+        console.log(res)
         // 弹出得分
+        this.showPopup = true
+        this.score = res.score
       })
     },
     // 结束考试
@@ -612,6 +644,16 @@ export default {
       uni.setStorageSync('mockTestResult', {
         paper_id: this.paper_id,
         questions: bsQuestions
+      })
+    },
+    doExit () {
+      uni.redirectTo({
+        url: '/pages/mockTest/mockTest'
+      })
+    },
+    toRecords () {
+      uni.redirectTo({
+        url: '/pages/mockTest/record'
       })
     }
   },
@@ -1352,4 +1394,95 @@ export default {
   border-color: transparent transparent transparent #FF0000;
   filter: drop-shadow(0 0.0625rem 0.1875rem rgba(0,0,0,0.3)); /* 2rpx 6rpx → 0.125rem 0.375rem */
 }
+
+.result-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1000;
+  }
+  
+  .result-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+  }
+  
+  .result-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 400px;
+    background: white;
+    border-radius: 15px;
+    padding: 25px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  }
+  
+  .result-header {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  .result-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #333;
+  }
+  
+  .result-score {
+    text-align: center;
+    margin: 0 auto;
+    margin-bottom: 20px;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: #4A9EFF;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* 操作按钮 */
+  .result-actions {
+    display: flex;
+  }
+  
+  .result-button {
+    flex: 1;
+    padding: 12px;
+    border-radius: 50px;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    transition: all 0.3s ease;
+  }
+  
+  .exit-btn {
+    background: #f5f5f5;
+    color: #666;
+    margin-right: 10px;
+  }
+  
+  .exit-btn:active {
+    background: #e0e0e0;
+  }
+  
+  .review-btn {
+    background: linear-gradient(135deg, #4A9EFF 0%, #2196F3 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(74, 158, 255, 0.3);
+  }
+  
+  .review-btn:active {
+    transform: scale(0.98);
+  }
 </style>

@@ -31,7 +31,7 @@
           <text class="mode-subtitle">Practice like the real exam</text>
           <view class="progress-info">
             <text class="progress-label">Practiced</text>
-            <text class="progress-value">{{ testsPracticed }}x</text>
+            <text class="progress-value">{{ testsPracticed }}</text>
           </view>
         </view>
       </view>
@@ -207,6 +207,9 @@
 </template>
 
 <script>
+import {
+  getTypeFind
+} from '@/http/api/index.js'
 import {getThree, startTrain, getTestRecordCount} from '@/http/api/testQuestions.js'
 import {queryMemberInfo} from '@/http/api/login.js'
 export default {
@@ -215,8 +218,8 @@ export default {
       subject_id: null,
       currentViewTitle: '',
       currentView: 'home', // 当前视图状态
-      overallProgress: 81, // 整体学习进度
-      testsPracticed: 12, // 测试练习次数
+      overallProgress: 0, // 整体学习进度
+      testsPracticed: 0, // 测试练习次数
       showQuantityPicker: false, // 是否显示数量选择器
       tempVideoCount: 10,
       tempQuestionCount: 50, // 临时题目数量
@@ -273,7 +276,7 @@ export default {
           question: filteredSigns
         };
       }).filter(category => category.question.length > 0);
-    }
+    },
   },
   methods: {
     camelCaseToSpacesAdvanced(str) {
@@ -439,43 +442,22 @@ export default {
     },
     // 获取分类数据
     async fetchCategories() {
+      
+      const subjects = uni.getStorageSync('subjects')
+      let categories = subjects.filter(item => item.id == this.subject_id)[0].cate
+      // 处理总数
+      categories.forEach(item => {
+        item.total = item.question ? item.question.length : 0
+        item.wrong = item.wrongQuestions ? item.wrongQuestions.length : 0
+        item.progress = item.answerQuestions ? (item.answerQuestions.length / item.total * 100).toFixed(2) : 0
+      })
 
       if (this.currentViewTitle == 'RodeSign') {
-        
-        // 获取本地的
-        const subjects = uni.getStorageSync('subjects')
-        
-        const roadData = subjects.filter(item => item.id == this.subject_id)[0].cate
-      
-        this.roadSignCategories = roadData
-        
-        // console.log(this.roadSignCategories)
-        
+        this.roadSignCategories = categories
       } else {
-        try {
-          const subjects = uni.getStorageSync('subjects')
-          let categories = subjects.filter(item => item.id == this.subject_id)[0].cate
-          // 处理总数
-          categories.forEach(item => {
-            item.total = item.question ? item.question.length : 0
-            item.wrong = item.wrongQuestions ? item.wrongQuestions.length : 0
-            item.progress = item.answerQuestions ? (item.answerQuestions.length / item.total * 100).toFixed(2) : 0
-          })
-          this.categories = categories
-          this.selectedCategory = this.categories[0].id
-          // const response = await getThree({
-          //   kind: 'QUESTION',
-          //   subject_id: this.subject_id
-          // })
-          // if (response.code === 1) {
-          //   this.categories = response.data;
-          //   this.selectedCategory = this.categories[0].id;
-          // }
-        } catch (error) {
-          console.error('Failed to fetch categories:', error);
-        }
+        this.categories = categories
+        this.selectedCategory = this.categories[0].id
       }
-
     },
     // 获取题目
     async startTrain () {
@@ -489,20 +471,6 @@ export default {
           const testCount = testCountRes.data.count
           // 对比
           if (!this.contrastMebmberInfo(testCount)) {
-            // 提示次数不够，升级会员
-            // uni.showModal({
-            //   title: 'Feature Locked',
-            //   content: `Not enough times, Upgrade to unlock this feature`,
-            //   confirmText: 'Upgrade',
-            //   cancelText: 'Cancel',
-            //   success: (res) => {
-            //     if (res.confirm) {
-            //       uni.navigateTo({
-            //         url: '/pages/my/subscription',
-            //       })
-            //     }
-            //   }
-            // });
             this.showFeature = true
             this.content = `Not enough times, Upgrade to unlock this feature`
             return false
@@ -564,10 +532,15 @@ export default {
     },
     // 选择详情页面中的道路标志
     selectDetailSign(sign) {
+      this.selectedCategory = sign.cate_id
+      const params = this.getTrainParams()
+      const questions = this.selectSubjects(params)
+      uni.setStorageSync('questions', questions)
+      this.selectedSignCategory.signs = questions
       console.log('Selected detail sign:', sign);
       // 这里可以导航到标志学习页面或显示标志详细信息
       uni.navigateTo({
-        url: `/pages/roadSign/learn?cate_id=${sign.cate_id}&categoryProgress=${this.selectedSignCategory.progress}&subject_id=${this.subject_id}`
+        url: `/pages/roadSign/learn?cate_id=${sign.cate_id}&categoryProgress=${this.selectedSignCategory.progress}&subject_id=${this.subject_id}&question_id=${sign.id}`
       })
     },
     // 查询用户会员权益
@@ -685,6 +658,19 @@ export default {
         }
       }
       return null // 如果没有找到，返回null或undefined
+    },
+    // 查询总进度
+    getTypeFind () {
+      getTypeFind().then((res) => {
+        const drivingTest = res.data[0].children
+        
+        drivingTest.forEach(item => {
+          if (item.id == this.subject_id) {
+            this.testsPracticed = item.practiced
+            this.overallProgress = item.progress
+          }
+        })
+      });
     }
    },
   onLoad(options) {
@@ -696,6 +682,7 @@ export default {
   onShow () {
     this.fetchCategories();
     this.queryMemberInfo()
+    this.getTypeFind()
   }
 }
 </script>

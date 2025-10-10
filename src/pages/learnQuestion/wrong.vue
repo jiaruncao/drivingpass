@@ -436,6 +436,7 @@
           // uni.navigateBack({
           //   delta: 2
           // })
+          uni.navigateBack()
         }
       },
       cancel () {

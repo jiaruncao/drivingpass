@@ -117,7 +117,7 @@
         </view>
       </view>
     </view>
-    <u-modal width="400rpx" :show="modalShow" :title="modalTitle" :showCancelButton="showCancel" :content='modalContent' :cancelText="cancelText" :confirmText="confirmText" @cancel="cancel" @confirm="confirm" ></u-modal>
+    <u-modal width="400px" :show="modalShow" :title="modalTitle" :showCancelButton="showCancel" :content='modalContent' :cancelText="cancelText" :confirmText="confirmText" @cancel="cancel" @confirm="confirm" ></u-modal>
   </view>
   
 </template>
