@@ -117,7 +117,7 @@
         </view>
       </view>
     </view>
-    <u-modal width="400px" :show="modalShow" :title="modalTitle" :showCancelButton="showCancel" :content='modalContent' :cancelText="cancelText" :confirmText="confirmText" @cancel="cancel" @confirm="confirm" ></u-modal>
+    <u-modal :width="modalWidth" :show="modalShow" :title="modalTitle" :showCancelButton="showCancel" :content='modalContent' :cancelText="cancelText" :confirmText="confirmText" @cancel="cancel" @confirm="confirm" ></u-modal>
   </view>
   
 </template>
@@ -152,10 +152,12 @@ export default {
       modalTitle: '',
       modalType: '',
       modalContent: '',
+      modalWidth: '400px',
       cancelText: 'Cancel',
       confirmText: 'Confirm',
       showCancel: true,
-      
+      resizeListener: null,
+
       // 视频题倒计时
       videoTime: 3 * 60,
       videoTimer: null
@@ -438,10 +440,47 @@ export default {
       uni.redirectTo({
         url: '/pages/mockTest/testVideo'
       })
+    },
+    updateModalWidth(windowWidth) {
+      let width = windowWidth
+      if (!width) {
+        try {
+          const systemInfo = uni.getSystemInfoSync()
+          width = systemInfo.windowWidth
+        } catch (error) {
+          width = 0
+        }
+      }
+
+      if (!width || typeof width !== 'number') {
+        this.modalWidth = '400px'
+        return
+      }
+
+      const maxWidth = 700
+      const minWidth = 320
+      const computedWidth = Math.max(Math.min(width * 0.7, maxWidth), minWidth)
+      this.modalWidth = `${computedWidth}px`
     }
   },
   onLoad (option) {
     // this.paper_id = option.paper_id
+    this.updateModalWidth()
+  },
+  onReady() {
+    if (typeof uni.onWindowResize === 'function') {
+      this.resizeListener = (res) => {
+        const newWidth = res && res.size ? res.size.windowWidth : undefined
+        this.updateModalWidth(newWidth)
+      }
+      uni.onWindowResize(this.resizeListener)
+    }
+  },
+  onUnload() {
+    if (this.resizeListener && typeof uni.offWindowResize === 'function') {
+      uni.offWindowResize(this.resizeListener)
+    }
+    this.resizeListener = null
   }
 }
 </script>
