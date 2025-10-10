@@ -428,7 +428,42 @@
       },
       // 返回
       goBack() {
-        uni.navigateBack();
+        const hasAnswered = Array.isArray(this.questions)
+          ? this.questions.some((question) => {
+              if (!question) {
+                return false;
+              }
+
+              if (typeof question.showAnswer === 'boolean') {
+                if (question.showAnswer) {
+                  return true;
+                }
+              }
+
+              if (Array.isArray(question.selectedOption)) {
+                return question.selectedOption.length > 0;
+              }
+
+              return question.selectedOption !== undefined && question.selectedOption !== null;
+            })
+          : false;
+
+        if (!hasAnswered) {
+          uni.navigateBack();
+          return;
+        }
+
+        uni.showModal({
+          title: 'Leave page?',
+          content: 'Are you sure you want to return to the previous page?',
+          cancelText: 'Stay',
+          confirmText: 'Leave',
+          success: (res) => {
+            if (res.confirm) {
+              uni.navigateBack();
+            }
+          }
+        });
       },
       // 打开设置
       openSettings() {
