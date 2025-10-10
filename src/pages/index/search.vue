@@ -141,7 +141,46 @@ export default {
       // 过滤后的结果
       filteredResults: [],
       // 防抖定时器
-      searchTimer: null
+      searchTimer: null,
+      // 搜索模块（用于匹配首页的几个主要功能入口）
+      moduleEntries: [
+        {
+          id: 'module-theory-test',
+          title: 'Theory Test',
+          kind: 'Module',
+          type: 'module',
+          route: '/pages/modeSelect/index',
+          params: {id: 2, title: 'TheoryTest'},
+          keywords: ['theory test', 'theory', 'theorytest']
+        },
+        {
+          id: 'module-hazard-test',
+          title: 'Hazard Perception',
+          kind: 'Module',
+          type: 'module',
+          route: '/pages/modeSelect/index',
+          params: {id: 3, title: 'HazardTest'},
+          keywords: ['hazard perception', 'hazard test', 'hazard', 'hazardperception']
+        },
+        {
+          id: 'module-road-sign',
+          title: 'Road Sign',
+          kind: 'Module',
+          type: 'module',
+          route: '/pages/roadSign/roadSign',
+          params: {id: 4},
+          keywords: ['road sign', 'road signs', 'roadsign', 'roadsigns', 'signs']
+        },
+        {
+          id: 'module-highway-code',
+          title: 'Highway Code',
+          kind: 'Module',
+          type: 'module',
+          route: '/pages/modeSelect/index',
+          params: {id: 5, title: 'HighwayCode'},
+          keywords: ['highway code', 'highway', 'code', 'highwaycode']
+        }
+      ]
     }
   },
   methods: {
@@ -173,22 +212,33 @@ export default {
     // 执行搜索
     performSearch() {
       const query = this.searchQuery.toLowerCase().trim();
-      
+
       if (!query) {
         this.filteredResults = [];
         this.isSearching = false;
         return;
       }
-      
+
+      const moduleMatches = this.getModuleMatches(query);
+      // 先展示本地匹配的模块结果
+      this.filteredResults = moduleMatches;
+
       // 模拟搜索延迟
       searchApi({
         keyword: query
       }).then(res => {
         console.log(res)
         if (res.code == 1) {
-          this.filteredResults = res.data.list.data
-          this.isSearching = false;
+          const listData = res && res.data && res.data.list && res.data.list.data;
+          const remoteResults = Array.isArray(listData) ? listData : [];
+          this.filteredResults = moduleMatches.concat(remoteResults);
+        } else {
+          this.filteredResults = moduleMatches;
         }
+      }).catch(() => {
+        this.filteredResults = moduleMatches;
+      }).finally(() => {
+        this.isSearching = false;
       })
     },
     // 清除搜索
@@ -199,25 +249,65 @@ export default {
     },
     // 高亮文本
     highlightText(text) {
+      if (!text) return '';
       if (!this.searchQuery) return text;
-      
-      const query = this.searchQuery.trim();
+
+      const query = this.escapeRegExp(this.searchQuery.trim());
+      if (!query) return text;
+
       const regex = new RegExp(`(${query})`, 'gi');
       return text.replace(regex, '<span class="highlight">$1</span>');
     },
     // 打开问题详情
     openQuestion(result) {
-      console.log('Opening question:', result.question);
+      console.log('Opening search result:', result);
       // 实际应用中导航到问题详情页
       // 可以传递问题ID或完整问题对象
       // uni.showToast({
       //   title: '打开问题详情',
       //   icon: 'none'
       // });
-      
+
+      if (result.type === 'module') {
+        if (!result.route) return;
+
+        let url = result.route;
+        if (result.params && Object.keys(result.params).length > 0) {
+          const queryString = Object.entries(result.params)
+            .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
+            .join('&');
+          url += (url.includes('?') ? '&' : '?') + queryString;
+        }
+        uni.navigateTo({url});
+        return;
+      }
+
       uni.navigateTo({
         url: '/pages/learnQuestion/detail?question_id=' + result.id
       })
+    },
+    getModuleMatches(query) {
+      const normalizedQuery = query.toLowerCase();
+      const condensedQuery = normalizedQuery.replace(/\s+/g, '');
+
+      return this.moduleEntries.filter(entry => {
+        const keywords = entry.keywords || [];
+        return keywords.some(keyword => {
+          const normalizedKeyword = keyword.toLowerCase();
+          const condensedKeyword = normalizedKeyword.replace(/\s+/g, '');
+          return (
+            normalizedKeyword.includes(normalizedQuery) ||
+            normalizedQuery.includes(normalizedKeyword) ||
+            condensedKeyword.includes(condensedQuery) ||
+            condensedQuery.includes(condensedKeyword)
+          );
+        }) || (entry.title && entry.title.toLowerCase().includes(normalizedQuery));
+      }).map(entry => ({
+        ...entry
+      }));
+    },
+    escapeRegExp(string) {
+      return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     }
   },
   onLoad() {

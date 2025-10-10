@@ -193,19 +193,37 @@ export default {
     },
     // 过滤后的分类列表（用于搜索功能）
     filteredCategories() {
-      if (!this.searchKeyword.trim()) {
+      const keyword = this.searchKeyword.trim().toLowerCase();
+      if (!keyword) {
         return this.roadSignCategories;
       }
-      
-      return this.roadSignCategories.map(category => {
-        const filteredSigns = category.signs.filter(sign => 
-          sign.name.toLowerCase().includes(this.searchKeyword.toLowerCase())
-        );
-        return {
-          ...category,
-          signs: filteredSigns
-        };
-      }).filter(category => category.signs.length > 0);
+
+      const categories = Array.isArray(this.roadSignCategories) ? this.roadSignCategories : [];
+
+      return categories
+        .map(category => {
+          const signs = Array.isArray(category.signs) ? category.signs : [];
+          const matchesCategoryName = typeof category.name === 'string' && category.name.toLowerCase().includes(keyword);
+
+          if (matchesCategoryName) {
+            return {
+              ...category,
+              signs
+            };
+          }
+
+          const filteredSigns = signs.filter(sign => this.matchesSignKeyword(sign, keyword));
+
+          if (!filteredSigns.length) {
+            return null;
+          }
+
+          return {
+            ...category,
+            signs: filteredSigns
+          };
+        })
+        .filter(Boolean);
     },
     // 当前选中的分类
     // selectedCategory() {
@@ -330,6 +348,41 @@ export default {
           this.selectedCategory.signs = res.data.data
         }
       })
+    },
+    matchesSignKeyword(sign, keyword) {
+      if (!sign) return false;
+
+      const normalizedKeyword = keyword.toLowerCase();
+      const condensedKeyword = normalizedKeyword.replace(/\s+/g, '');
+
+      const values = [];
+      const pushValue = value => {
+        if (typeof value === 'string' && value.trim()) {
+          const lowerValue = value.toLowerCase();
+          values.push(lowerValue);
+          values.push(lowerValue.replace(/\s+/g, ''));
+        }
+      };
+
+      pushValue(sign.title);
+      pushValue(sign.name);
+      pushValue(sign.description);
+      pushValue(sign.keyword);
+
+      if (Array.isArray(sign.keywords)) {
+        sign.keywords.forEach(pushValue);
+      }
+
+      if (sign.symbol != null && sign.symbol !== undefined) {
+        pushValue(String(sign.symbol));
+      }
+
+      return values.some(value =>
+        value.includes(normalizedKeyword) ||
+        normalizedKeyword.includes(value) ||
+        value.includes(condensedKeyword) ||
+        condensedKeyword.includes(value)
+      );
     }
   },
   onLoad(options) {
