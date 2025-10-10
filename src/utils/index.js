@@ -1,6 +1,7 @@
 import store from "@/store/index.js";
 import http from "@/http/index.js";
 import i18n from "@/i18n/i18n.js";
+import {formatScore} from "@/utils/number";
 
 /*
  * author：Gengbaodada
@@ -417,7 +418,8 @@ const utils = {
   removeWrongQuestionIfExists,
   addQuestionIfNotExists,
   getCurrentQuestionIndex,
-  getWrongList
+  getWrongList,
+  formatScore
 };
 
 export default utils;

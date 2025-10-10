@@ -70,13 +70,13 @@
         </view>
         
         <view class="stat-card">
-          <text class="stat-number">{{ info.multiple_choice_score ? info.multiple_choice_score.toFixed(2) : 0 }}</text>
+          <text class="stat-number">{{ formatScore(info.multiple_choice_score) }}</text>
           <text class="stat-label">Avg Score</text>
           <text class="stat-sublabel">Multiple Choice</text>
         </view>
-        
+
         <view class="stat-card">
-          <text class="stat-number">{{ info.hazard_perception_score }}</text>
+          <text class="stat-number">{{ formatScore(info.hazard_perception_score) }}</text>
           <text class="stat-label">Avg Score</text>
           <text class="stat-sublabel">Hazard Perception</text>
         </view>
@@ -131,6 +131,7 @@
 // 引入图表库（如使用u-charts）
 // import uCharts from '@/components/u-charts/u-charts.js';
 import {getTestStatistics} from '@/http/api/testQuestions.js'
+import {formatScore as formatScoreToOneDecimal} from '@/utils/number'
 export default {
   data() {
     return {
@@ -371,7 +372,10 @@ export default {
         }
       })
     },
-    
+    formatScore (score) {
+      return formatScoreToOneDecimal(score)
+    }
+
   }
 }
 </script>
