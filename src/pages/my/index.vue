@@ -231,6 +231,47 @@
       </view>
     </view>
     
+    <u-popup
+      :show="showQuestionBankSheet"
+      mode="bottom"
+      round="24"
+      :closeOnClickOverlay="true"
+      @close="closeQuestionBankSheet"
+    >
+      <view class="question-bank-sheet">
+        <view class="sheet-handle"></view>
+        <view class="sheet-header">
+          <text class="sheet-title">Select Question Bank</text>
+          <text class="sheet-subtitle">Choose the licence you're preparing for</text>
+        </view>
+        <scroll-view scroll-y class="sheet-options">
+          <view
+            v-for="option in questionBankOptions"
+            :key="option.value"
+            class="sheet-option-item"
+            :class="{ active: pendingQuestionBank === option.value }"
+            @tap="selectQuestionBank(option.value)"
+          >
+            <view class="sheet-option-main">
+              <view class="sheet-option-icon">
+                <text>{{ option.icon }}</text>
+              </view>
+              <view class="sheet-option-texts">
+                <text class="sheet-option-label">{{ option.label }}</text>
+                <text class="sheet-option-description">{{ option.description }}</text>
+              </view>
+            </view>
+            <text v-if="pendingQuestionBank === option.value" class="sheet-option-check">✔</text>
+          </view>
+        </scroll-view>
+        <view class="sheet-footer">
+          <view class="sheet-button primary" @tap="confirmQuestionBankSelection">Confirm Selection</view>
+          <view class="sheet-button secondary" @tap="closeQuestionBankSheet">Cancel</view>
+        </view>
+        <view class="safe-area-spacer"></view>
+      </view>
+    </u-popup>
+
     <!-- 升级弹框 -->
     <u-modal title="Feature Locked" :show="showFeature" :showCancelButton="true" cancelText="Cancel" confirmText="Upgrade" :content='content' @confirm="confirmFeature" @cancel="cancelFeature"></u-modal>
   </view>
@@ -253,7 +294,16 @@ export default {
       currentQuestionBank: 'Car',
       passRate: 70,
       showFeature: false,
-      content: ''
+      content: '',
+      showQuestionBankSheet: false,
+      pendingQuestionBank: 'Car',
+      questionBankOptions: [
+        { value: 'Car', label: 'Car', description: 'DVSA car theory questions', icon: '🚗' },
+        { value: 'Motorcycle', label: 'Motorcycle', description: 'Motorcycle-specific practice', icon: '🏍️' },
+        { value: 'ADI', label: 'ADI', description: 'Approved Driving Instructor theory prep', icon: '🎓' },
+        { value: 'LGV', label: 'LGV', description: 'Large goods vehicle training', icon: '🚚' },
+        { value: 'PCV', label: 'PCV', description: 'Passenger carrying vehicle focus', icon: '🚌' }
+      ]
     }
   },
   computed: {
@@ -352,11 +402,39 @@ export default {
     },
     // 切换题库
     switchQuestionBank() {
-      console.log('Switch question bank clicked');
-      // 实际应用中显示题库选择器
-      const banks = ['Car', 'Motorcycle', 'ADI', 'LGV', 'PCV'];
-      const currentIndex = banks.indexOf(this.currentQuestionBank);
-      this.currentQuestionBank = banks[(currentIndex + 1) % banks.length];
+      this.pendingQuestionBank = this.currentQuestionBank;
+      this.showQuestionBankSheet = true;
+    },
+    // 选择题库
+    selectQuestionBank(optionValue) {
+      this.pendingQuestionBank = optionValue;
+    },
+    // 关闭题库选择弹窗
+    closeQuestionBankSheet() {
+      this.showQuestionBankSheet = false;
+      this.pendingQuestionBank = this.currentQuestionBank;
+    },
+    // 确认题库选择
+    confirmQuestionBankSelection() {
+      this.currentQuestionBank = this.pendingQuestionBank;
+      this.closeQuestionBankSheet();
+      try {
+        uni.setStorageSync('questionBankType', this.currentQuestionBank);
+      } catch (error) {
+        console.warn('Unable to persist question bank selection', error);
+      }
+    },
+    // 加载存储的题库偏好
+    loadQuestionBankPreference() {
+      try {
+        const storedBank = uni.getStorageSync('questionBankType');
+        if (storedBank) {
+          this.currentQuestionBank = storedBank;
+          this.pendingQuestionBank = storedBank;
+        }
+      } catch (error) {
+        console.warn('Unable to load stored question bank', error);
+      }
     },
     // 评价应用
     rateApp() {
@@ -445,6 +523,7 @@ export default {
     }
   },
   onLoad() {
+    this.loadQuestionBankPreference();
     // 页面加载时获取数据
     // this.fetchUserData();
     // this.queryMemberInfo()
@@ -891,6 +970,139 @@ export default {
   font-weight: 700;
   color: #4CAF50;
   font-size: 36rpx;
+}
+
+.question-bank-sheet {
+  padding: 40rpx 40rpx 50rpx;
+  background: #ffffff;
+  border-top-left-radius: 36rpx;
+  border-top-right-radius: 36rpx;
+  min-height: 520rpx;
+  display: flex;
+  flex-direction: column;
+}
+
+.sheet-handle {
+  width: 120rpx;
+  height: 10rpx;
+  background: #E2E8F0;
+  border-radius: 5rpx;
+  align-self: center;
+  margin-bottom: 30rpx;
+}
+
+.sheet-header {
+  text-align: center;
+  margin-bottom: 30rpx;
+}
+
+.sheet-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #1F2937;
+  display: block;
+  margin-bottom: 10rpx;
+}
+
+.sheet-subtitle {
+  font-size: 26rpx;
+  color: #6B7280;
+}
+
+.sheet-options {
+  flex: 1;
+  max-height: 520rpx;
+}
+
+.sheet-option-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx 20rpx;
+  border-radius: 24rpx;
+  margin-bottom: 20rpx;
+  background: #F9FAFB;
+  transition: all 0.2s ease;
+}
+
+.sheet-option-item:last-child {
+  margin-bottom: 0;
+}
+
+.sheet-option-item.active {
+  background: #E0F2FE;
+  box-shadow: inset 0 0 0 2rpx rgba(37, 99, 235, 0.25);
+}
+
+.sheet-option-main {
+  display: flex;
+  align-items: center;
+}
+
+.sheet-option-icon {
+  width: 72rpx;
+  height: 72rpx;
+  border-radius: 20rpx;
+  background: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 20rpx;
+  font-size: 36rpx;
+  box-shadow: 0 10rpx 20rpx rgba(15, 23, 42, 0.08);
+}
+
+.sheet-option-texts {
+  display: flex;
+  flex-direction: column;
+}
+
+.sheet-option-label {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #1F2937;
+}
+
+.sheet-option-description {
+  font-size: 24rpx;
+  color: #6B7280;
+  margin-top: 6rpx;
+}
+
+.sheet-option-check {
+  font-size: 32rpx;
+  color: #2563EB;
+}
+
+.sheet-footer {
+  padding-top: 24rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.sheet-button {
+  width: 100%;
+  padding: 28rpx 0;
+  border-radius: 26rpx;
+  text-align: center;
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.sheet-button.primary {
+  background: linear-gradient(135deg, #3B82F6, #2563EB);
+  color: #ffffff;
+  box-shadow: 0 12rpx 24rpx rgba(37, 99, 235, 0.35);
+}
+
+.sheet-button.secondary {
+  background: #E5E7EB;
+  color: #374151;
+}
+
+.safe-area-spacer {
+  height: env(safe-area-inset-bottom);
 }
 
 /* 菜单列表 */
