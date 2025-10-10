@@ -61,11 +61,23 @@ function handleLanguage() {
  * create by date：2024/06/07
  * content：格式化uview时间
  */
+function formatDateToDDMMYYYY(dateValue) {
+  if (!dateValue) return "";
+
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) {
+    return typeof dateValue === "string" ? dateValue : "";
+  }
+
+  const day = date.getDate().toString().padStart(2, "0");
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
+  const year = date.getFullYear();
+
+  return `${day}/${month}/${year}`;
+}
+
 function handleTime(data) {
-  const date = new Date(data);
-  return `${date.getFullYear()}-${(date.getMonth() + 1)
-    .toString()
-    .padStart(2, "0")}-${date.getDate().toString().padStart(2, "0")}`;
+  return formatDateToDDMMYYYY(data);
 }
 
 function setStore(key, data) {
@@ -408,6 +420,7 @@ const utils = {
   clearStore,
   getStore,
   handleTime,
+  formatDateToDDMMYYYY,
   removeStore,
   setStore,
   toast,

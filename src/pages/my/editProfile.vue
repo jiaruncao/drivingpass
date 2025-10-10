@@ -83,7 +83,7 @@
                     :start="minDate"
                     @change="onDateChange">
               <view class="date-input">
-                <text>{{ formData.test_date || 'Select date' }}</text>
+                <text>{{ displayTestDate }}</text>
                 <text class="date-icon">📅</text>
               </view>
             </picker>
@@ -261,6 +261,11 @@ export default {
       const month = String(today.getMonth() + 1).padStart(2, '0');
       const day = String(today.getDate()).padStart(2, '0');
       return `${year}-${month}-${day}`;
+    },
+
+    displayTestDate() {
+      const formatted = this.$utils.formatDateToDDMMYYYY(this.formData.test_date);
+      return formatted || 'Select date';
     }
   },
   
