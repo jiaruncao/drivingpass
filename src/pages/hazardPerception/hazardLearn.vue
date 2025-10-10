@@ -102,6 +102,10 @@ export default {
   data() {
     return {
       questionId: null,
+      subject_id: null,
+      cate_id: null,
+      currentIndex: 0,
+      questions: [],
       title_video_url: null,
       autoplay: true, // 是否自动播放
       loop: false, // 是否循环播放
@@ -327,15 +331,111 @@ export default {
     recordAdd () {
       recordAdd({
         question_id: this.questionId
+      }).then(res => {
+        if (res.code == 1) {
+          this.addRecord()
+          this.markQuestionCompleted()
+          this.persistCurrentIndex(this.currentIndex)
+        }
       })
+    },
+    addRecord () {
+      if (!this.subject_id || !this.cate_id) return
+
+      const subjects = uni.getStorageSync('subjects');
+      if (!subjects) return;
+
+      const added = this.$utils.addQuestionIfNotExists(
+        subjects,
+        this.subject_id,
+        this.cate_id,
+        this.questionId
+      );
+
+      if (added) {
+        uni.setStorageSync('subjects', subjects);
+      }
+    },
+    markQuestionCompleted () {
+      if (!this.subject_id || !this.cate_id) return
+
+      this.$utils.updateSubjectStorage('subjects', {
+        subjectId: this.subject_id,
+        cateId: this.cate_id,
+        questionId: this.questionId
+      }, {
+        'is_read': true
+      });
+
+      if (this.questions.length && this.questions[this.currentIndex]) {
+        this.questions[this.currentIndex].is_read = true;
+        uni.setStorageSync('questions', this.questions);
+      }
+    },
+    persistCurrentIndex (index) {
+      if (!this.subject_id || !this.cate_id) return
+
+      this.$utils.updateSubjectStorage('subjects', {
+        subjectId: this.subject_id,
+        cateId: this.cate_id
+      }, {
+        'current_question_index': index
+      });
     }
   },
-  
+
   onLoad(options) {
-    if (options.id) {
-      this.questionId = options.id
+    if (options.subject_id) {
+      this.subject_id = options.subject_id
+    }
+    if (options.cate_id) {
+      this.cate_id = options.cate_id
+    }
+    if (options.index) {
+      const parsedIndex = Number(options.index)
+      if (!Number.isNaN(parsedIndex)) {
+        this.currentIndex = parsedIndex
+      }
+    }
+
+    this.questionId = options.id || null
+
+    const storedQuestions = uni.getStorageSync('questions')
+    if (storedQuestions && storedQuestions.length) {
+      this.questions = storedQuestions
+
+      if (this.questionId) {
+        const matchedIndex = this.questions.findIndex(item => item.id == this.questionId)
+        if (matchedIndex >= 0) {
+          this.currentIndex = matchedIndex
+        }
+      } else if (this.subject_id && this.cate_id) {
+        const subjects = uni.getStorageSync('subjects')
+        if (subjects) {
+          const savedIndex = this.$utils.getCurrentQuestionIndex(subjects, this.subject_id, this.cate_id)
+          if (savedIndex >= 0 && savedIndex < this.questions.length) {
+            this.currentIndex = savedIndex
+          }
+        }
+      }
+
+      if (this.currentIndex < 0) {
+        this.currentIndex = 0
+      }
+      if (this.currentIndex >= this.questions.length) {
+        this.currentIndex = this.questions.length ? this.questions.length - 1 : 0
+      }
+
+      if (!this.questionId && this.questions[this.currentIndex]) {
+        this.questionId = this.questions[this.currentIndex].id
+      }
+    }
+
+    if (this.questionId) {
       this.getQuestionDetail()
     }
+
+    this.persistCurrentIndex(this.currentIndex)
     console.log('Hazard Perception Learn Mode loaded');
     // 自动开始播放
     // this.startAutoPlay();

@@ -228,8 +228,15 @@ export default {
   },
   watch: {
     // 监听当前索引变化，自动保存进度
-    currentIndex() {
-      // this.saveProgress();
+    currentIndex(newIndex) {
+      if (!this.subject_id || !this.cate_id) return;
+
+      this.$utils.updateSubjectStorage('subjects', {
+        subjectId: this.subject_id,
+        cateId: this.cate_id
+      }, {
+        'current_question_index': newIndex
+      });
     }
   },
   onLoad(option) {
@@ -242,19 +249,38 @@ export default {
       this.signsList = questions;
       this.updateProgress()
     }
-    
-    if (this.question_id) {
-      // 获取下标
-      // 自动跳转到当前题目
 
-      this.currentIndex = this.signsList.findIndex(item => {
-        return item.id == this.question_id
-      })
-      
-      this.$nextTick(function() {
-        this.updateTranslate();
-      })
+    let initialIndex = 0
+
+    if (this.question_id) {
+      const matchedIndex = this.signsList.findIndex(item => item.id == this.question_id)
+      if (matchedIndex >= 0) {
+        initialIndex = matchedIndex
+      }
     }
+
+    if (!this.question_id && this.subject_id && this.cate_id) {
+      const subjects = uni.getStorageSync('subjects')
+      if (subjects) {
+        const savedIndex = this.$utils.getCurrentQuestionIndex(subjects, this.subject_id, this.cate_id)
+        if (savedIndex >= 0 && savedIndex < this.signsList.length) {
+          initialIndex = savedIndex
+        }
+      }
+    }
+
+    if (initialIndex < 0) {
+      initialIndex = 0
+    }
+    if (initialIndex >= this.signsList.length) {
+      initialIndex = this.signsList.length ? this.signsList.length - 1 : 0
+    }
+
+    this.currentIndex = initialIndex
+
+    this.$nextTick(function() {
+      this.updateTranslate();
+    })
 
     // 页面加载后初始化数据
     // this.updateProgress();
