@@ -1,28 +1,40 @@
 <template>
-  <u-popup :show="submitShow" @close="close" mode="center" round="16">
-    <div class="submit_main">
-      <div class="submit_title">Time Used 14:24</div>
-      <div class="submit_percentage">
-        <div class="percentage_main">
-          <div class="percentage_sum">79 <span>%</span></div>
-          <div class="percentage_title">Accuracy</div>
-        </div>
-      </div>
-      <div class="submit_content">
-        <div class="left">
-          <div class="left_sum">9</div>
-          <div class="left_title">Wrong Answers</div>
-        </div>
-        <div class="right">
-          <div class="right_sum">12</div>
-          <div class="right_title">Total</div>
-        </div>
-      </div>
-      <div class="submit_btn">
-        <div class="back_home" @click="backHome">Back to Home</div>
-        <div class="view_details" @click="findDetails">View Details</div>
-      </div>
-    </div>
+  <u-popup
+    :show="submitShow"
+    @close="close"
+    mode="center"
+    round="24"
+    :customStyle="{ backgroundColor: 'transparent' }"
+  >
+    <view class="submit-popup">
+      <view class="submit-card">
+        <view class="submit-header">
+          <text class="submit-title">Test Summary</text>
+          <text class="submit-time">Time Used 14:24</text>
+        </view>
+        <view class="score-ring">
+          <view class="score-circle">
+            <view class="score-value">79<text>%</text></view>
+            <text class="score-label">Accuracy</text>
+          </view>
+        </view>
+        <view class="score-breakdown">
+          <view class="breakdown-card">
+            <text class="breakdown-value">9</text>
+            <text class="breakdown-label">Wrong Answers</text>
+          </view>
+          <view class="breakdown-divider"></view>
+          <view class="breakdown-card">
+            <text class="breakdown-value">12</text>
+            <text class="breakdown-label">Total Questions</text>
+          </view>
+        </view>
+        <view class="submit-actions">
+          <view class="btn secondary" @click="findDetails">Review Answers</view>
+          <view class="btn primary" @click="backHome">Back to Home</view>
+        </view>
+      </view>
+    </view>
   </u-popup>
 </template>
 
@@ -54,109 +66,152 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.submit_main {
-  width: 608rpx;
-  height: 787rpx;
-  background: #ffffff;
-  border-radius: 16rpx;
-  .submit_btn {
-    display: flex;
-    padding: 0 35rpx;
-    margin-top: 48rpx;
-    .view_details {
-      width: 45%;
-      height: 81rpx;
-      background: #ffffff;
-      border-radius: 41rpx;
-      border: 1px solid #999999;
-      font-weight: 400;
-      font-size: 24rpx;
-      color: #333333;
-      text-align: center;
-      line-height: 81rpx;
-      margin-left: 10%;
-    }
-    .back_home {
-      width: 45%;
-      height: 81rpx;
-      background: #ffffff;
-      border-radius: 41rpx;
-      border: 1px solid #999999;
-      font-weight: 400;
-      font-size: 24rpx;
-      color: #333333;
-      text-align: center;
-      line-height: 81rpx;
-    }
-  }
-  .submit_content {
-    width: 100%;
-    display: flex;
-    margin-top: 41rpx;
-    .right {
-      width: 50%;
-      border-right: 1px solid #d7d7d7;
-      text-align: center;
-      .right_title {
-        font-weight: 400;
-        font-size: 24rpx;
-        color: #999999;
-      }
-      .right_sum {
-        font-weight: 400;
-        font-size: 48rpx;
-        color: #333333;
-      }
-    }
-    .left {
-      width: 50%;
-      border-right: 1px solid #d7d7d7;
-      text-align: center;
-      .left_title {
-        font-weight: 400;
-        font-size: 24rpx;
-        color: #999999;
-      }
-      .left_sum {
-        font-weight: 400;
-        font-size: 48rpx;
-        color: #ff6666;
-      }
-    }
-  }
-  .submit_percentage {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-    .percentage_main {
-      width: 257rpx;
-      height: 257rpx;
-      background: #43a0ff;
-      border-radius: 50%;
-      .percentage_title {
-        text-align: center;
-        font-weight: 400;
-        font-size: 24rpx;
-        color: #ffffff;
-      }
-      .percentage_sum {
-        padding-top: 50rpx;
-        text-align: center;
-        font-weight: bold;
-        font-size: 72rpx;
-        color: #fefefe;
-        span {
-          font-size: 24rpx;
-        }
-      }
-    }
-  }
-  .submit_title {
-    text-align: center;
-    font-weight: 400;
-    font-size: 28rpx;
-    color: #333333;
-    padding: 85rpx 0;
-  }
+.submit-popup {
+  padding: 16rpx;
+  width: 680rpx;
+}
+
+.submit-card {
+  background: radial-gradient(circle at top, rgba(74, 158, 255, 0.25), rgba(33, 150, 243, 0.08));
+  border-radius: 40rpx;
+  padding: 48rpx 40rpx 40rpx;
+  box-shadow: 0 34rpx 60rpx rgba(31, 71, 168, 0.16);
+  backdrop-filter: blur(12px);
+  display: flex;
+  flex-direction: column;
+  gap: 40rpx;
+}
+
+.submit-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.submit-title {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.submit-time {
+  font-size: 26rpx;
+  color: #475569;
+}
+
+.score-ring {
+  display: flex;
+  justify-content: center;
+}
+
+.score-circle {
+  width: 280rpx;
+  height: 280rpx;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, #4a9eff, #2563eb, #4a9eff);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  position: relative;
+  box-shadow: 0 26rpx 40rpx rgba(37, 99, 235, 0.3);
+}
+
+.score-circle::after {
+  content: "";
+  position: absolute;
+  inset: 18rpx;
+  border-radius: 50%;
+  background: #0f172a;
+  opacity: 0.15;
+}
+
+.score-value {
+  position: relative;
+  font-size: 80rpx;
+  font-weight: 800;
+  z-index: 1;
+}
+
+.score-value text {
+  font-size: 28rpx;
+  margin-left: 4rpx;
+}
+
+.score-label {
+  position: relative;
+  z-index: 1;
+  font-size: 26rpx;
+  letter-spacing: 2rpx;
+  text-transform: uppercase;
+}
+
+.score-breakdown {
+  display: flex;
+  align-items: stretch;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 26rpx;
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.25);
+}
+
+.breakdown-card {
+  flex: 1;
+  padding: 30rpx 20rpx;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10rpx;
+}
+
+.breakdown-divider {
+  width: 1px;
+  background: linear-gradient(180deg, transparent, rgba(148, 163, 184, 0.4), transparent);
+}
+
+.breakdown-value {
+  font-size: 48rpx;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.breakdown-label {
+  font-size: 24rpx;
+  color: #475569;
+  text-align: center;
+}
+
+.submit-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 20rpx;
+}
+
+.btn {
+  width: 100%;
+  height: 92rpx;
+  border-radius: 999px;
+  font-size: 28rpx;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn.primary {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+  box-shadow: 0 16rpx 36rpx rgba(37, 99, 235, 0.35);
+}
+
+.btn.secondary {
+  background: rgba(37, 99, 235, 0.12);
+  color: #1d4ed8;
+  box-shadow: inset 0 0 0 2rpx rgba(37, 99, 235, 0.25);
+}
+
+.btn:active {
+  transform: scale(0.98);
 }
 </style>

@@ -35,23 +35,31 @@
 			</view>
 
 			<!-- 添加标签弹窗 -->
-			<u-popup :show="showTagDialog" mode="center" width="80%">
-				<view class="dialog-content">
-					<text class="dialog-title">Add New Tag</text>
-					<u-input v-model="newTag" placeholder="Enter tag name" class="tag-input"></u-input>
-					<view class="dialog-buttons">
-						<u-button class="dialog-btn" type="primary" @click="addNewTag">
-							Confirm
-						</u-button>
-						<u-button class="dialog-btn" @click="showTagDialog = false">
-							Cancel
-						</u-button>
-					</view>
-				</view>
-			</u-popup>
-		</view>
+                        <u-popup
+                                :show="showTagDialog"
+                                mode="center"
+                                width="80%"
+                                :customStyle="{ backgroundColor: 'transparent' }"
+                        >
+                                <view class="tag-dialog">
+                                        <view class="dialog-header">
+                                                <text class="dialog-title">Add New Tag</text>
+                                                <text class="dialog-subtitle">Organise your posts with a custom label</text>
+                                        </view>
+                                        <u-input
+                                                v-model="newTag"
+                                                placeholder="Enter tag name"
+                                                class="tag-input"
+                                        ></u-input>
+                                        <view class="dialog-actions">
+                                                <view class="dialog-btn ghost" @click="showTagDialog = false">Cancel</view>
+                                                <view class="dialog-btn primary" @click="addNewTag">Confirm</view>
+                                        </view>
+                                </view>
+                        </u-popup>
+                </view>
 
-	</view>
+        </view>
 </template>
 
 <script>
@@ -279,29 +287,61 @@
 	}
 
 	/* 弹窗样式 */
-	.dialog-content {
-		padding: 30rpx;
-		background-color: #fff;
-		border-radius: 16rpx;
-	}
+        .tag-dialog {
+                background: linear-gradient(160deg, rgba(74, 158, 255, 0.18), rgba(33, 150, 243, 0.05));
+                border-radius: 32rpx;
+                padding: 40rpx 34rpx;
+                box-shadow: 0 30rpx 60rpx rgba(31, 71, 168, 0.18);
+                backdrop-filter: blur(10px);
+        }
 
-	.dialog-title {
-		font-size: 32rpx;
-		font-weight: bold;
-		margin-bottom: 20rpx;
-		display: block;
-	}
+        .dialog-header {
+                margin-bottom: 30rpx;
+        }
 
-	.tag-input {
-		margin-bottom: 20rpx;
-	}
+        .dialog-title {
+                font-size: 34rpx;
+                font-weight: 700;
+                color: #0f172a;
+                display: block;
+        }
 
-	.dialog-buttons {
-		display: flex;
-		justify-content: space-around;
-	}
+        .dialog-subtitle {
+                font-size: 24rpx;
+                color: #475569;
+                margin-top: 10rpx;
+                display: block;
+        }
 
-	.dialog-btn {
-		width: 45%;
-	}
+        .tag-input {
+                margin-bottom: 30rpx;
+        }
+
+        .dialog-actions {
+                display: flex;
+                gap: 20rpx;
+        }
+
+        .dialog-btn {
+                flex: 1;
+                height: 88rpx;
+                border-radius: 999px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 28rpx;
+                font-weight: 600;
+        }
+
+        .dialog-btn.ghost {
+                background: rgba(148, 163, 184, 0.12);
+                color: #475569;
+                box-shadow: inset 0 0 0 2rpx rgba(148, 163, 184, 0.35);
+        }
+
+        .dialog-btn.primary {
+                background: linear-gradient(135deg, #2563eb, #1d4ed8);
+                color: #fff;
+                box-shadow: 0 18rpx 36rpx rgba(37, 99, 235, 0.32);
+        }
 </style>
