@@ -974,21 +974,24 @@ export default {
 
 .question-bank-sheet {
   padding: 40rpx 40rpx 50rpx;
-  background: #ffffff;
+  background: linear-gradient(160deg, rgba(74, 158, 255, 0.2), rgba(255, 255, 255, 0.95));
   border-top-left-radius: 36rpx;
   border-top-right-radius: 36rpx;
   min-height: 520rpx;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 -24rpx 60rpx rgba(31, 71, 168, 0.18);
+  backdrop-filter: blur(12px);
 }
 
 .sheet-handle {
   width: 120rpx;
   height: 10rpx;
-  background: #E2E8F0;
-  border-radius: 5rpx;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 999px;
   align-self: center;
   margin-bottom: 30rpx;
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.35);
 }
 
 .sheet-header {
@@ -1021,8 +1024,9 @@ export default {
   padding: 24rpx 20rpx;
   border-radius: 24rpx;
   margin-bottom: 20rpx;
-  background: #F9FAFB;
+  background: rgba(255, 255, 255, 0.9);
   transition: all 0.2s ease;
+  box-shadow: 0 12rpx 24rpx rgba(15, 23, 42, 0.08);
 }
 
 .sheet-option-item:last-child {
@@ -1030,8 +1034,8 @@ export default {
 }
 
 .sheet-option-item.active {
-  background: #E0F2FE;
-  box-shadow: inset 0 0 0 2rpx rgba(37, 99, 235, 0.25);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(37, 99, 235, 0.18));
+  box-shadow: inset 0 0 0 2rpx rgba(37, 99, 235, 0.35);
 }
 
 .sheet-option-main {
@@ -1043,13 +1047,13 @@ export default {
   width: 72rpx;
   height: 72rpx;
   border-radius: 20rpx;
-  background: #FFFFFF;
+  background: rgba(255, 255, 255, 0.95);
   display: flex;
   align-items: center;
   justify-content: center;
   margin-right: 20rpx;
   font-size: 36rpx;
-  box-shadow: 0 10rpx 20rpx rgba(15, 23, 42, 0.08);
+  box-shadow: 0 16rpx 30rpx rgba(37, 99, 235, 0.15);
 }
 
 .sheet-option-texts {

@@ -208,8 +208,14 @@
       mode="bottom"
       @close="closeSetting"
       :closeOnClickOverlay="true"
+      :customStyle="{ backgroundColor: 'transparent' }"
     >
-      <div class="setting_main">
+      <div class="setting_main bottom-sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet_header">
+          <div class="sheet-title">Practice Preferences</div>
+          <div class="sheet-subtitle">Tailor how questions behave during your session</div>
+        </div>
         <div class="setting_option">
           <div class="option_name">Auto-next when correct</div>
           <div class="option_switch">
@@ -235,23 +241,44 @@
       mode="bottom"
       @close="closeComment"
       :closeOnClickOverlay="true"
+      :customStyle="{ backgroundColor: 'transparent' }"
     >
-      <div class="comment_main">
-        <div class="comment_title">Comment Feedback</div>
-        <div class="comment_report" @click="reportComment">Report Comment</div>
-        <div class="comment_report" @click="commentShow = false">Cancel</div>
+      <div class="comment_main bottom-sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet_header">
+          <div class="sheet-title">Comment Feedback</div>
+          <div class="sheet-subtitle">Choose how you'd like to handle this comment</div>
+        </div>
+        <div class="comment_actions">
+          <div class="comment_button danger" @click="reportComment">Report Comment</div>
+          <div class="comment_button ghost" @click="commentShow = false">Cancel</div>
+        </div>
       </div>
     </u-popup>
-    <u-popup :show="replyShow" mode="bottom" @close="closeReply">
-      <div class="reply_main">
+    <u-popup
+      :show="replyShow"
+      mode="bottom"
+      @close="closeReply"
+      :closeOnClickOverlay="true"
+      :customStyle="{ backgroundColor: 'transparent' }"
+    >
+      <div class="reply_main bottom-sheet">
+        <div class="sheet-handle"></div>
         <div class="reply_header">
-          <div class="cancle" @click="closeReply">Cancle</div>
-          <div class="post" @click="postReply">Post</div>
+          <div>
+            <div class="sheet-title">Write a reply</div>
+            <div class="sheet-subtitle">Share your thoughts with the community</div>
+          </div>
+          <div class="reply_actions">
+            <div class="pill ghost" @click="closeReply">Cancel</div>
+            <div class="pill primary" @click="postReply">Post</div>
+          </div>
         </div>
         <div class="content_input">
           <u--textarea
             v-model="replyQuery.content"
             placeholder="Add a comment..."
+            class="reply_textarea"
           ></u--textarea>
         </div>
       </div>
@@ -536,58 +563,122 @@ export default {
     text-align: center;
     color: #999;
   }
-  .reply_main {
-    height: 283rpx;
-    background: #f3f6f8;
-    padding: 28rpx 30rpx;
-    .content_input {
-      margin-top: 20rpx;
-    }
-    .reply_header {
-      display: flex;
-      font-weight: 400;
-      font-size: 28rpx;
-      color: #333333;
-      .post {
-        margin-left: auto;
-      }
-    }
+  .bottom-sheet {
+    background: linear-gradient(180deg, rgba(74, 158, 255, 0.18), rgba(248, 250, 252, 0.96));
+    border-radius: 40rpx 40rpx 0 0;
+    padding: 48rpx 40rpx calc(48rpx + constant(safe-area-inset-bottom));
+    padding-bottom: calc(48rpx + env(safe-area-inset-bottom));
+    box-shadow: 0 -24rpx 60rpx rgba(31, 71, 168, 0.2);
+    backdrop-filter: blur(16px);
   }
-  .comment_main {
-    padding: 45rpx 30rpx;
-    .comment_report {
-      width: 100%;
-      height: 81rpx;
-      background: #f3f6f8;
-      border-radius: 41rpx;
-      font-weight: 400;
-      font-size: 28rpx;
-      color: #333333;
-      text-align: center;
-      line-height: 81rpx;
-      margin: 20rpx 0 0 0;
-    }
-    .comment_title {
-      margin-bottom: 30rpx;
-      text-align: center;
-      font-weight: 400;
-      font-size: 32rpx;
-      color: #333333;
-    }
+  .sheet-handle {
+    width: 120rpx;
+    height: 10rpx;
+    background: rgba(255, 255, 255, 0.75);
+    border-radius: 999px;
+    margin: 0 auto 36rpx;
+    box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.35);
+  }
+  .sheet_header {
+    margin-bottom: 36rpx;
+  }
+  .sheet-title {
+    font-size: 34rpx;
+    font-weight: 700;
+    color: #0f172a;
+  }
+  .sheet-subtitle {
+    font-size: 24rpx;
+    color: #475569;
+    margin-top: 10rpx;
   }
   .setting_main {
-    padding: 52rpx 30rpx;
     .setting_option {
       display: flex;
-      margin-bottom: 45rpx;
+      align-items: center;
+      padding: 28rpx 24rpx;
+      margin-bottom: 24rpx;
+      border-radius: 28rpx;
+      background: rgba(255, 255, 255, 0.88);
+      box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.2);
       .option_name {
-        font-weight: 400;
+        font-weight: 600;
         font-size: 28rpx;
-        color: #333333;
+        color: #0f172a;
       }
       .option_switch {
         margin-left: auto;
       }
+    }
+    .setting_option:last-child {
+      margin-bottom: 0;
+    }
+  }
+  .comment_main {
+    .comment_actions {
+      display: flex;
+      flex-direction: column;
+      gap: 20rpx;
+    }
+    .comment_button {
+      height: 92rpx;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 28rpx;
+    }
+    .comment_button.danger {
+      background: linear-gradient(135deg, #f97316, #ef4444);
+      color: #fff;
+      box-shadow: 0 18rpx 36rpx rgba(239, 68, 68, 0.35);
+    }
+    .comment_button.ghost {
+      background: rgba(148, 163, 184, 0.12);
+      color: #475569;
+      box-shadow: inset 0 0 0 2rpx rgba(148, 163, 184, 0.3);
+    }
+  }
+  .reply_main {
+    .reply_header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 20rpx;
+    }
+    .reply_actions {
+      display: flex;
+      gap: 16rpx;
+    }
+    .pill {
+      height: 72rpx;
+      padding: 0 32rpx;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26rpx;
+      font-weight: 600;
+    }
+    .pill.ghost {
+      background: rgba(148, 163, 184, 0.12);
+      color: #475569;
+      box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.4);
+    }
+    .pill.primary {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #fff;
+      box-shadow: 0 16rpx 30rpx rgba(37, 99, 235, 0.3);
+    }
+    .content_input {
+      margin-top: 30rpx;
+    }
+    .reply_textarea {
+      background: rgba(15, 23, 42, 0.04);
+      border-radius: 24rpx;
+      padding: 20rpx;
+      box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.2);
     }
   }
   .forum_list {
