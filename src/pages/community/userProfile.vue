@@ -85,7 +85,7 @@
                 <text class="category-icon">{{ post.categoryIcon }}</text>
                 <text>{{ post.category }}</text>
               </view>
-              <text class="post-time">{{ $u.timeFormat(post.createtime) }}</text>
+              <text class="post-time">{{ formatDate(post.createtime) }}</text>
             </view>
             <text class="post-content">{{ post.content }}</text>
             <!-- <view v-if="post.file_url && post.file_url.length > 0" class="post-media">
@@ -177,6 +177,9 @@ export default {
     }
   },
   methods: {
+    formatDate (value) {
+      return this.$utils.formatDateToDDMMYYYY(value)
+    },
     getExtension(url) {
       // 匹配最后一个 '.' 后的内容（包括可能的查询参数）
       const extensionMatch = url.match(/\.([a-zA-Z0-9]+)(?:$|\?|#)/);

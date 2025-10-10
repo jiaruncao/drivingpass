@@ -360,7 +360,7 @@
             <view class="question-footer">
               <view class="question-stats">
                 <view class="stat">
-                  <text class="stat-value">{{ $u.timeFormat(question.updatetime) }}</text>
+                  <text class="stat-value">{{ formatDate(question.updatetime) }}</text>
                   <text class="stat-label">Last Attempt</text>
                 </view>
               </view>
@@ -452,6 +452,9 @@ export default {
     }
   },
   methods: {
+    formatDate (value) {
+      return this.$utils.formatDateToDDMMYYYY(value)
+    },
     getExtension(url) {
       // 匹配最后一个 '.' 后的内容（包括可能的查询参数）
       const extensionMatch = url.match(/\.([a-zA-Z0-9]+)(?:$|\?|#)/);

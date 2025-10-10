@@ -14,7 +14,7 @@
 				<view class="top-info tn-padding-left-sm tn-padding-right-sm">
 					<view class="left-info ">
 						<text class="student-name">Trainee：StormChaser</text>
-						<text class="date">2025-06-18</text>
+                                                <text class="date">18/06/2025</text>
 					</view>
 					<view class="right-info tn-flex-direction-row tn-flex-row-between tn-flex">
 						<view class="tn-flex tn-flex-direction-row tn-flex-row-between">
@@ -24,7 +24,7 @@
 							</view>
 						</view>
 						<view class="tn-flex tn-flex-col-center tn-flex-row-center">
-							<text class="time-number">6.28</text>
+                                                        <text class="time-number">28/06/2025</text>
 						</view>
 						<view class="tn-padding-bottom-sm tn-flex tn-flex-col-center tn-flex-row-center">
 							<text class="time-text">Test Date</text>

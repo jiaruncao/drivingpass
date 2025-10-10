@@ -30,7 +30,7 @@
           <view class="countdown-badge">
             <text class="countdown-text">{{ info.days_left.days }} days left</text>
           </view>
-          <text class="test-date-number">{{ $u.timeFormat(info.test_date, 'dd/mm') }}</text>
+          <text class="test-date-number">{{ formatUKDate(info.test_date) }}</text>
           <text class="test-date-label">Test Date</text>
         </view>
       </view>
@@ -165,10 +165,11 @@ export default {
       // 模态框显示状态
       showModal: false,
       // 图表宽度
-      chartWidth: 350,
-      // 图表上下文
-      multipleChoiceCtx: null,
-      hazardPerceptionCtx: null
+      chartWidth: 0,
+      // 图表数据
+      multipleChoiceChartData: null,
+      hazardPerceptionChartData: null,
+      resizeListener: null
     }
   },
   computed: {
@@ -186,9 +187,13 @@ export default {
     this.getTestStatistics()
     // 页面加载时初始化
     this.getSystemInfo();
+    this.registerResizeListener();
     // #ifdef APP-PLUS
     plus.screen.lockOrientation('portrait-primary');
     // #endif
+  },
+  onUnload() {
+    this.unregisterResizeListener();
   },
   onReady() {
     // 页面渲染完成后初始化图表
@@ -200,17 +205,41 @@ export default {
     // 获取系统信息，设置图表宽度
     getSystemInfo() {
       const systemInfo = uni.getSystemInfoSync();
-      // 计算图表宽度（屏幕宽度减去padding）
-      this.chartWidth = systemInfo.windowWidth - 80;
+      this.setChartWidth(systemInfo.windowWidth);
+    },
+
+    setChartWidth(windowWidth) {
+      const numericWidth = typeof windowWidth === 'number' ? windowWidth : parseFloat(windowWidth) || 0;
+      const padding = 40; // scroll-view 左右各 20px
+      const calculatedWidth = Math.max(numericWidth - padding, 0);
+      this.chartWidth = calculatedWidth;
+    },
+
+    registerResizeListener() {
+      if (typeof uni.onWindowResize !== 'function') {
+        return;
+      }
+      this.resizeListener = res => {
+        this.setChartWidth(res.size.windowWidth);
+        this.redrawCharts();
+      };
+      uni.onWindowResize(this.resizeListener);
+    },
+
+    unregisterResizeListener() {
+      if (typeof uni.offWindowResize !== 'function') {
+        this.resizeListener = null;
+        return;
+      }
+      if (this.resizeListener) {
+        uni.offWindowResize(this.resizeListener);
+        this.resizeListener = null;
+      }
     },
     
     // 格式化为英国日期格式
     formatUKDate(dateString) {
-      const date = new Date(dateString);
-      const day = String(date.getDate()).padStart(2, '0');
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const year = date.getFullYear();
-      return `${day}/${month}/${year}`;
+      return this.$utils.formatDateToDDMMYYYY(dateString);
     },
     
     // 返回上一页
@@ -249,6 +278,9 @@ export default {
     
     // 绘制折线图（简化版本，实际项目中应使用u-charts或其他图表库）
     drawLineChart(canvasId, chartData) {
+      if (!chartData || !Array.isArray(chartData.data) || chartData.data.length === 0) {
+        return;
+      }
       const ctx = uni.createCanvasContext(canvasId, this);
       const width = this.chartWidth;
       const height = 200;
@@ -280,7 +312,8 @@ export default {
       const maxValue = 100;
       const minValue = 0;
       const range = maxValue - minValue;
-      const xStep = graphWidth / (chartData.data.length - 1);
+      const dataLength = chartData.data.length;
+      const xStep = dataLength > 1 ? graphWidth / (dataLength - 1) : 0;
       
       // 开始绘制路径
       ctx.beginPath();
@@ -289,7 +322,7 @@ export default {
       chartData.data.forEach((value, index) => {
         const x = padding + xStep * index;
         const y = padding + graphHeight - ((value - minValue) / range) * graphHeight;
-        
+
         if (index === 0) {
           ctx.moveTo(x, y);
         } else {
@@ -329,7 +362,7 @@ export default {
       ctx.setTextAlign('center');
       
       // 只显示部分标签避免拥挤
-      const labelStep = Math.ceil(chartData.labels.length / 5);
+      const labelStep = Math.ceil(chartData.labels.length / 5) || 1;
       chartData.labels.forEach((label, index) => {
         if (index % labelStep === 0 || index === chartData.labels.length - 1) {
           const x = padding + xStep * index;
@@ -348,27 +381,68 @@ export default {
       // 执行绘制
       ctx.draw();
     },
+    redrawCharts () {
+      this.$nextTick(() => {
+        if (this.multipleChoiceChartData) {
+          this.drawLineChart('multipleChoiceChart', this.multipleChoiceChartData);
+        }
+        if (this.hazardPerceptionChartData) {
+          this.drawLineChart('hazardPerceptionChart', this.hazardPerceptionChartData);
+        }
+      });
+    },
+    formatChartLabel (label) {
+      if (!label) return '';
+      const normalized = label.toString().replace(/[.]/g, '-').replace(/[\/]/g, '-');
+      const segments = normalized.split('-').filter(Boolean);
+
+      if (segments.length === 3) {
+        if (segments[0].length === 4) {
+          const [year, month, day] = segments;
+          return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
+        }
+        if (segments[2].length === 4) {
+          const [day, month, year] = segments;
+          return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
+        }
+      }
+
+      if (segments.length === 2) {
+        const [day, month] = segments;
+        const year = new Date().getFullYear().toString();
+        return `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`;
+      }
+
+      return label;
+    },
     getTestStatistics () {
       getTestStatistics().then(res => {
         console.log(res)
         if (res.code == 1) {
           this.info = res.data.list
-          // 初始化多选题图表
-          this.info.labels = this.info.labels.map(data => {
-            return data.split('-').reverse().join('/')
-          })
-          
-          
-          this.$nextTick(() => {
-            this.drawLineChart('multipleChoiceChart', {
-              labels: this.info.labels,
-              data: this.info.data
-            });
-            this.drawLineChart('hazardPerceptionChart', {
-              labels: ['09/05', '10/05', '11/05', '12/05', '13/05', '14/05', '15/05', '16/05', '17/05', '18/05'],
-              data: [20, 95, 30, 20, 25, 10, 40, 48, 8, 50]
-            });
-          });
+          const multipleChoiceLabels = Array.isArray(this.info.labels)
+            ? this.info.labels.map(this.formatChartLabel)
+            : []
+          this.info.labels = multipleChoiceLabels
+
+          this.multipleChoiceChartData = {
+            labels: multipleChoiceLabels,
+            data: Array.isArray(this.info.data) ? this.info.data : []
+          }
+
+          const hazardLabelsSource = Array.isArray(this.info.hazard_labels) && this.info.hazard_labels.length
+            ? this.info.hazard_labels
+            : ['09/05', '10/05', '11/05', '12/05', '13/05', '14/05', '15/05', '16/05', '17/05', '18/05']
+          const hazardDataSource = Array.isArray(this.info.hazard_data) && this.info.hazard_data.length
+            ? this.info.hazard_data
+            : [20, 95, 30, 20, 25, 10, 40, 48, 8, 50]
+
+          this.hazardPerceptionChartData = {
+            labels: hazardLabelsSource.map(this.formatChartLabel),
+            data: hazardDataSource
+          }
+
+          this.redrawCharts()
         }
       })
     },
