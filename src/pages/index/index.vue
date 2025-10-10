@@ -57,6 +57,7 @@
     getTypeFind,
     queryAllQuestion
   } from '@/http/api/index.js'
+  import {formatScore} from '@/utils/number'
   export default {
     data() {
       return {
@@ -119,7 +120,7 @@
       },
       getScore(name) {
         const scoreInfo = this.drivingTest.find(item => item.name === name)
-        return scoreInfo ? scoreInfo.score : 0
+        return formatScore(scoreInfo ? scoreInfo.score : 0)
       },
       // 第一次进入，获取题库
       queryAllQuestion () {
