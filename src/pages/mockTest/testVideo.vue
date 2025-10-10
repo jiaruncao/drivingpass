@@ -152,27 +152,119 @@
     <u-modal width="400px" :show="modalShow" :title="modalTitle" :showCancelButton="showCancel" :content='modalContent' :cancelText="cancelText" :confirmText="confirmText" @cancel="cancel" @confirm="confirm"></u-modal>
     
     <view v-if="showPopup" class="result-modal">
-      <view class="result-backdrop" @tap.stop></view>
-      <view class="result-content">
+      <view class="result-backdrop" @tap="closeResultPopup"></view>
+      <view class="result-content" @tap.stop>
+        <view class="result-close" @tap="closeResultPopup">×</view>
         <view class="result-header">
-          <view class="result-title">Test Completed</view>
-          <view class="result-min-title" style="margin-top: 10px;">Your Score</view>
+          <view class="result-title">Mock Test Summary</view>
+          <view class="result-subtitle">{{ resultSummary.message }}</view>
         </view>
-        
-        <view class="result-score">
-          <view>
-            <text style="font-size: 40px;font-weight: 500;">{{score}}</text>
+
+        <view class="score-grid">
+          <view class="score-card">
+            <view class="score-card-header">
+              <text class="score-card-label">Multiple Choice</text>
+              <text :class="['score-card-status', resultSummary.multipleChoice.pass ? 'pass' : 'review']">
+                {{ resultSummary.multipleChoice.pass ? 'Pass' : 'Review' }}
+              </text>
+            </view>
+            <view class="score-card-value">
+              <text class="score-number">{{ formatScore(resultSummary.multipleChoice.score) }}</text>
+              <text class="score-total">/ {{ resultSummary.multipleChoice.total }}</text>
+            </view>
+            <view class="score-progress">
+              <view class="score-progress-fill" :style="{ width: multipleChoiceProgress + '%' }"></view>
+            </view>
+            <text class="score-card-hint">{{ resultSummary.multipleChoice.feedback }}</text>
+          </view>
+
+          <view class="score-card hazard">
+            <view class="score-card-header">
+              <text class="score-card-label">Hazard Perception</text>
+              <text :class="['score-card-status', resultSummary.hazardPerception.pass ? 'pass' : 'review']">
+                {{ resultSummary.hazardPerception.pass ? 'Pass' : 'Review' }}
+              </text>
+            </view>
+            <view class="score-card-value">
+              <text class="score-number">{{ formatScore(resultSummary.hazardPerception.score) }}</text>
+              <text class="score-total">/ {{ resultSummary.hazardPerception.total }}</text>
+            </view>
+            <view class="score-progress">
+              <view class="score-progress-fill hazard" :style="{ width: hazardPerceptionProgress + '%' }"></view>
+            </view>
+            <text class="score-card-hint">{{ resultSummary.hazardPerception.feedback }}</text>
           </view>
         </view>
-    
-        <!-- 操作按钮 -->
+
+        <view class="overall-status" :class="resultSummary.pass ? 'overall-pass' : 'overall-review'">
+          <view class="overall-status-label">{{ resultSummary.pass ? 'Pass' : 'Keep practising' }}</view>
+          <view class="overall-status-desc">{{ resultSummary.passMessage }}</view>
+        </view>
+
+        <view v-if="hasWrongQuestions" class="wrong-review">
+          <view class="wrong-review-header" @tap="toggleWrongReview">
+            <view>
+              <text class="wrong-review-title">Review incorrect questions</text>
+              <text class="wrong-review-subtitle">{{ totalWrongCount }} question{{ totalWrongCount === 1 ? '' : 's' }} to revisit</text>
+            </view>
+            <view class="wrong-review-toggle">
+              <text>{{ wrongReviewExpanded ? 'Hide' : 'View' }}</text>
+              <view :class="['chevron', wrongReviewExpanded ? 'expanded' : '']"></view>
+            </view>
+          </view>
+
+          <view v-if="wrongReviewExpanded" class="wrong-review-body">
+            <view class="wrong-tabs">
+              <view
+                :class="['wrong-tab', activeWrongTab === 'multiple' ? 'active' : '', !wrongQuestions.multiple.length ? 'disabled' : '']"
+                @tap.stop="switchWrongTab('multiple')"
+              >
+                Multiple Choice ({{ wrongQuestions.multiple.length }})
+              </view>
+              <view
+                :class="['wrong-tab', activeWrongTab === 'hazard' ? 'active' : '', !wrongQuestions.hazard.length ? 'disabled' : '']"
+                @tap.stop="switchWrongTab('hazard')"
+              >
+                Hazard Perception ({{ wrongQuestions.hazard.length }})
+              </view>
+            </view>
+
+            <scroll-view class="wrong-list" scroll-y>
+              <view v-if="!currentWrongList.length" class="wrong-empty">
+                <text>No mistakes in this section 🎉</text>
+              </view>
+              <view
+                v-for="(item, index) in currentWrongList"
+                :key="item.id || item.question_id || index"
+                class="wrong-item"
+              >
+                <view class="wrong-item-header">
+                  <text class="wrong-item-index">{{ index + 1 }}.</text>
+                  <text class="wrong-item-title">{{ resolveQuestionTitle(item) }}</text>
+                </view>
+                <view v-if="item.user_answer" class="wrong-item-meta">
+                  <text class="wrong-item-label">Your answer</text>
+                  <text class="wrong-item-value">{{ formatAnswer(item.user_answer) }}</text>
+                </view>
+                <view v-if="item.correct_answer" class="wrong-item-meta">
+                  <text class="wrong-item-label">Correct</text>
+                  <text class="wrong-item-value">{{ formatAnswer(item.correct_answer) }}</text>
+                </view>
+                <view v-if="item.explanation" class="wrong-item-meta">
+                  <text class="wrong-item-label">Explanation</text>
+                  <text class="wrong-item-value">{{ item.explanation }}</text>
+                </view>
+                <view class="wrong-item-actions">
+                  <view class="link-button" @tap="openQuestionDetail(item)">View details</view>
+                </view>
+              </view>
+            </scroll-view>
+          </view>
+        </view>
+
         <view class="result-actions">
-          <button class="result-button exit-btn" @tap="doExit">
-            Exit
-          </button>
-          <button class="result-button review-btn" @tap="toRecords">
-            To Records
-          </button>
+          <button class="result-button ghost" @tap="doExit">Back to Mock Home</button>
+          <button class="result-button primary" @tap="toRecords">Your Records</button>
         </view>
       </view>
     </view>
@@ -235,7 +327,30 @@ export default {
       recentClicks: [], // 最近的点击时间记录
       scoreDisqualified: false ,// 分数是否被取消
       showPopup: false,
-      score: 0
+      score: 0,
+      resultSummary: {
+        pass: false,
+        message: 'Here is your performance breakdown.',
+        passMessage: '',
+        multipleChoice: {
+          score: 0,
+          total: 50,
+          pass: false,
+          feedback: 'Aim for at least 43/50 to pass the DVSA mark.'
+        },
+        hazardPerception: {
+          score: 0,
+          total: 75,
+          pass: false,
+          feedback: 'Aim for at least 44/75 to pass the DVSA mark.'
+        }
+      },
+      wrongQuestions: {
+        multiple: [],
+        hazard: []
+      },
+      wrongReviewExpanded: false,
+      activeWrongTab: 'multiple'
     }
   },
   
@@ -270,6 +385,36 @@ export default {
     // 未回答题目数
     unansweredCount() {
       return this.questionsData.length - this.answeredCount
+    },
+
+    multipleChoiceProgress() {
+      const total = this.resultSummary.multipleChoice.total || 1
+      const score = this.resultSummary.multipleChoice.score || 0
+      return Math.max(0, Math.min(100, Math.round((score / total) * 100)))
+    },
+
+    hazardPerceptionProgress() {
+      const total = this.resultSummary.hazardPerception.total || 1
+      const score = this.resultSummary.hazardPerception.score || 0
+      return Math.max(0, Math.min(100, Math.round((score / total) * 100)))
+    },
+
+    hasWrongQuestions() {
+      return (this.wrongQuestions.multiple && this.wrongQuestions.multiple.length > 0) ||
+        (this.wrongQuestions.hazard && this.wrongQuestions.hazard.length > 0)
+    },
+
+    currentWrongList() {
+      if (this.activeWrongTab === 'hazard') {
+        return this.wrongQuestions.hazard || []
+      }
+      return this.wrongQuestions.multiple || []
+    },
+
+    totalWrongCount() {
+      const multiple = this.wrongQuestions.multiple ? this.wrongQuestions.multiple.length : 0
+      const hazard = this.wrongQuestions.hazard ? this.wrongQuestions.hazard.length : 0
+      return multiple + hazard
     }
   },
   
@@ -427,20 +572,30 @@ export default {
       this.cacheCurrentVideoScore()
       // 这里获取单选成绩
       const mockTestResult = uni.getStorageSync('mockTestResult')
-      
+
       const questions = mockTestResult.questions
-      
+
       console.log('this.userMarks', this.userMarks)
-      
+
       // 提交
       submitExamQuestion({
         paper_id: this.paper_id,
         questions: questions
       }).then(res => {
         console.log(res)
-        // 弹出得分
+        const payload = this.unwrapSubmitResponse(res)
+        if (!payload) {
+          return
+        }
+
+        const parsed = this.buildResultSummary(payload)
+        this.resultSummary = parsed.summary
+        this.wrongQuestions = parsed.wrongQuestions
+        this.score = parsed.summary.totalScore
+        this.activeWrongTab = parsed.activeTab
+        this.wrongReviewExpanded = parsed.autoExpandWrongReview
         this.showPopup = true
-        this.score = res.score
+        this.persistWrongQuestions(parsed.wrongQuestions)
       })
     },
     // 结束考试
@@ -627,7 +782,7 @@ export default {
         let result = qs.userMarks.map(mark => mark.time).join(',')
         // 查找是否已存在相同ID的题目
         const existingIndex = bsQuestions.findIndex(item => item.id === qs.id)
-        
+
         if (existingIndex !== -1) {
           // 如果存在相同ID，替换answer
           bsQuestions[existingIndex].answer = result
@@ -638,7 +793,7 @@ export default {
             answer: result
           })
         }
-        
+
       })
 
       uni.setStorageSync('mockTestResult', {
@@ -655,6 +810,191 @@ export default {
       uni.redirectTo({
         url: '/pages/mockTest/record'
       })
+    },
+    closeResultPopup () {
+      this.showPopup = false
+    },
+    toggleWrongReview () {
+      this.wrongReviewExpanded = !this.wrongReviewExpanded
+    },
+    switchWrongTab (tab) {
+      if (tab === this.activeWrongTab) {
+        return
+      }
+      if (tab === 'multiple' && (!this.wrongQuestions.multiple || !this.wrongQuestions.multiple.length)) {
+        return
+      }
+      if (tab === 'hazard' && (!this.wrongQuestions.hazard || !this.wrongQuestions.hazard.length)) {
+        return
+      }
+      this.activeWrongTab = tab
+    },
+    resolveQuestionTitle (item = {}) {
+      return item.title || item.question || item.content || item.stem || 'Untitled question'
+    },
+    formatAnswer (answer) {
+      if (Array.isArray(answer)) {
+        return answer.join(', ')
+      }
+      if (typeof answer === 'number') {
+        return answer.toString()
+      }
+      if (!answer) {
+        return '—'
+      }
+      return String(answer)
+    },
+    openQuestionDetail (item = {}) {
+      const questionId = item.question_id || item.id
+      if (!questionId) {
+        uni.showToast({
+          title: 'Missing question ID',
+          icon: 'none'
+        })
+        return
+      }
+      this.closeResultPopup()
+      uni.navigateTo({
+        url: `/pages/learnQuestion/detail?question_id=${questionId}&mode=wrong`
+      })
+    },
+    formatScore (score) {
+      if (score === null || score === undefined || score === '') {
+        return '0'
+      }
+      const value = Number(score)
+      if (Number.isNaN(value)) {
+        return '0'
+      }
+      return value % 1 === 0 ? value.toString() : value.toFixed(1)
+    },
+    unwrapSubmitResponse (response) {
+      if (!response || typeof response !== 'object') {
+        uni.showToast({
+          title: 'Unable to parse result',
+          icon: 'none'
+        })
+        return null
+      }
+
+      if (Object.prototype.hasOwnProperty.call(response, 'code')) {
+        if (response.code !== 1) {
+          uni.showToast({
+            title: response.msg || 'Failed to submit mock test',
+            icon: 'none'
+          })
+          return null
+        }
+        return response.data || {}
+      }
+
+      return response
+    },
+    buildResultSummary (payload = {}) {
+      const multiplePassMark = this.ensureNumber(
+        payload.multiple_choice_pass_mark ?? payload.multiple_choice?.pass_mark ?? payload.multiplePassMark,
+        43
+      )
+      const hazardPassMark = this.ensureNumber(
+        payload.hazard_perception_pass_mark ?? payload.hazard_perception?.pass_mark ?? payload.hazardPassMark,
+        44
+      )
+
+      const multipleScore = this.ensureNumber(
+        payload.multiple_choice_score ?? payload.multipleScore ?? payload.multiple_choice?.score ?? payload.mc_score
+      )
+      const multipleTotal = this.ensureNumber(
+        payload.multiple_choice_total ?? payload.multiple_choice?.total ?? payload.multipleTotal,
+        50
+      ) || 50
+      const hazardScore = this.ensureNumber(
+        payload.hazard_perception_score ?? payload.hazardScore ?? payload.hazard_perception?.score ?? payload.hp_score ?? payload.hazard_score
+      )
+      const hazardTotal = this.ensureNumber(
+        payload.hazard_perception_total ?? payload.hazard_perception?.total ?? payload.hazardTotal,
+        75
+      ) || 75
+
+      const multiplePass = multipleScore >= multiplePassMark
+      const hazardPass = hazardScore >= hazardPassMark
+      const passStatus = payload.pass ?? payload.passed ?? payload.pass_status === 'pass' || (multiplePass && hazardPass)
+
+      const multipleGap = Math.max(0, multiplePassMark - multipleScore)
+      const hazardGap = Math.max(0, hazardPassMark - hazardScore)
+
+      const multipleFeedback = multiplePass
+        ? `Great job! You reached the pass mark (${multiplePassMark}).`
+        : `Need ${multipleGap} more point${multipleGap === 1 ? '' : 's'} to hit ${multiplePassMark}.`
+
+      const hazardFeedback = hazardPass
+        ? `Strong spotting! You reached the pass mark (${hazardPassMark}).`
+        : `Need ${hazardGap} more point${hazardGap === 1 ? '' : 's'} to hit ${hazardPassMark}.`
+
+      const summary = {
+        totalScore: this.ensureNumber(payload.total_score ?? payload.score, multipleScore + hazardScore),
+        pass: Boolean(passStatus),
+        message: payload.message || payload.summary || 'Here is your performance breakdown.',
+        passMessage: payload.pass_message || payload.advice || (passStatus
+          ? 'Excellent effort—keep maintaining this standard.'
+          : 'Review the highlighted questions to boost your score next time.'),
+        multipleChoice: {
+          score: multipleScore,
+          total: multipleTotal,
+          pass: multiplePass,
+          feedback: multipleFeedback
+        },
+        hazardPerception: {
+          score: hazardScore,
+          total: hazardTotal,
+          pass: hazardPass,
+          feedback: hazardFeedback
+        }
+      }
+
+      const wrongQuestions = {
+        multiple: this.normaliseWrongQuestionList(
+          payload.multiple_wrong_questions ?? payload.multipleWrongQuestions ?? payload.wrong_multiple ?? payload.multiple_wrong
+        ),
+        hazard: this.normaliseWrongQuestionList(
+          payload.hazard_wrong_questions ?? payload.hazardWrongQuestions ?? payload.wrong_hazard ?? payload.hazard_wrong
+        )
+      }
+
+      const hasMultipleWrong = wrongQuestions.multiple.length > 0
+      const hasHazardWrong = wrongQuestions.hazard.length > 0
+
+      return {
+        summary,
+        wrongQuestions,
+        activeTab: hasMultipleWrong ? 'multiple' : 'hazard',
+        autoExpandWrongReview: hasMultipleWrong || hasHazardWrong
+      }
+    },
+    ensureNumber (value, fallback = 0) {
+      const numberValue = Number(value)
+      return Number.isFinite(numberValue) ? numberValue : fallback
+    },
+    normaliseWrongQuestionList (list) {
+      if (!Array.isArray(list)) {
+        return []
+      }
+      return list.map(item => {
+        const normalised = { ...item }
+        if (normalised.user_answer === undefined) {
+          normalised.user_answer = normalised.answer ?? normalised.userAnswer ?? ''
+        }
+        if (normalised.correct_answer === undefined) {
+          normalised.correct_answer = normalised.correct ?? normalised.correctAnswer ?? normalised.right_answer ?? ''
+        }
+        return normalised
+      })
+    },
+    persistWrongQuestions (wrongQuestions) {
+      try {
+        uni.setStorageSync('mockTestWrongQuestions', wrongQuestions)
+      } catch (error) {
+        console.error('Failed to persist wrong questions', error)
+      }
     }
   },
   onLoad (option) {
@@ -1396,93 +1736,417 @@ export default {
 }
 
 .result-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 1000;
-  }
-  
-  .result-backdrop {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
-  }
-  
-  .result-content {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 400px;
-    background: white;
-    border-radius: 15px;
-    padding: 25px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  }
-  
-  .result-header {
-    text-align: center;
-    margin-bottom: 20px;
-  }
-  
-  .result-title {
-    font-size: 20px;
-    font-weight: 600;
-    color: #333;
-  }
-  
-  .result-score {
-    text-align: center;
-    margin: 0 auto;
-    margin-bottom: 20px;
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    background: #4A9EFF;
-    color: #fff;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+}
 
-  /* 操作按钮 */
+.result-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(2px);
+}
+
+.result-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 92%;
+  max-width: 640px;
+  background: #ffffff;
+  border-radius: 1.5rem;
+  padding: 1.5rem;
+  box-shadow: 0 1.5rem 3rem rgba(15, 23, 42, 0.18);
+}
+
+.result-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #1f2937;
+  font-size: 1.25rem;
+  font-weight: 600;
+  box-shadow: 0 0.5rem 1.5rem rgba(148, 163, 184, 0.35);
+}
+
+.result-close:active {
+  background: #e5e7eb;
+}
+
+.result-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+  padding: 0 1rem;
+}
+
+.result-title {
+  font-size: 1.45rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.result-subtitle {
+  margin-top: 0.35rem;
+  font-size: 0.95rem;
+  color: #64748b;
+}
+
+.score-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+@media screen and (min-width: 45rem) {
+  .score-grid {
+    flex-direction: row;
+  }
+}
+
+.score-card {
+  flex: 1;
+  background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+  border-radius: 1.25rem;
+  padding: 1.2rem;
+  box-shadow: 0 0.75rem 1.75rem rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.score-card.hazard {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+}
+
+.score-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.score-card-label {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2933;
+}
+
+.score-card-status {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.score-card-status.pass {
+  background: rgba(34, 197, 94, 0.15);
+  color: #15803d;
+}
+
+.score-card-status.review {
+  background: rgba(239, 68, 68, 0.12);
+  color: #b91c1c;
+}
+
+.score-card-value {
+  display: flex;
+  align-items: baseline;
+  gap: 0.25rem;
+  color: #0f172a;
+}
+
+.score-number {
+  font-size: 2.25rem;
+  font-weight: 700;
+}
+
+.score-total {
+  font-size: 1rem;
+  color: #475569;
+}
+
+.score-progress {
+  width: 100%;
+  height: 0.55rem;
+  background: rgba(226, 232, 240, 0.85);
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 0.75rem 0;
+}
+
+.score-progress-fill {
+  height: 100%;
+  background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.score-progress-fill.hazard {
+  background: linear-gradient(135deg, #f97316 0%, #f59e0b 100%);
+}
+
+.score-card-hint {
+  font-size: 0.85rem;
+  color: #475569;
+  line-height: 1.4;
+}
+
+.overall-status {
+  border-radius: 1rem;
+  padding: 1rem 1.25rem;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.overall-pass {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.overall-review {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.overall-status-label {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.overall-status-desc {
+  margin-top: 0.25rem;
+  font-size: 0.92rem;
+  color: #0f172a;
+}
+
+.wrong-review {
+  margin-top: 1.25rem;
+  border-radius: 1.25rem;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  background: #f8fafc;
+}
+
+.wrong-review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+}
+
+.wrong-review-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.wrong-review-subtitle {
+  display: block;
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-top: 0.25rem;
+}
+
+.wrong-review-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #2563eb;
+}
+
+.chevron {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-right: 0.125rem solid currentColor;
+  border-bottom: 0.125rem solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 0.2s ease;
+}
+
+.chevron.expanded {
+  transform: rotate(135deg);
+}
+
+.wrong-review-body {
+  background: #ffffff;
+  border-top: 1px solid #e2e8f0;
+}
+
+.wrong-tabs {
+  display: flex;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.wrong-tab {
+  flex: 1;
+  text-align: center;
+  padding: 0.75rem 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #64748b;
+  position: relative;
+}
+
+.wrong-tab.disabled {
+  opacity: 0.4;
+}
+
+.wrong-tab.active {
+  color: #1d4ed8;
+}
+
+.wrong-tab.active::after {
+  content: '';
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: 0.1rem;
+  height: 0.1875rem;
+  border-radius: 999px;
+  background: #1d4ed8;
+}
+
+.wrong-list {
+  max-height: 14rem;
+  padding: 0.75rem 1.1rem;
+}
+
+@media screen and (min-width: 48rem) {
+  .wrong-list {
+    max-height: 18rem;
+  }
+}
+
+.wrong-item {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.9rem;
+  padding: 0.75rem 0.85rem;
+  margin-bottom: 0.75rem;
+  background: #f9fafb;
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.08);
+}
+
+.wrong-item:last-child {
+  margin-bottom: 0;
+}
+
+.wrong-item-header {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 0.45rem;
+}
+
+.wrong-item-index {
+  color: #6366f1;
+}
+
+.wrong-item-title {
+  flex: 1;
+  line-height: 1.45;
+}
+
+.wrong-item-meta {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #4b5563;
+  margin-bottom: 0.25rem;
+}
+
+.wrong-item-label {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.wrong-item-value {
+  flex: 1;
+  color: #334155;
+}
+
+.wrong-item-actions {
+  margin-top: 0.6rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.link-button {
+  color: #2563eb;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.link-button:active {
+  opacity: 0.7;
+}
+
+.wrong-empty {
+  padding: 1.5rem 1rem;
+  text-align: center;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.result-actions {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+@media screen and (min-width: 40rem) {
   .result-actions {
-    display: flex;
+    flex-direction: row;
   }
-  
-  .result-button {
-    flex: 1;
-    padding: 12px;
-    border-radius: 50px;
-    font-size: 14px;
-    font-weight: 600;
-    border: none;
-    transition: all 0.3s ease;
-  }
-  
-  .exit-btn {
-    background: #f5f5f5;
-    color: #666;
-    margin-right: 10px;
-  }
-  
-  .exit-btn:active {
-    background: #e0e0e0;
-  }
-  
-  .review-btn {
-    background: linear-gradient(135deg, #4A9EFF 0%, #2196F3 100%);
-    color: white;
-    box-shadow: 0 4px 15px rgba(74, 158, 255, 0.3);
-  }
-  
-  .review-btn:active {
-    transform: scale(0.98);
-  }
+}
+
+.result-button {
+  flex: 1;
+  padding: 0.85rem 1rem;
+  border-radius: 0.85rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.result-button.ghost {
+  background: #f8fafc;
+  color: #1f2937;
+  border: 1px solid #e2e8f0;
+}
+
+.result-button.ghost:active {
+  background: #e2e8f0;
+}
+
+.result-button.primary {
+  background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+  color: white;
+  box-shadow: 0 1rem 1.8rem rgba(79, 70, 229, 0.25);
+}
+
+.result-button.primary:active {
+  transform: translateY(1px);
+}
 </style>
