@@ -504,7 +504,26 @@ export default {
       this.selectOption = item;
     },
     goBack() {
-      uni.navigateBack({ delta: 1 });
+      const hasSelection = Array.isArray(this.selectOption)
+        ? this.selectOption.length > 0
+        : !!this.selectOption;
+
+      if (!hasSelection) {
+        uni.navigateBack({ delta: 1 });
+        return;
+      }
+
+      uni.showModal({
+        title: "Leave page?",
+        content: "Are you sure you want to return to the previous page?",
+        cancelText: "Stay",
+        confirmText: "Leave",
+        success: (res) => {
+          if (res.confirm) {
+            uni.navigateBack({ delta: 1 });
+          }
+        },
+      });
     },
   },
 };
