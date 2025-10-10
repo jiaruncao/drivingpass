@@ -307,8 +307,15 @@ export default {
   },
   watch: {
     // 监听当前索引变化，自动保存进度
-    currentIndex() {
-      
+    currentIndex(newIndex) {
+      if (!this.subject_id || !this.cate_id) return;
+
+      this.$utils.updateSubjectStorage('subjects', {
+        subjectId: this.subject_id,
+        cateId: this.cate_id
+      }, {
+        'current_question_index': newIndex
+      });
     }
   },
   onLoad(option) {

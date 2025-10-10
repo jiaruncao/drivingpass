@@ -420,7 +420,7 @@ export default {
         case 'HazardTest':
           // 跳转答题
           uni.navigateTo({
-            url: '/pages/hazardPerception/list?cate_id=' + this.selectedCategory + '&title=' + category.name + '&mode=learn'
+            url: `/pages/hazardPerception/list?cate_id=${this.selectedCategory}&subject_id=${this.subject_id}&title=${encodeURIComponent(category.name)}&mode=learn`
           })
           break;
         case 'HighwayCode':
@@ -432,7 +432,7 @@ export default {
         case 'RodeSign':
           // 跳转答题
           uni.navigateTo({
-            url: '/pages/roadSign/roadSign'
+            url: `/pages/roadSign/roadSign?id=${this.subject_id}`
           })
           break;
         default:

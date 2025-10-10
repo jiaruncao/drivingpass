@@ -309,41 +309,19 @@
     
     <view v-if="showResult" class="result-modal">
       <view class="result-backdrop" @tap.stop></view>
-      <view class="result-content">
-        <view class="result-header">
-          <view class="result-title">Accuracy</view>
-          <view>Test Completed</view>
+      <view class="result-content completion-content">
+        <view class="result-header completion-header">
+          <view class="completion-icon">🎉</view>
+          <view class="result-title">您已完成本章节学习</view>
+          <view class="result-subtitle">是否重置再次学习？</view>
         </view>
-        
-        <view class="result-score">
-          <view>
-            <text style="font-size: 70rpx;font-weight: 500;">{{accuracyCount}}</text> <text style="font-size: 50rpx;margin-left: 10rpx;">%</text>
-          </view>
-          <!-- <view style="font-size: 20rpx;">
-            Accuracy
-          </view> -->
-        </view>
-    
-        <!-- 标记统计 -->
-        <view class="result-stats">
-          <view class="stat-item">
-            <text class="stat-value" style="color:#F44336 !important;">{{ wrongCount }}</text>
-            <text class="stat-label" style="color:#F44336 !important;">Incorrect</text>
-          </view>
-          <view class="stat-item">
-            
-            <text class="stat-value">{{ questions.length }}</text>
-            <text class="stat-label">Total</text>
-          </view>
-        </view>
-    
-        <!-- 操作按钮 -->
-        <view class="result-actions">
-          <button class="result-button exit-btn" @tap="goBack">
-            Exit
+
+        <view class="result-actions completion-actions">
+          <button class="result-button reset-btn" @tap="resetLearning">
+            重置学习
           </button>
-          <button class="result-button review-btn" @tap="showQuestionList">
-            View Details
+          <button class="result-button home-btn" @tap="returnHome">
+            返回主页
           </button>
         </view>
       </view>
@@ -395,12 +373,18 @@
       fontSizeClass() {
         const sizes = ['font-size-small', 'font-size-medium', 'font-size-large', 'font-size-extra-large'];
         return sizes[this.settings.fontSize - 1];
-      },
-      wrongCount () {
-        return this.questions.filter(q => q.status == 'incorrect').length
-      },
-      accuracyCount () {
-        return Math.round(((this.questions.length - this.wrongCount) / this.questions.length) * 100)
+      }
+    },
+    watch: {
+      currentQuestionIndex(newIndex) {
+        if (this.mode !== 'learn') return;
+        if (!this.subject_id || !this.cate_id) return;
+        this.$utils.updateSubjectStorage('subjects', {
+          subjectId: this.subject_id,
+          cateId: this.cate_id
+        }, {
+          'current_question_index': newIndex
+        });
       }
     },
     methods: {
@@ -611,6 +595,7 @@
         const hasAllAnswered = this.questions.every(question => {
           return question.showAnswer
         });
+        this.hasAllAnswered = hasAllAnswered;
         if (hasAllAnswered) {
           // 所有题目都答完了
           this.showResult = true;
@@ -619,6 +604,36 @@
         // 缓存答题
         uni.setStorageSync('records', this.questions)
         // this.$forceUpdate()
+      },
+      resetLearning() {
+        this.questions = this.questions.map(question => ({
+          ...question,
+          showAnswer: false,
+          selectedOption: null,
+          status: '',
+          isCorrect: false
+        }));
+        this.correctStreak = 0;
+        this.currentQuestionIndex = 0;
+        this.hasAllAnswered = false;
+        this.showResult = false;
+        uni.setStorageSync('questions', this.questions);
+        uni.setStorageSync('records', this.questions);
+        if (this.mode === 'learn' && this.subject_id && this.cate_id) {
+          this.$utils.updateSubjectStorage('subjects', {
+            subjectId: this.subject_id,
+            cateId: this.cate_id
+          }, {
+            'current_question_index': 0,
+            'answerQuestions': []
+          });
+        }
+      },
+      returnHome() {
+        this.showResult = false;
+        uni.switchTab({
+          url: '/pages/index/index'
+        });
       },
       // 判断是否答对
       isCorrectAnswer(question) {
@@ -876,15 +891,16 @@
       } else {
         this.subject_id = option.subject_id
         this.cate_id = option.cate_id
-        
+
         // 自动跳转到当前题目
         const subjects = uni.getStorageSync('subjects');
-        
-        if (!subjects) return;
-        
-        this.currentQuestionIndex = this.$utils.getCurrentQuestionIndex(subjects, this.subject_id, this.cate_id)
-        
-        console.log('this.currentQuestionIndex', this.currentQuestionIndex)
+
+        if (subjects) {
+          const savedIndex = this.$utils.getCurrentQuestionIndex(subjects, this.subject_id, this.cate_id)
+          this.currentQuestionIndex = savedIndex >= 0 ? savedIndex : 0
+        } else {
+          this.currentQuestionIndex = 0
+        }
       }
       
       // 初始化题目数据
@@ -913,6 +929,9 @@
         return question.showAnswer
       });
       this.hasAllAnswered = hasAllAnswered
+      if (this.hasAllAnswered) {
+        this.showResult = true
+      }
     }
   }
 </script>
@@ -2711,127 +2730,34 @@
     padding: 50rpx;
     box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.3);
   }
-  
-  .result-header {
+
+  .completion-header {
     text-align: center;
     margin-bottom: 40rpx;
   }
-  
+
+  .completion-icon {
+    font-size: 90rpx;
+    margin-bottom: 20rpx;
+  }
+
   .result-title {
     font-size: 42rpx;
     font-weight: 600;
     color: #333;
   }
-  
-  .result-score {
-    text-align: center;
-    margin: 0 auto;
-    margin-bottom: 40rpx;
-    width: 200rpx;
-    height: 200rpx;
-    border-radius: 50%;
-    background: #4A9EFF;
-    color: #fff;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .score-label {
+
+  .result-subtitle {
+    margin-top: 12rpx;
     font-size: 28rpx;
     color: #666;
-    display: block;
-    margin-bottom: 20rpx;
   }
-  
-  .score-display {
-    display: flex;
-    align-items: baseline;
-    justify-content: center;
-    margin-bottom: 20rpx;
-  }
-  
-  .score-number {
-    font-size: 80rpx;
-    font-weight: bold;
-    color: #4A9EFF;
-  }
-  
-  .score-divider {
-    font-size: 40rpx;
-    color: #999;
-    margin: 0 10rpx;
-  }
-  
-  .score-total {
-    font-size: 50rpx;
-    color: #666;
-  }
-  
-  /* 得分状态 */
-  .score-status {
-    display: inline-block;
-    padding: 10rpx 30rpx;
-    border-radius: 20rpx;
-    margin-top: 10rpx;
-  }
-  
-  .score-status.excellent {
-    background: linear-gradient(135deg, #66BB6A 0%, #4CAF50 100%);
-  }
-  
-  .score-status.good {
-    background: linear-gradient(135deg, #42A5F5 0%, #2196F3 100%);
-  }
-  
-  .score-status.pass {
-    background: linear-gradient(135deg, #FFA726 0%, #FF9800 100%);
-  }
-  
-  .score-status.fail {
-    background: linear-gradient(135deg, #EF5350 0%, #F44336 100%);
-  }
-  
-  .status-text {
-    color: white;
-    font-size: 28rpx;
-    font-weight: 600;
-  }
-  
-  /* 统计信息 */
-  .result-stats {
-    display: flex;
-    justify-content: space-around;
-    padding: 30rpx 0;
-    border-top: 1rpx solid #eee;
-    border-bottom: 1rpx solid #eee;
-    margin-bottom: 40rpx;
-  }
-  
-  .stat-item {
-    text-align: center;
-  }
-  
-  .stat-label {
-    font-size: 24rpx;
-    color: #999;
-    display: block;
-    margin-bottom: 10rpx;
-  }
-  
-  .stat-value {
-    font-size: 36rpx;
-    font-weight: 600;
-    color: #333;
-  }
-  
-  /* 操作按钮 */
+
   .result-actions {
     display: flex;
     gap: 30rpx;
   }
-  
+
   .result-button {
     flex: 1;
     padding: 26rpx;
@@ -2841,23 +2767,23 @@
     border: none;
     transition: all 0.3s ease;
   }
-  
-  .exit-btn {
-    background: #f5f5f5;
-    color: #666;
-  }
-  
-  .exit-btn:active {
-    background: #e0e0e0;
-  }
-  
-  .review-btn {
+
+  .reset-btn {
     background: linear-gradient(135deg, #4A9EFF 0%, #2196F3 100%);
     color: white;
     box-shadow: 0 8rpx 30rpx rgba(74, 158, 255, 0.3);
   }
-  
-  .review-btn:active {
+
+  .reset-btn:active {
     transform: scale(0.98);
+  }
+
+  .home-btn {
+    background: #f5f5f5;
+    color: #666;
+  }
+
+  .home-btn:active {
+    background: #e0e0e0;
   }
 </style>

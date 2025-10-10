@@ -20,11 +20,12 @@
     <view class="container">
       <!-- 视频网格 -->
       <view class="videos-grid">
-        <view 
-          v-for="(video, index) in displayVideos" 
-          :key="video.id" 
+        <view
+          v-for="(video, index) in displayVideos"
+          :key="video.id"
           class="video-card"
-          @tap="handleVideoClick(video)"
+          :class="{ active: currentIndex === index }"
+          @tap="handleVideoClick(video, index)"
         >
           <!-- 视频缩略图 -->
           <view class="video-thumbnail">
@@ -99,12 +100,14 @@ export default {
   data() {
     return {
       cate_id: null,
+      subject_id: null,
       categoryName: 'Category 1', // 分类名称
       userSubscription: 'free', // 用户订阅类型: free, silver, gold
       showUpgradeModal: false, // 是否显示升级模态框
       requiredUpgrade: '', // 需要升级的订阅类型
       // 视频数据
-      videos: []
+      videos: [],
+      currentIndex: -1
     }
   },
   computed: {
@@ -137,7 +140,7 @@ export default {
       });
     },
     // 处理视频点击
-    handleVideoClick(video) {
+    handleVideoClick(video, index) {
       if (video.isLocked) {
         // 显示升级提示
         this.requiredUpgrade = video.requiredSubscription;
@@ -145,26 +148,29 @@ export default {
       } else {
         // 播放视频
         console.log('Playing video:', video.number);
-        this.playVideo(video);
+        this.playVideo(video, index);
       }
     },
     // 播放视频
-    playVideo(video) {
+    playVideo(video, index) {
       // 实际应用中导航到视频播放页面
       console.log(`Playing video ${video.number}`);
-      
+
       // 更新视频状态为已观看
       if (video.status === 'unwatched') {
         video.status = 'viewed';
       }
-      
+
+      this.currentIndex = index;
+      this.persistCurrentIndex(index);
+
       // // 导航到视频播放页面
       // uni.navigateTo({
       //   url: `/pages/hazardPerception/hazardLearn?id=${video.id}`
       // });
-      
+
       uni.navigateTo({
-        url: `/pages/hazardPerception/hazardLearn?id=${video.id}`
+        url: `/pages/hazardPerception/hazardLearn?id=${video.id}&cate_id=${this.cate_id}&subject_id=${this.subject_id}&index=${index}`
       })
     },
     // 关闭模态框
@@ -196,7 +202,28 @@ export default {
     initVideos() {
       const questions = uni.getStorageSync('questions')
       this.videos = questions ? questions : []
+      if (this.subject_id && this.cate_id) {
+        const subjects = uni.getStorageSync('subjects')
+        if (subjects) {
+          const savedIndex = this.$utils.getCurrentQuestionIndex(subjects, this.subject_id, this.cate_id)
+          if (savedIndex >= 0 && savedIndex < this.videos.length) {
+            this.currentIndex = savedIndex
+          } else {
+            this.currentIndex = -1
+          }
+        }
+      }
       // this.updateVideoLockStatus();
+    },
+    persistCurrentIndex(index) {
+      if (!this.subject_id || !this.cate_id) return;
+
+      this.$utils.updateSubjectStorage('subjects', {
+        subjectId: this.subject_id,
+        cateId: this.cate_id
+      }, {
+        'current_question_index': index
+      });
     },
     // 获取视频数据 - API调用示例
     async fetchVideos() {
@@ -243,7 +270,13 @@ export default {
     if (options.title) {
       this.categoryName = decodeURIComponent(options.title);
     }
-    
+    if (options.cate_id) {
+      this.cate_id = options.cate_id;
+    }
+    if (options.subject_id) {
+      this.subject_id = options.subject_id;
+    }
+
     // 初始化数据
     this.initVideos();
     
@@ -253,6 +286,7 @@ export default {
   },
   onShow() {
     // 页面显示时更新视频锁定状态
+    this.initVideos();
     this.updateVideoLockStatus();
   }
 }
@@ -392,6 +426,11 @@ export default {
   box-shadow: 0 8rpx 24rpx rgba(0,0,0,0.1);
   position: relative;
   margin-bottom: 32rpx;
+}
+
+.video-card.active {
+  box-shadow: 0 0 24rpx rgba(74, 158, 255, 0.25);
+  border: 2rpx solid rgba(74, 158, 255, 0.6);
 }
 
 .video-card:active {
