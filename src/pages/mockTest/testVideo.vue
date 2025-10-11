@@ -917,7 +917,7 @@ export default {
 
       const multiplePass = multipleScore >= multiplePassMark
       const hazardPass = hazardScore >= hazardPassMark
-      const passStatus = payload.pass ?? payload.passed ?? payload.pass_status === 'pass' || (multiplePass && hazardPass)
+      const passStatus = payload.pass ?? payload.passed ?? (payload.pass_status === 'pass' || (multiplePass && hazardPass))
 
       const multipleGap = Math.max(0, multiplePassMark - multipleScore)
       const hazardGap = Math.max(0, hazardPassMark - hazardScore)
