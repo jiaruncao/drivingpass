@@ -91,8 +91,8 @@ fly.interceptors.response.use(
     // });
     setTimeout(() => {
       uni.hideLoading();
-      return Promise.reject(error);
     }, 500);
+    return Promise.reject(error);
   }
 );
 
