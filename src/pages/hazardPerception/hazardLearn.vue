@@ -153,19 +153,24 @@ export default {
       showCancelButton: false,
       cancelText: 'Cancel',
       confirmText: 'Confirm',
-      showCompletionModal: false
+      showCompletionModal: false,
+      completedQuestionIds: []
     }
   },
   computed: {
     totalQuestions() {
-      return Array.isArray(this.questions) ? this.questions.length : 0
+      if (!Array.isArray(this.questions)) return 0
+      const uniqueIds = new Set()
+      this.questions.forEach(question => {
+        if (question && question.id) {
+          uniqueIds.add(question.id)
+        }
+      })
+      return uniqueIds.size
     },
     completedCount() {
-      if (!Array.isArray(this.questions)) return 0
-      return this.questions.reduce((count, question) => {
-        if (!question) return count
-        return count + (question.is_read ? 1 : 0)
-      }, 0)
+      if (!Array.isArray(this.completedQuestionIds)) return 0
+      return this.completedQuestionIds.length
     },
     learningProgress() {
       if (!this.totalQuestions) return 0
@@ -371,17 +376,23 @@ export default {
     // 记录
     recordAdd () {
       const currentQuestion = this.questions && this.questions[this.currentIndex]
-      if (currentQuestion && currentQuestion.is_read) {
+      const attemptSuccessful = this.evaluateAttempt()
+      if (currentQuestion && currentQuestion.is_read && attemptSuccessful) {
         this.persistCurrentIndex(this.currentIndex)
         return
       }
 
       recordAdd({
-        question_id: this.questionId
+        question_id: this.questionId,
+        result: attemptSuccessful
       }).then(res => {
         if (res.code == 1) {
-          this.addRecord()
-          this.markQuestionCompleted()
+          if (attemptSuccessful) {
+            this.addRecord()
+            this.markQuestionCompleted()
+          } else {
+            this.handleHazardFailure()
+          }
           this.persistCurrentIndex(this.currentIndex)
         }
       })
@@ -422,6 +433,7 @@ export default {
       }
 
       this.checkCompletion()
+      this.trackHazardCompletion(this.questionId)
     },
     checkCompletion () {
       if (!this.questions.length) return
@@ -456,6 +468,7 @@ export default {
         is_read: false
       }))
       this.currentIndex = 0
+      this.completedQuestionIds = []
       if (this.questions.length) {
         this.questionId = this.questions[0].id
         this.getQuestionDetail()
@@ -469,6 +482,82 @@ export default {
       uni.switchTab({
         url: '/pages/index/index'
       })
+    },
+    evaluateAttempt() {
+      if (this.scoreDisqualified) return false
+      return this.userMarks.some(mark => mark && Number(mark.score) > 0)
+    },
+    handleHazardFailure() {
+      const currentQuestion = this.questions && this.questions[this.currentIndex]
+      if (!currentQuestion) return
+      this.clearHazardCompletion(currentQuestion.id)
+      currentQuestion.is_read = false
+      this.enqueueHazardRetry(currentQuestion)
+      uni.setStorageSync('questions', this.questions)
+    },
+    enqueueHazardRetry(question) {
+      if (!Array.isArray(this.questions) || !question || !question.id) return
+      const alreadyQueued = this.questions.some((item, idx) => {
+        if (idx <= this.currentIndex) return false
+        if (!item) return false
+        return item.id === question.id && item.needsRetry
+      })
+      if (alreadyQueued) return
+
+      const retryQuestion = {
+        ...question,
+        is_read: false,
+        needsRetry: true
+      }
+
+      const minIndex = this.currentIndex + 1
+      let insertIndex = this.questions.length
+      if (minIndex < this.questions.length) {
+        const range = this.questions.length - minIndex
+        insertIndex = minIndex + Math.floor(Math.random() * (range + 1))
+      }
+
+      this.questions.splice(insertIndex, 0, retryQuestion)
+    },
+    trackHazardCompletion(questionId) {
+      if (!questionId) return
+      if (!this.completedQuestionIds.includes(questionId)) {
+        this.completedQuestionIds = [...this.completedQuestionIds, questionId]
+      }
+      this.removePendingHazardRetry(questionId)
+    },
+    clearHazardCompletion(questionId) {
+      if (!questionId) return
+      this.completedQuestionIds = this.completedQuestionIds.filter(id => id !== questionId)
+      this.removePendingHazardRetry(questionId)
+    },
+    removePendingHazardRetry(questionId) {
+      if (!Array.isArray(this.questions)) return
+      let removed = false
+      for (let i = this.questions.length - 1; i > this.currentQuestionIndex; i--) {
+        const item = this.questions[i]
+        if (!item) continue
+        if (item.id === questionId && item.needsRetry) {
+          this.questions.splice(i, 1)
+          removed = true
+        }
+      }
+      if (removed) {
+        uni.setStorageSync('questions', this.questions)
+      }
+    },
+    initializeHazardProgress() {
+      if (!Array.isArray(this.questions)) {
+        this.completedQuestionIds = []
+        return
+      }
+      const completedIds = []
+      this.questions.forEach(question => {
+        if (question && question.is_read && !completedIds.includes(question.id)) {
+          completedIds.push(question.id)
+        }
+      })
+      this.completedQuestionIds = completedIds
     },
     persistCurrentIndex (index) {
       if (!this.subject_id || !this.cate_id) return
@@ -507,6 +596,7 @@ export default {
     const storedQuestions = uni.getStorageSync('questions')
     if (storedQuestions && storedQuestions.length) {
       this.questions = storedQuestions
+      this.initializeHazardProgress()
 
       if (this.questionId) {
         const matchedIndex = this.questions.findIndex(item => item.id == this.questionId)
