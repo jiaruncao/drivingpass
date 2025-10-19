@@ -212,6 +212,7 @@ import {
 } from '@/http/api/index.js'
 import {getThree, startTrain, getTestRecordCount} from '@/http/api/testQuestions.js'
 import {queryMemberInfo} from '@/http/api/login.js'
+import utils from '@/utils/index.js'
 export default {
   data() {
     return {
@@ -430,9 +431,51 @@ export default {
           })
           break;
         case 'RodeSign':
-          // 跳转答题
+          // 跳转到道路标志学习
+          let targetCategoryId = this.selectedCategory
+          if (!targetCategoryId && this.roadSignCategories.length) {
+            targetCategoryId = this.roadSignCategories[0].id
+          }
+
+          if (!targetCategoryId) {
+            uni.showToast({
+              title: 'has no data',
+              icon: 'none'
+            })
+            return
+          }
+
+          const roadSignQuestions = this.selectSubjects({
+            cate_id: targetCategoryId
+          })
+
+          if (!roadSignQuestions || !roadSignQuestions.length) {
+            uni.showToast({
+              title: 'has no data',
+              icon: 'none'
+            })
+            return
+          }
+
+          uni.setStorageSync('questions', roadSignQuestions)
+
+          const subjectsStorage = uni.getStorageSync('subjects')
+          let targetIndex = 0
+          if (subjectsStorage) {
+            const savedIndex = utils.getCurrentQuestionIndex(subjectsStorage, this.subject_id, targetCategoryId)
+            if (savedIndex >= 0 && savedIndex < roadSignQuestions.length) {
+              targetIndex = savedIndex
+            }
+          }
+
+          const targetQuestionId = roadSignQuestions[targetIndex] ? roadSignQuestions[targetIndex].id : ''
+          const query = [`cate_id=${targetCategoryId}`, `subject_id=${this.subject_id}`]
+          if (targetQuestionId) {
+            query.push(`question_id=${targetQuestionId}`)
+          }
+
           uni.navigateTo({
-            url: `/pages/roadSign/roadSign?id=${this.subject_id}`
+            url: `/pages/roadSign/learn?${query.join('&')}`
           })
           break;
         default:
@@ -452,11 +495,33 @@ export default {
         item.progress = item.answerQuestions ? (item.answerQuestions.length / item.total * 100).toFixed(2) : 0
       })
 
+      let preferredCategoryId = categories.length ? categories[0].id : null
+      const subjectsStorage = uni.getStorageSync('subjects')
+      if (subjectsStorage) {
+        const subjectRecord = subjectsStorage.find(item => item.id == this.subject_id)
+        if (subjectRecord) {
+          const lastCateId = subjectRecord.last_learn_cate_id
+          if (lastCateId && categories.some(item => item.id == lastCateId)) {
+            preferredCategoryId = lastCateId
+          } else {
+            const categoryWithProgress = categories.find(item => Array.isArray(item.answerQuestions) && item.answerQuestions.length)
+            if (categoryWithProgress) {
+              preferredCategoryId = categoryWithProgress.id
+            }
+          }
+        }
+      }
+
       if (this.currentViewTitle == 'RodeSign') {
         this.roadSignCategories = categories
+        this.selectedCategory = preferredCategoryId
       } else {
         this.categories = categories
-        this.selectedCategory = this.categories[0].id
+        this.selectedCategory = preferredCategoryId
+        const activeCategory = this.categories.find(item => item.id == this.selectedCategory)
+        if (activeCategory) {
+          this.selectedCategoryName = activeCategory.name
+        }
       }
     },
     // 获取题目
