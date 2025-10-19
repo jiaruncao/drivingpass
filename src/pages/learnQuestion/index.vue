@@ -359,6 +359,7 @@
         correctStreak: 0, // 连续答对数
         commentText: '', // 评论输入
         showCommentInput: false, // 是否显示评论输入框
+        correctQuestionIds: [], // 已经答对的题目ID
         // 设置选项
         settings: {
           autoAdvance: true, // 答对自动跳转
@@ -385,11 +386,8 @@
         return sizes[this.settings.fontSize - 1];
       },
       answeredCount() {
-        if (!Array.isArray(this.questions)) return 0;
-        return this.questions.reduce((count, question) => {
-          if (!question) return count;
-          return count + (question.showAnswer ? 1 : 0);
-        }, 0);
+        if (!Array.isArray(this.correctQuestionIds)) return 0;
+        return this.correctQuestionIds.length;
       },
       learningProgress() {
         if (!this.totalQuestions) return 0;
@@ -562,14 +560,15 @@
 
         // 判断是否答对
         const isCorrect = question.options_json[optionIndex].key == question.answer;
-        
+
         question.isCorrect = isCorrect;
         question.status = isCorrect ? 'correct' : 'incorrect';
 
         if (isCorrect) {
+          this.trackCorrectAnswer(question);
           // 答对了
           this.correctStreak++;
-          
+
           // 移除本地错题
           this.removeWrong()
           
@@ -592,6 +591,7 @@
           }
 
         } else {
+          this.trackIncorrectAnswer(question, questionIndex);
           if (this.mode == 'learn') {
             // 查询评论
             this.queryPostList()
@@ -611,21 +611,20 @@
           this.wrongAdd()
           this.$forceUpdate()
         }
-        
+
         this.recordAdd()
-        
+
         // 如果答题答完
-        const hasAllAnswered = this.questions.every(question => {
-          return question.showAnswer
-        });
+        const hasAllAnswered = this.correctQuestionIds.length >= this.totalQuestions;
         this.hasAllAnswered = hasAllAnswered;
         if (hasAllAnswered) {
           // 所有题目都答完了
           this.showResult = true;
         }
-        
+
         // 缓存答题
         uni.setStorageSync('records', this.questions)
+        uni.setStorageSync('questions', this.questions)
         // this.$forceUpdate()
       },
       resetLearning() {
@@ -640,6 +639,7 @@
         this.currentQuestionIndex = 0;
         this.hasAllAnswered = false;
         this.showResult = false;
+        this.correctQuestionIds = [];
         uni.setStorageSync('questions', this.questions);
         uni.setStorageSync('records', this.questions);
         if (this.mode === 'learn' && this.subject_id && this.cate_id) {
@@ -801,6 +801,13 @@
         if (questions && questions.length) {
           this.questions = questions
           this.totalQuestions = questions.length
+          const correctIds = []
+          questions.forEach(question => {
+            if (question && question.isCorrect && !correctIds.includes(question.id)) {
+              correctIds.push(question.id)
+            }
+          })
+          this.correctQuestionIds = correctIds
           uni.setStorageSync('records', this.questions)
         }
       },
@@ -901,6 +908,61 @@
             this.persistProgress(this.currentQuestionIndex)
           }
         })
+      },
+      trackCorrectAnswer(question) {
+        if (!question || !question.id) return
+        if (!this.correctQuestionIds.includes(question.id)) {
+          this.correctQuestionIds = [...this.correctQuestionIds, question.id]
+        }
+        this.removePendingRetry(question.id)
+      },
+      trackIncorrectAnswer(question, questionIndex) {
+        if (!question || !question.id) return
+        this.correctQuestionIds = this.correctQuestionIds.filter(id => id !== question.id)
+        if (this.mode !== 'learn') return
+        this.enqueueRetryQuestion(question, questionIndex)
+      },
+      enqueueRetryQuestion(question, questionIndex) {
+        if (!Array.isArray(this.questions)) return
+        const alreadyQueued = this.questions.some((item, idx) => {
+          if (idx <= questionIndex) return false
+          if (!item) return false
+          return item.id === question.id && item.needsRetry
+        })
+        if (alreadyQueued) return
+
+        const retryQuestion = {
+          ...question,
+          showAnswer: false,
+          selectedOption: question.type === 'MCQ' ? [] : null,
+          status: '',
+          isCorrect: false,
+          needsRetry: true
+        }
+
+        const minIndex = questionIndex + 1
+        let insertIndex = this.questions.length
+        if (minIndex < this.questions.length) {
+          const range = this.questions.length - minIndex
+          insertIndex = minIndex + Math.floor(Math.random() * (range + 1))
+        }
+
+        this.questions.splice(insertIndex, 0, retryQuestion)
+      },
+      removePendingRetry(questionId) {
+        if (!Array.isArray(this.questions)) return
+        let removed = false
+        for (let i = this.questions.length - 1; i > this.currentQuestionIndex; i--) {
+          const item = this.questions[i]
+          if (!item) continue
+          if (item.id === questionId && item.needsRetry) {
+            this.questions.splice(i, 1)
+            removed = true
+          }
+        }
+        if (removed) {
+          uni.setStorageSync('questions', this.questions)
+        }
       }
     },
     onLoad(option) {
