@@ -45,11 +45,26 @@
 
       <!-- 滑动指示器 -->
       <view class="swipe-indicators">
-        <view v-for="(sign, index) in signsList" 
+        <view v-for="(sign, index) in signsList"
               :key="index" 
               class="indicator" 
               :class="{active: currentIndex === index}"
               @tap="goToSlide(index)">
+        </view>
+      </view>
+    </view>
+
+    <view v-if="showCompletionModal" class="result-modal">
+      <view class="result-backdrop" @tap.stop></view>
+      <view class="result-content completion-content">
+        <view class="result-header completion-header">
+          <view class="completion-icon">🎉</view>
+          <view class="result-title">Learning Complete</view>
+          <view class="result-subtitle">You've covered every sign in this category.</view>
+        </view>
+        <view class="result-actions completion-actions">
+          <button class="result-button reset-btn" @tap="resetProgress">Reset Progress</button>
+          <button class="result-button home-btn" @tap="returnHome">Return Home</button>
         </view>
       </view>
     </view>
@@ -61,7 +76,9 @@ import {getThree, recordAdd} from '@/http/api/testQuestions.js'
 export default {
   data() {
     return {
+      subject_id: null,
       cate_id: null,
+      question_id: null,
       currentIndex: 0, // 当前标志索引
       categoryProgress: 0, // 分类进度
       translateX: 0, // 滑动偏移量
@@ -69,7 +86,9 @@ export default {
       isDragging: false, // 是否正在拖拽
       slideWidth: 0, // 滑块宽度
       // 标志数据列表
-      signsList: []
+      signsList: [],
+      showCompletionModal: false,
+      prevCategoryProgress: 0
     }
   },
   computed: {
@@ -108,6 +127,22 @@ export default {
         fail: function (err) {
           console.log("fail:" + JSON.stringify(err));
         }
+      });
+    },
+    persistCurrentIndex (index) {
+      if (!this.subject_id || !this.cate_id) return
+
+      this.$utils.updateSubjectStorage('subjects', {
+        subjectId: this.subject_id,
+        cateId: this.cate_id
+      }, {
+        'current_question_index': index
+      });
+
+      this.$utils.updateSubjectStorage('subjects', {
+        subjectId: this.subject_id
+      }, {
+        'last_learn_cate_id': this.cate_id
       });
     },
     // 切换已读状态
@@ -178,8 +213,54 @@ export default {
     },
     // 更新进度
     updateProgress() {
+      const previousProgress = this.categoryProgress;
       const readCount = this.signsList.filter(sign => sign.is_read).length;
-      this.categoryProgress = Math.round((readCount / this.totalSigns) * 100);
+      const total = this.totalSigns || 0;
+      const newProgress = total ? Math.round((readCount / total) * 100) : 0;
+      this.categoryProgress = newProgress;
+
+      if (this.signsList.length && newProgress === 100 && previousProgress < 100) {
+        this.showCompletionModal = true;
+      }
+
+      this.prevCategoryProgress = newProgress;
+    },
+    resetProgress () {
+      const subjects = uni.getStorageSync('subjects');
+      if (subjects && this.subject_id && this.cate_id) {
+        const subject = subjects.find(item => item.id == this.subject_id);
+        if (subject && Array.isArray(subject.cate)) {
+          const cate = subject.cate.find(item => item.id == this.cate_id);
+          if (cate) {
+            if (Array.isArray(cate.question)) {
+              cate.question = cate.question.map(question => ({
+                ...question,
+                is_read: false
+              }));
+            }
+            cate.answerQuestions = [];
+            cate.current_question_index = 0;
+          }
+        }
+        uni.setStorageSync('subjects', subjects);
+      }
+
+      this.signsList = this.signsList.map(sign => ({
+        ...sign,
+        is_read: false
+      }));
+      this.categoryProgress = 0;
+      this.prevCategoryProgress = 0;
+      this.currentIndex = 0;
+      uni.setStorageSync('questions', this.signsList);
+      this.persistCurrentIndex(0);
+      this.showCompletionModal = false;
+    },
+    returnHome () {
+      this.showCompletionModal = false;
+      uni.switchTab({
+        url: '/pages/index/index'
+      });
     },
     addRecord () {
       // 获取记录数组
@@ -216,10 +297,12 @@ export default {
           }, {
             'is_read': true
           });
-          
+
           this.signsList[index].is_read = true;
-          
+
           this.updateProgress()
+          uni.setStorageSync('questions', this.signsList)
+          this.persistCurrentIndex(this.currentIndex)
         }
       } catch (error) {
         console.error('Failed to save progress:', error);
@@ -229,14 +312,7 @@ export default {
   watch: {
     // 监听当前索引变化，自动保存进度
     currentIndex(newIndex) {
-      if (!this.subject_id || !this.cate_id) return;
-
-      this.$utils.updateSubjectStorage('subjects', {
-        subjectId: this.subject_id,
-        cateId: this.cate_id
-      }, {
-        'current_question_index': newIndex
-      });
+      this.persistCurrentIndex(newIndex)
     }
   },
   onLoad(option) {
@@ -281,6 +357,12 @@ export default {
     this.$nextTick(function() {
       this.updateTranslate();
     })
+
+    this.prevCategoryProgress = this.categoryProgress
+
+    if (this.subject_id && this.cate_id) {
+      this.persistCurrentIndex(this.currentIndex)
+    }
 
     // 页面加载后初始化数据
     // this.updateProgress();
@@ -577,5 +659,91 @@ export default {
   .sign-title {
     font-size: 40rpx;
   }
+}
+
+.result-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+}
+
+.result-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.result-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 600rpx;
+  background: white;
+  border-radius: 30rpx;
+  padding: 50rpx;
+  box-shadow: 0 20rpx 60rpx rgba(0, 0, 0, 0.3);
+}
+
+.completion-header {
+  text-align: center;
+  margin-bottom: 40rpx;
+}
+
+.completion-icon {
+  font-size: 90rpx;
+  margin-bottom: 20rpx;
+}
+
+.result-title {
+  font-size: 42rpx;
+  font-weight: 600;
+  color: #333;
+}
+
+.result-subtitle {
+  margin-top: 12rpx;
+  font-size: 28rpx;
+  color: #666;
+}
+
+.result-actions {
+  display: flex;
+  gap: 30rpx;
+}
+
+.result-button {
+  flex: 1;
+  padding: 26rpx;
+  border-radius: 50rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.reset-btn {
+  background: linear-gradient(135deg, #4A9EFF 0%, #2196F3 100%);
+  color: white;
+  box-shadow: 0 8rpx 30rpx rgba(74, 158, 255, 0.3);
+}
+
+.reset-btn:active {
+  transform: scale(0.98);
+}
+
+.home-btn {
+  background: #f5f5f5;
+  color: #666;
+}
+
+.home-btn:active {
+  background: #e0e0e0;
 }
 </style>

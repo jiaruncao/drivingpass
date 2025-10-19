@@ -214,6 +214,12 @@ export default {
         }
       }
       // this.updateVideoLockStatus();
+
+      if (this.subject_id && this.cate_id) {
+        const indexToPersist = this.currentIndex >= 0 ? this.currentIndex : 0
+        this.currentIndex = indexToPersist
+        this.persistCurrentIndex(indexToPersist)
+      }
     },
     persistCurrentIndex(index) {
       if (!this.subject_id || !this.cate_id) return;
@@ -223,6 +229,12 @@ export default {
         cateId: this.cate_id
       }, {
         'current_question_index': index
+      });
+
+      this.$utils.updateSubjectStorage('subjects', {
+        subjectId: this.subject_id
+      }, {
+        'last_learn_cate_id': this.cate_id
       });
     },
     // 获取视频数据 - API调用示例

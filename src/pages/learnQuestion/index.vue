@@ -312,16 +312,16 @@
       <view class="result-content completion-content">
         <view class="result-header completion-header">
           <view class="completion-icon">🎉</view>
-          <view class="result-title">您已完成本章节学习</view>
-          <view class="result-subtitle">是否重置再次学习？</view>
+          <view class="result-title">Great job!</view>
+          <view class="result-subtitle">You've finished this section. What would you like to do next?</view>
         </view>
 
         <view class="result-actions completion-actions">
           <button class="result-button reset-btn" @tap="resetLearning">
-            重置学习
+            Reset Progress
           </button>
           <button class="result-button home-btn" @tap="returnHome">
-            返回主页
+            Return Home
           </button>
         </view>
       </view>
@@ -378,16 +378,26 @@
     watch: {
       currentQuestionIndex(newIndex) {
         if (this.mode !== 'learn') return;
+        this.persistProgress(newIndex);
+      }
+    },
+    methods: {
+      persistProgress (index) {
         if (!this.subject_id || !this.cate_id) return;
+
         this.$utils.updateSubjectStorage('subjects', {
           subjectId: this.subject_id,
           cateId: this.cate_id
         }, {
-          'current_question_index': newIndex
+          'current_question_index': index
         });
-      }
-    },
-    methods: {
+
+        this.$utils.updateSubjectStorage('subjects', {
+          subjectId: this.subject_id
+        }, {
+          'last_learn_cate_id': this.cate_id
+        });
+      },
       getInitial(username) {
         return username.charAt(0).toUpperCase();
       },
@@ -489,15 +499,7 @@
       // Swiper切换
       onSwiperChange(e) {
         this.currentQuestionIndex = e.detail.current;
-        
-        // 记录当前题目
-        this.$utils.updateSubjectStorage('subjects', {
-          subjectId: this.subject_id,
-          cateId: this.cate_id
-        }, {
-          'current_question_index': this.currentQuestionIndex
-        });
-        
+
         if (this.settings.voiceAutoRead) {
           this.readCurrentQuestion();
         }
@@ -620,11 +622,11 @@
         uni.setStorageSync('questions', this.questions);
         uni.setStorageSync('records', this.questions);
         if (this.mode === 'learn' && this.subject_id && this.cate_id) {
+          this.persistProgress(0);
           this.$utils.updateSubjectStorage('subjects', {
             subjectId: this.subject_id,
             cateId: this.cate_id
           }, {
-            'current_question_index': 0,
             'answerQuestions': []
           });
         }
@@ -874,12 +876,9 @@
           // 记录答题
           this.addRecord()
           // 记录当前题目
-          this.$utils.updateSubjectStorage('subjects', {
-            subjectId: this.subject_id,
-            cateId: this.cate_id
-          }, {
-            'current_question_index': this.currentQuestionIndex
-          });
+          if (this.mode === 'learn') {
+            this.persistProgress(this.currentQuestionIndex)
+          }
         })
       }
     },
@@ -914,6 +913,14 @@
       // 如果开启了语音自动读题，读第一题
       if (this.settings.voiceAutoRead) {
         this.readCurrentQuestion();
+      }
+
+      if (this.mode === 'learn' && this.subject_id && this.cate_id) {
+        this.$utils.updateSubjectStorage('subjects', {
+          subjectId: this.subject_id
+        }, {
+          'last_learn_cate_id': this.cate_id
+        });
       }
       // 监听
       const _this= this
