@@ -13,7 +13,7 @@
         </div>
         <div class="info_title">{{ startLearnQuestion.title }}</div>
       </div>
-      <div class="info_file">
+      <div class="info_file" v-if="hasQuestionMedia">
         <img :src="startLearnQuestion.file" alt="" />
       </div>
       <div class="info_option" v-if="startLearnQuestion.type == 'SCQ'">
@@ -361,6 +361,17 @@ export default {
         },
       ],
     };
+  },
+  computed: {
+    hasQuestionMedia() {
+      const file = this.startLearnQuestion && this.startLearnQuestion.file;
+      if (!file) return false;
+      if (typeof file === "string") {
+        const normalized = file.trim().toLowerCase();
+        return normalized !== "" && normalized !== "null" && normalized !== "undefined";
+      }
+      return true;
+    },
   },
   onLoad(option) {
     this.startLearnQuestion =
