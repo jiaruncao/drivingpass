@@ -88,6 +88,16 @@
       </view>
     </view>
 
+    <view class="progress-summary" v-if="totalQuestions">
+      <view class="progress-summary-header">
+        <text class="progress-summary-title">Progress</text>
+        <text class="progress-summary-value">{{ answeredCount }}/{{ totalQuestions }} ({{ learningProgress }}%)</text>
+      </view>
+      <view class="progress-summary-bar">
+        <view class="progress-summary-fill" :style="{ width: learningProgress + '%' }"></view>
+      </view>
+    </view>
+
     <!-- 连续答对庆祝动画 -->
     <view v-if="showStreakCelebration" class="streak-celebration">🎉</view>
 
@@ -373,6 +383,17 @@
       fontSizeClass() {
         const sizes = ['font-size-small', 'font-size-medium', 'font-size-large', 'font-size-extra-large'];
         return sizes[this.settings.fontSize - 1];
+      },
+      answeredCount() {
+        if (!Array.isArray(this.questions)) return 0;
+        return this.questions.reduce((count, question) => {
+          if (!question) return count;
+          return count + (question.showAnswer ? 1 : 0);
+        }, 0);
+      },
+      learningProgress() {
+        if (!this.totalQuestions) return 0;
+        return Math.round((this.answeredCount / this.totalQuestions) * 100);
       }
     },
     watch: {
@@ -1038,6 +1059,43 @@
     background: white;
     position: relative;
     z-index: 100;
+  }
+
+  .progress-summary {
+    padding: 0 40rpx 40rpx;
+  }
+
+  .progress-summary-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16rpx;
+  }
+
+  .progress-summary-title {
+    font-size: 28rpx;
+    color: #6b7280;
+  }
+
+  .progress-summary-value {
+    font-size: 30rpx;
+    font-weight: 600;
+    color: #111827;
+  }
+
+  .progress-summary-bar {
+    width: 100%;
+    height: 12rpx;
+    border-radius: 999rpx;
+    background: #e5e7eb;
+    overflow: hidden;
+  }
+
+  .progress-summary-fill {
+    height: 100%;
+    border-radius: 999rpx;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    transition: width 0.3s ease;
   }
 
   .back-button {
@@ -2239,6 +2297,22 @@
 
   .dark-mode .settings-button {
     color: #9ca3af;
+  }
+
+  .dark-mode .progress-summary-title {
+    color: #9ca3af;
+  }
+
+  .dark-mode .progress-summary-value {
+    color: #f9fafb;
+  }
+
+  .dark-mode .progress-summary-bar {
+    background: #374151;
+  }
+
+  .dark-mode .progress-summary-fill {
+    background: linear-gradient(90deg, #8b5cf6 0%, #6366f1 100%);
   }
 
   .dark-mode .question-text {

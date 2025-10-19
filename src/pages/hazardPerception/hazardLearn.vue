@@ -45,11 +45,20 @@
     
       <!-- 底部控制区域 -->
       <view class="bottom-controls">
+        <view class="learning-progress" v-if="totalQuestions">
+          <view class="learning-progress-header">
+            <text class="learning-progress-label">Progress</text>
+            <text class="learning-progress-value">{{ completedCount }}/{{ totalQuestions }} ({{ learningProgress }}%)</text>
+          </view>
+          <view class="learning-progress-bar">
+            <view class="learning-progress-fill" :style="{ width: learningProgress + '%' }"></view>
+          </view>
+        </view>
         <!-- 细进度条 -->
         <view class="thin-progress-bar">
           <view class="thin-progress-fill" :style="{width: progress + '%'}"></view>
         </view>
-    
+
         <!-- 得分条 -->
         <view class="score-bar-container">
           <!-- 得分区间 - 分段显示，模拟两个危险区间 -->
@@ -145,6 +154,22 @@ export default {
       cancelText: 'Cancel',
       confirmText: 'Confirm',
       showCompletionModal: false
+    }
+  },
+  computed: {
+    totalQuestions() {
+      return Array.isArray(this.questions) ? this.questions.length : 0
+    },
+    completedCount() {
+      if (!Array.isArray(this.questions)) return 0
+      return this.questions.reduce((count, question) => {
+        if (!question) return count
+        return count + (question.is_read ? 1 : 0)
+      }, 0)
+    },
+    learningProgress() {
+      if (!this.totalQuestions) return 0
+      return Math.round((this.completedCount / this.totalQuestions) * 100)
     }
   },
   methods: {
@@ -345,6 +370,12 @@ export default {
     },
     // 记录
     recordAdd () {
+      const currentQuestion = this.questions && this.questions[this.currentIndex]
+      if (currentQuestion && currentQuestion.is_read) {
+        this.persistCurrentIndex(this.currentIndex)
+        return
+      }
+
       recordAdd({
         question_id: this.questionId
       }).then(res => {
@@ -384,8 +415,10 @@ export default {
       });
 
       if (this.questions.length && this.questions[this.currentIndex]) {
-        this.questions[this.currentIndex].is_read = true;
-        uni.setStorageSync('questions', this.questions);
+        if (!this.questions[this.currentIndex].is_read) {
+          this.$set(this.questions[this.currentIndex], 'is_read', true)
+          uni.setStorageSync('questions', this.questions);
+        }
       }
 
       this.checkCompletion()
@@ -621,6 +654,46 @@ export default {
   /* right: 0; */
   height: 2rem;
   background: transparent;
+}
+
+.learning-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 3.2rem;
+  padding: 0 1.5rem;
+}
+
+.learning-progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9rem;
+}
+
+.learning-progress-label {
+  font-weight: 500;
+}
+
+.learning-progress-value {
+  font-weight: 600;
+}
+
+.learning-progress-bar {
+  width: 100%;
+  height: 0.35rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  overflow: hidden;
+}
+
+.learning-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #34d399 0%, #10b981 100%);
+  transition: width 0.3s ease;
 }
 
 /* 细进度条 */
@@ -863,6 +936,15 @@ export default {
 
   .bottom-controls {
     height: 1.15rem;
+  }
+
+  .learning-progress {
+    bottom: 2.2rem;
+    padding: 0 1rem;
+  }
+
+  .learning-progress-header {
+    font-size: 0.8rem;
   }
 
   .thin-progress-bar {
